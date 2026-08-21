@@ -1,6 +1,6 @@
 # рабочие файлы
 _t_*.html
-*.xlsx
+# таблица библиотеки лежит в data/ и отслеживается
 *.tsv
 node_modules/
 .DS_Store
