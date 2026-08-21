@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Визуальный язык Music Cosmos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,600;1,300&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* Осознанно одна тема: документ о тёмном интерфейсе, внутри — живая сцена. */
+:root{
+  --void:#05070C; --surface:#0A0E16; --surface-2:#0F1420;
+  --line:#1A2130; --line-soft:#141A26;
+  --ink:#E7EAF2; --ink-2:#A6AFC4; --muted:#69738C;
+  --amber:#FFB36B; --amber-dim:#8A5F35;
+  --k3000:#FF9A4D; --k4500:#FFD9A8; --k6000:#FFF6EC; --k9000:#CFDCFF; --k14000:#9FB6FF;
+  --ok:#7FD1A8;
+}
+*{box-sizing:border-box}
+html{background:var(--void)}
+body{
+  margin:0; background:var(--void); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 24px 90px}
+h1,h2,h3{margin:0; text-wrap:balance}
+h1{
+  font-family:Spectral,Georgia,serif; font-weight:300; font-size:clamp(2.1rem,5.6vw,3.5rem);
+  letter-spacing:-.015em; line-height:1.08;
+}
+h1 em{font-style:italic; color:var(--amber)}
+h2{
+  font-family:Spectral,Georgia,serif; font-weight:600; font-size:clamp(1.35rem,3vw,1.75rem);
+  letter-spacing:-.01em;
+}
+h3{font-family:"IBM Plex Sans",sans-serif; font-weight:600; font-size:1rem; letter-spacing:-.005em}
+p{margin:0}
+a{color:var(--amber)}
+:focus-visible{outline:2px solid var(--amber); outline-offset:3px; border-radius:3px}
+
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muted);
+}
+
+/* ---------- живая сцена ---------- */
+.stage{position:relative; margin:0 -24px 0; height:clamp(340px,52vh,540px); overflow:hidden; background:var(--void)}
+.stage canvas{display:block; width:100%; height:100%}
+.stage .fallback{
+  position:absolute; inset:0; display:none; place-items:center; text-align:center;
+  color:var(--muted); font-size:.9rem; padding:24px;
+}
+.stage.failed .fallback{display:grid}
+.stage::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(180deg,var(--void) 0%,transparent 16%,transparent 62%,var(--void) 100%);
+}
+.stage-cap{
+  position:absolute; left:24px; bottom:14px; z-index:2; max-width:52ch;
+  font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.08em;
+  color:var(--muted); text-transform:uppercase;
+}
+
+header.top{padding:34px 0 40px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:16px}
+.lede{color:var(--ink-2); font-size:1.08rem; max-width:66ch; font-family:Spectral,Georgia,serif; font-weight:300; font-size:1.18rem; line-height:1.55}
+.lede b{font-weight:600; color:var(--ink)}
+
+section{margin-top:60px}
+.shead{display:flex; flex-direction:column; gap:10px; margin-bottom:26px}
+.shead p{color:var(--ink-2); max-width:68ch; font-size:.97rem}
+
+/* ---------- принципы ---------- */
+.principles{display:grid; gap:1px; background:var(--line-soft); border:1px solid var(--line-soft); border-radius:12px; overflow:hidden}
+.pr{background:var(--surface); padding:20px 22px; display:grid; grid-template-columns:auto 1fr; gap:6px 18px}
+.pr .k{
+  font-family:"IBM Plex Mono",monospace; font-size:.7rem; color:var(--amber-dim);
+  letter-spacing:.1em; padding-top:4px; white-space:nowrap;
+}
+.pr .b{display:flex; flex-direction:column; gap:7px; min-width:0}
+.pr p{font-size:.93rem; color:var(--ink-2)}
+.pr .bad{color:var(--muted); font-size:.87rem}
+.pr .bad b{color:var(--ink-2); font-weight:500}
+
+/* ---------- палитра ---------- */
+.ramp{height:64px; border-radius:10px; border:1px solid var(--line); overflow:hidden;
+  background:linear-gradient(90deg,var(--k3000),var(--k4500),var(--k6000),var(--k9000),var(--k14000));
+}
+.ramp-ticks{
+  display:grid; grid-template-columns:repeat(5,1fr); margin-top:8px; gap:8px;
+  font-family:"IBM Plex Mono",monospace; font-size:.68rem; color:var(--muted);
+}
+.ramp-ticks span{display:flex; flex-direction:column; gap:2px}
+.ramp-ticks i{font-style:normal; color:var(--ink-2)}
+.ramp-note{margin-top:16px; color:var(--ink-2); font-size:.93rem; max-width:68ch}
+
+/* ---------- слои рендера ---------- */
+.layers{display:grid; gap:12px}
+.layer{
+  display:grid; grid-template-columns:34px 1fr auto; gap:16px; align-items:start;
+  background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px;
+}
+.layer .n{
+  font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--amber-dim);
+  padding-top:3px; font-variant-numeric:tabular-nums;
+}
+.layer .t{display:flex; flex-direction:column; gap:6px; min-width:0}
+.layer .t p{font-size:.91rem; color:var(--ink-2)}
+.layer .cost{
+  font-family:"IBM Plex Mono",monospace; font-size:.68rem; color:var(--muted);
+  border:1px solid var(--line); border-radius:5px; padding:3px 8px; white-space:nowrap;
+}
+.layer .cost.good{color:var(--ok); border-color:currentColor}
+
+.callout{
+  margin-top:22px; border-left:2px solid var(--amber); padding:14px 0 14px 18px;
+  color:var(--ink-2); font-size:.95rem; max-width:70ch;
+}
+.callout b{color:var(--ink); font-weight:600}
+
+/* ---------- территории ---------- */
+.terr{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px}
+.tc{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px; display:flex; flex-direction:column; gap:9px}
+.tc .name{font-family:Spectral,Georgia,serif; font-size:1.1rem; font-weight:600; color:var(--ink)}
+.tc .params{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--muted); line-height:1.75}
+.tc .params b{color:var(--ink-2); font-weight:400}
+.tc .swatch{height:3px; border-radius:2px; margin-bottom:2px}
+
+/* ---------- инструменты ---------- */
+.tools{display:grid; gap:1px; background:var(--line-soft); border:1px solid var(--line-soft); border-radius:12px; overflow:hidden}
+.tool{background:var(--surface); padding:15px 18px; display:grid; grid-template-columns:minmax(140px,190px) 1fr; gap:6px 20px; align-items:baseline}
+.tool .lib{font-family:"IBM Plex Mono",monospace; font-size:.83rem; color:var(--ink)}
+.tool .why{font-size:.9rem; color:var(--ink-2)}
+@media (max-width:620px){ .tool{grid-template-columns:1fr} }
+
+/* ---------- extras ---------- */
+.extras{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px}
+.ex{background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:17px 19px; display:flex; flex-direction:column; gap:8px}
+.ex h3{color:var(--amber)}
+.ex p{font-size:.9rem; color:var(--ink-2)}
+
+ol.steps{margin:0; padding:0; list-style:none; counter-reset:s; display:grid; gap:14px}
+ol.steps li{counter-increment:s; display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:start}
+ol.steps li::before{
+  content:counter(s); font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--void);
+  background:var(--amber); width:22px; height:22px; border-radius:50%;
+  display:grid; place-items:center; margin-top:2px;
+}
+ol.steps b{display:block; color:var(--ink); font-weight:600; font-size:.97rem; margin-bottom:2px}
+ol.steps span{color:var(--ink-2); font-size:.92rem}
+
+.refs{display:flex; flex-wrap:wrap; gap:8px}
+.refs span{
+  font-size:.83rem; color:var(--ink-2); background:var(--surface);
+  border:1px solid var(--line); border-radius:20px; padding:5px 13px;
+}
+
+footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:.82rem; max-width:70ch}
+
+@media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
+@media (max-width:560px){ .wrap{padding:0 16px 60px} .stage{margin:0 -16px} .stage-cap{left:16px} }
+</style>
+
+<div class="stage" id="stage">
+  <canvas id="sky" aria-label="Демонстрация: газ, пыль и звёзды одним шейдерным проходом"></canvas>
+  <p class="fallback">WebGL недоступен — сцена не отрисована. Текст ниже читается независимо.</p>
+  <p class="stage-cap">Один фрагментный проход: газ, пыль, три слоя звёзд. Пыль гасит звёзды за собой — отсюда глубина. Двигайте курсор.</p>
+</div>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Визуальное направление · к ТЗ Music Cosmos v0.1</p>
+  <h1>Свет должен откуда-то <em>идти</em></h1>
+  <p class="lede">Все «музыкальные галактики» проваливаются одинаково: это точки на чёрном с одинаковым ореолом вокруг каждой. Выходит скринсейвер, а не место. Разница не в количестве частиц — она в том, что <b>у света есть источник, а пыль его перекрывает</b>. Ниже — как этого добиться и чем это делается.</p>
+</header>
+
+<section>
+  <div class="shead">
+    <h2>Пять вещей, которые отделяют космос от точек на чёрном</h2>
+    <p>Каждая из них — не украшение, а несущая конструкция. Убрать любую — и картинка сползает обратно в скринсейвер.</p>
+  </div>
+
+  <div class="principles">
+    <div class="pr">
+      <span class="k">01 · ПЫЛЬ</span>
+      <div class="b">
+        <h3>Глубина берётся из перекрытия, а не из размера</h3>
+        <p>Астрофото читается объёмным потому, что между вами и дальними звёздами висит вещество: газ светится, пыль поглощает. Три-четыре слоя fbm-шума с разным параллаксом, и звёзды за пыльной полосой физически гаснут — не затемняются равномерно, а именно перекрываются. Это одна строчка в шейдере и главный источник ощущения объёма.</p>
+        <p class="bad">Как делают обычно: <b>уменьшают дальние точки и добавляют blur.</b> Читается как расфокус, а не как расстояние.</p>
+      </div>
+    </div>
+    <div class="pr">
+      <span class="k">02 · СВЕТ</span>
+      <div class="b">
+        <h3>Немного источников, всё остальное — освещено ими</h3>
+        <p>Свечение вокруг каждого объекта одинаковой силы убивает иерархию: глазу не за что зацепиться. Правильно — два-три десятка по-настоящему ярких звёзд на всю карту, а туманность вокруг них окрашена их же светом. Тогда яркость сама становится языком важности, и <code>importance_score</code> получает визуальное выражение бесплатно.</p>
+        <p class="bad">Как делают обычно: <b>bloom на всё подряд.</b> Всё светится одинаково — значит ничто не выделено.</p>
+      </div>
+    </div>
+    <div class="pr">
+      <span class="k">03 · ЦВЕТ</span>
+      <div class="b">
+        <h3>Палитра из физики, а не из UI-кита</h3>
+        <p>Кривая излучения абсолютно чёрного тела даёт готовый набор, который невозможно испортить: любые два цвета на ней гармоничны, потому что физически родственны. Оранжевый 3000 K, белый 6000 K, голубой 14000 K — и всё между ними. Дальше остаётся отобразить на эту кривую музыкальный смысл.</p>
+        <p class="bad">Как делают обычно: <b>назначают каждому жанру свой хекс.</b> Двенадцать несочетаемых цветов и радуга вместо неба.</p>
+      </div>
+    </div>
+    <div class="pr">
+      <span class="k">04 · БРАК</span>
+      <div class="b">
+        <h3>Немного дефектов оптики</h3>
+        <p>Идеальные градиенты выдают компьютерную графику мгновенно. Зерно, лёгкая хроматическая аберрация к краям, виньетка, дифракционные лучи только у самых ярких звёзд — четыре дешёвых приёма, после которых кадр читается как снятый, а не нарисованный. Ключевое слово — <em>немного</em>: зерно на 3–5 %, аберрация в доли пикселя.</p>
+        <p class="bad">Как делают обычно: <b>ничего или сразу слишком много.</b> Или стерильно, или инстаграм-фильтр.</p>
+      </div>
+    </div>
+    <div class="pr">
+      <span class="k">05 · ФОРМА</span>
+      <div class="b">
+        <h3>Два облака должны быть разной породы</h3>
+        <p>Два одинаковых круга читаются как диаграмма Венна. В библиотеке 2 454 академических трека против 1 690 повседневных и 190 джазовых — пропорции сами просят несимметричной композиции: плотная структурированная масса с ядром, рядом более рыхлая клочковатая, между ними тонкая перемычка. Разная морфология честно кодирует то, что у этих половин разные онтологии.</p>
+        <p class="bad">Как делают обычно: <b>два равных круга по центру.</b> Симметрия читается как схема, а не как небо.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Температура вместо жанровых цветов</h2>
+    <p>Кривая чёрного тела — единственная палитра, в которой нельзя ошибиться. Её и стоит взять как основной язык цвета, оставив жанровые оттенки только для газа территорий.</p>
+  </div>
+  <div class="ramp" role="img" aria-label="Градиент цвета излучения от 3000 до 14000 кельвинов"></div>
+  <div class="ramp-ticks">
+    <span><i>3000 K</i>барокко, романтизм</span>
+    <span><i>4500 K</i>джаз, кроссовер</span>
+    <span><i>6000 K</i>классицизм, рок</span>
+    <span><i>9000 K</i>модернизм, электроника</span>
+    <span><i>14000 K</i>авангард, спектрализм</span>
+  </div>
+  <p class="ramp-note">Отображение музыкального смысла на температуру не обязано быть буквальным — важно, что оно монотонно. Старое и тёплое внизу шкалы, радикальное и холодное вверху. Глаз считывает такую шкалу без легенды, а карта остаётся цельной даже когда на ней сто территорий. Для точных значений берите таблицу Митчелла Чэрити для чёрного тела — она даёт sRGB прямо по кельвинам.</p>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Как это устроено технически</h2>
+    <p>Вся сцена — четыре слоя и три прохода. Не тысячи спрайтов с фильтрами, а несколько больших операций на GPU. Это и быстрее, и красивее, потому что процедурная материя не размывается при увеличении, а раскрывает новую детализацию.</p>
+  </div>
+
+  <div class="layers">
+    <div class="layer">
+      <span class="n">L0</span>
+      <div class="t">
+        <h3>Газ территорий — полноэкранный шейдер</h3>
+        <p>Центры территорий, радиусы и цвета передаются маленьким массивом uniform или data-текстурой. Фрагментный шейдер считает domain-warped fbm и рисует туманность. Никаких спрайтов: при зуме шум даёт новые октавы, и облако не расплывается, а раскрывается.</p>
+      </div>
+      <span class="cost good">1 draw call</span>
+    </div>
+    <div class="layer">
+      <span class="n">L1</span>
+      <div class="t">
+        <h3>Пыль — второй канал того же шума</h3>
+        <p>Отдельная октава fbm со смещённым сидом. Умножает яркость газа и звёзд под собой. Даёт тёмные прожилки, без которых туманность выглядит как размытое пятно.</p>
+      </div>
+      <span class="cost good">в том же проходе</span>
+    </div>
+    <div class="layer">
+      <span class="n">L2</span>
+      <div class="t">
+        <h3>Звёзды — один инстансированный меш</h3>
+        <p>4 334 объекта = одна геометрия, атрибуты на инстанс: позиция, радиус, температура, важность. Форма звезды считается процедурно во фрагментном шейдере — радиальное затухание плюс дифракционные лучи у ярких. Текстур нет, значит нет и мыла на любом зуме.</p>
+      </div>
+      <span class="cost good">1 draw call</span>
+    </div>
+    <div class="layer">
+      <span class="n">L3</span>
+      <div class="t">
+        <h3>Свечение — один пост-проход</h3>
+        <p>Downsample → порог по яркости → пирамида размытий → композит. Один раз на кадр для всей сцены. Именно так свет «затекает» в пыль и связывает слои в единую картинку.</p>
+      </div>
+      <span class="cost good">3–5 мелких FBO</span>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Главная ловушка — фильтры на объектах.</b> В Pixi каждый объект с фильтром получает собственную render texture. На четырёх тысячах светящихся звёзд это гарантированные 15 кадров в секунду, и никакая оптимизация потом не спасёт — переписывать придётся всю сцену. Свечение обязано быть общим пост-проходом, а не свойством объекта.
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Чем это делать</h2>
+    <p>PixiJS из ТЗ подходит, но только если использовать его как тонкую обёртку над GPU: своя геометрия, свой шейдер, свой пост-проход. Граф сцены и система фильтров здесь не помогают — рисуется-то всего четыре вещи.</p>
+  </div>
+  <div class="tools">
+    <div class="tool"><span class="lib">ogl</span><span class="why">~10 КБ, даёт ровно нужные примитивы: программа, геометрия с инстансами, render target. Если писать свои шейдеры всё равно придётся, это меньше кода, чем обходить граф сцены Pixi.</span></div>
+    <div class="tool"><span class="lib">PixiJS 8</span><span class="why">Разумный выбор, если нужен готовый ввод, работа с текстом и WebGPU-фоллбэк. Используйте <code>Mesh</code> + собственный <code>Shader</code>, не <code>Sprite</code> и не <code>filters</code>.</span></div>
+    <div class="tool"><span class="lib">d3-interpolate-zoom</span><span class="why">Реализация Ван Вейка и Нуйя — та самая траектория, из-за которой камера «летит», а не «едет». Одна функция, а разница между приятным и раздражающим перелётом колоссальная.</span></div>
+    <div class="tool"><span class="lib">d3-quadtree</span><span class="why">Точный хит-тест по четырём тысячам звёзд без чтения пикселей из GPU. Строится один раз на предрасчёте вместе с раскладкой.</span></div>
+    <div class="tool"><span class="lib">d3-delaunay</span><span class="why">Диаграмма Вороного с релаксацией Ллойда — территории получают площадь пропорционально весу и естественные извилистые границы вместо кругов.</span></div>
+    <div class="tool"><span class="lib">poisson-disk-sampling</span><span class="why">Раскладка звёзд внутри территории без слипаний и без решётки. С сидом от хеша <code>entity_id</code> координаты становятся стабильными по построению — требование постоянства пространства решается само.</span></div>
+    <div class="tool"><span class="lib">Tone.js</span><span class="why">Только если делать звуковой слой. Тихий генеративный дрон, меняющий тембр по территории, — самый дешёвый способ добавить атмосферы. Строго по желанию пользователя.</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Территории как характеры</h2>
+    <p>Идея пресетов материи из ТЗ верная, но выражать их надо параметрами шейдера, а не подменой спрайтов. Один и тот же код рисует всё — меняются числа.</p>
+  </div>
+  <div class="terr">
+    <div class="tc">
+      <div class="swatch" style="background:linear-gradient(90deg,#FF9A4D,#FFD9A8)"></div>
+      <span class="name">Барокко</span>
+      <p class="params"><b>плотность</b> высокая<br><b>октавы шума</b> 7 — мелкая деталь<br><b>ореол</b> тугой, золотой<br><b>частицы</b> почти неподвижны</p>
+    </div>
+    <div class="tc">
+      <div class="swatch" style="background:linear-gradient(90deg,#FFD9A8,#FFF6EC)"></div>
+      <span class="name">Романтизм</span>
+      <p class="params"><b>плотность</b> средняя<br><b>октавы шума</b> 4 — крупные массы<br><b>ореол</b> широкий, мягкий<br><b>частицы</b> медленный дрейф</p>
+    </div>
+    <div class="tc">
+      <div class="swatch" style="background:linear-gradient(90deg,#CFDCFF,#FFF6EC)"></div>
+      <span class="name">Минимализм</span>
+      <p class="params"><b>плотность</b> низкая<br><b>структура</b> концентрические волны<br><b>ореол</b> ровный, тонкий<br><b>частицы</b> пульс по кольцам</p>
+    </div>
+    <div class="tc">
+      <div class="swatch" style="background:linear-gradient(90deg,#9FB6FF,#CFDCFF)"></div>
+      <span class="name">Авангард</span>
+      <p class="params"><b>плотность</b> рваная<br><b>структура</b> разломы, смещения<br><b>ореол</b> асимметричный<br><b>частицы</b> резкие скачки</p>
+    </div>
+  </div>
+  <div class="callout">
+    <b>Шесть–десять таких наборов — и вся карта опознаётся без подписей.</b> Пользователь через неделю начнёт узнавать территории по фактуре, как узнают районы города по застройке. Это и есть разница между картой и диаграммой.
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Ощущение полёта</h2>
+    <p>Половина впечатления от такого интерфейса — не картинка, а движение камеры. Три технических решения дают почти весь эффект.</p>
+  </div>
+  <div class="layers">
+    <div class="layer">
+      <span class="n">01</span>
+      <div class="t">
+        <h3>Зум экспоненциальный, а не линейный</h3>
+        <p>Масштаб меняется умножением, интерполируется в логарифме. Линейный зум ощущается как рывок в начале и вязкость в конце — мозг ждёт постоянной скорости приближения, а не постоянного прироста масштаба.</p>
+      </div>
+      <span class="cost">обязательно</span>
+    </div>
+    <div class="layer">
+      <span class="n">02</span>
+      <div class="t">
+        <h3>Перелёт по дуге «отдалиться — переместиться — приблизиться»</h3>
+        <p>Прямая интерполяция между двумя точками при большом расстоянии выглядит как телепорт. Траектория Ван Вейка сначала отводит камеру назад, показывает контекст, потом ныряет к цели. Пользователь по дороге видит, где он был и где оказался.</p>
+      </div>
+      <span class="cost">одна функция</span>
+    </div>
+    <div class="layer">
+      <span class="n">03</span>
+      <div class="t">
+        <h3>Уровни детализации перекрываются, а не переключаются</h3>
+        <p>Дискретные уровни зума из ТЗ хороши как язык описания, но в рантайме они дадут щелчок при переходе. Каждому классу объектов — своя полоса появления с плавным кроссфейдом и гистерезисом, чтобы на границе ничего не мигало.</p>
+      </div>
+      <span class="cost">важно</span>
+    </div>
+    <div class="layer">
+      <span class="n">04</span>
+      <div class="t">
+        <h3>На любом масштабе что-то входит в кадр</h3>
+        <p>От двух облаков до отдельного трека — примерно одиннадцать удвоений масштаба. Если детализация появляется рывками, большая часть пути окажется пустой и скучной. Процедурный шум решает это бесплатно: новые октавы проступают непрерывно, и лететь интересно всё время.</p>
+      </div>
+      <span class="cost">следствие L0</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Надписи как на астрономической карте</h2>
+    <p>Здесь такие проекты чаще всего и умирают: красивая сцена и поверх неё обычная тёмная панель из UI-кита. Интерфейс должен читаться как разметка на небесном атласе, а не как сайдбар.</p>
+  </div>
+  <div class="principles">
+    <div class="pr">
+      <span class="k">ТИП</span>
+      <div class="b">
+        <h3>Капитель, разрядка, табличные цифры</h3>
+        <p>Подписи — мелкий шрифт с широким трекингом, в верхнем регистре или капителью. Числа обязательно моноширинные и табличные, чтобы столбцы статистики не дрожали. Заголовки объектов можно отдать характерной антикве: она моментально уводит от ощущения дашборда.</p>
+      </div>
+    </div>
+    <div class="pr">
+      <span class="k">СВЯЗЬ</span>
+      <div class="b">
+        <h3>Выноски вместо подложек</h3>
+        <p>Плашка под текстом пробивает дыру в небе. Вместо неё — тонкая линия-выноска от объекта к подписи и лёгкая тень у самого текста. Так подписано всё в астрономических атласах, и работает это до сих пор.</p>
+      </div>
+    </div>
+    <div class="pr">
+      <span class="k">СЛОЙ</span>
+      <div class="b">
+        <h3>Текст живёт в DOM, а не на канвасе</h3>
+        <p>Шрифты остаются резкими, текст выделяется и озвучивается скринридером, а вёрстка панелей не превращается в ручную типографику по координатам. Позиционирование — через <code>transform</code>, чтобы не пересчитывать layout каждый кадр.</p>
+      </div>
+    </div>
+    <div class="pr">
+      <span class="k">ДОСТУП</span>
+      <div class="b">
+        <h3>Зеркало иерархии для клавиатуры</h3>
+        <p>Карта на канвасе для скринридера — чёрная дыра. Держите ту же иерархию параллельно обычным фокусируемым деревом: стрелки ходят по уровням, Enter входит внутрь. Это же дерево бесплатно становится индексом для поиска, так что стоит оно дёшево.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Четыре вещи, которых в ТЗ нет</h2>
+    <p>Каждая дешёвая в реализации и заметно добавляет к ощущению живого места.</p>
+  </div>
+  <div class="extras">
+    <div class="ex">
+      <h3>Световое эхо</h3>
+      <p>Нажали Play — от звезды медленно расходится волна света, гаснущая к краю территории. Одна анимация, а карта перестаёт быть неподвижной картинкой и начинает реагировать на вас.</p>
+    </div>
+    <div class="ex">
+      <h3>Созвездия по времени</h3>
+      <p>Если задержаться на объекте, проступают тонкие линии к тому, что слушалось в тот же период. Не постоянный слой связей, а награда за внимание — ровно то, чего просит §16, но по личной истории, а не по жанровому родству.</p>
+    </div>
+    <div class="ex">
+      <h3>Тихий дрон</h3>
+      <p>Генеративный гул, меняющий тембр при переходе между территориями. Барокко звенит, авангард шуршит, минимализм пульсирует. Выключено по умолчанию, включается одной кнопкой — и полностью меняет ощущение присутствия.</p>
+    </div>
+    <div class="ex">
+      <h3>Обзорная карта на глубине</h3>
+      <p>На пятом уровне зума легко потеряться. Маленькая схема в углу с точкой «вы здесь» стоит вечер работы и снимает единственный реальный источник фрустрации в такой навигации.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>С чего начинать</h2>
+    <p>Порядок ровно обратный привычному: сначала доказать красоту, потом строить приложение. §58 сам ставит эстетику на первое место — значит, и проверять её надо первой.</p>
+  </div>
+  <ol class="steps">
+    <li><div><b>Один статичный кадр в шейдерной песочнице</b><span>Настоящие 2 454 академические звезды, газ, пыль, свечение. Без React, без данных из таблицы — координаты можно взять случайные с правильными пропорциями. Если этот кадр не красив, никакая архитектура его не спасёт, и лучше узнать это на второй день, а не на третий месяц.</span></div></li>
+    <li><div><b>Оживить зум на том же кадре</b><span>Экспоненциальный масштаб, перелёт по дуге, проступающие октавы шума. Здесь становится понятно, интересно ли вообще летать по этой карте.</span></div></li>
+    <li><div><b>Подключить настоящие координаты</b><span>Вороной по территориям, Poisson-disk внутри, сид от <code>entity_id</code>. Композиция сразу становится узнаваемой и перестаёт меняться между запусками.</span></div></li>
+    <li><div><b>И только теперь — приложение</b><span>Semantic zoom, панели, поиск, таймлайн, playback. К этому моменту главный риск уже снят, и остаётся обычная работа.</span></div></li>
+  </ol>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>На что смотреть</h2>
+    <p>Ориентиры, по которым стоит выверять картинку.</p>
+  </div>
+  <div class="refs">
+    <span>снимки Hubble и JWST — логика света и пыли</span>
+    <span>Space Engine, Celestia — ощущение непрерывного масштаба</span>
+    <span>«Уранография» Боде — язык подписей и выносок</span>
+    <span>инструментальная графика миссий NASA — хайрлайны и цифры</span>
+    <span>Кирелл Бенци, дата-арт — как не скатиться в network graph</span>
+    <span>длинновыдержечные астропластинки — зерно и дифракционные лучи</span>
+  </div>
+</section>
+
+<footer>
+  Сцена наверху — упрощение принципа: один фрагментный проход, свечение приближено внутри шейдера вместо честного пост-прохода, звёзды процедурные, а не из датасета. Пропорции облаков взяты из книги: 2 454 академических трека, 1 690 повседневных, 190 джазовых. Документ намеренно одноцветный по теме — это материал о тёмном интерфейсе.
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var cv = document.getElementById('sky');
+  var gl = cv.getContext('webgl2', {antialias:false, alpha:false, powerPreference:'high-performance'});
+  if(!gl){ stage.classList.add('failed'); return; }
+
+  var VS = `#version 300 es
+void main(){
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(p - 1.0, 0.0, 1.0);
+}`;
+
+  var FS = `#version 300 es
+precision highp float;
+out vec4 outColor;
+uniform vec2 uRes;
+uniform float uTime;
+uniform vec2 uMouse;
+
+float h21(vec2 p){
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+vec2 h22(vec2 p){ float n = h21(p); return vec2(n, h21(p + n * 17.3)); }
+
+float vnoise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  float a = h21(i), b = h21(i + vec2(1.0,0.0));
+  float c = h21(i + vec2(0.0,1.0)), d = h21(i + vec2(1.0,1.0));
+  return mix(mix(a,b,u.x), mix(c,d,u.x), u.y);
+}
+float fbm(vec2 p, int oct){
+  float s = 0.0, a = 0.5;
+  mat2 r = mat2(0.80, 0.60, -0.60, 0.80);
+  for(int i = 0; i < 8; i++){
+    if(i >= oct) break;
+    s += a * vnoise(p);
+    p = r * p * 2.03;
+    a *= 0.5;
+  }
+  return s;
+}
+
+// приближение кривой излучения чёрного тела: 0 = тёплый, 1 = голубой
+vec3 blackbody(float t){
+  vec3 c1 = vec3(1.00, 0.58, 0.26);
+  vec3 c2 = vec3(1.00, 0.84, 0.62);
+  vec3 c3 = vec3(1.00, 0.97, 0.93);
+  vec3 c4 = vec3(0.81, 0.87, 1.00);
+  vec3 c5 = vec3(0.62, 0.73, 1.00);
+  if(t < 0.25) return mix(c1, c2, t / 0.25);
+  if(t < 0.50) return mix(c2, c3, (t - 0.25) / 0.25);
+  if(t < 0.75) return mix(c3, c4, (t - 0.50) / 0.25);
+  return mix(c4, c5, (t - 0.75) / 0.25);
+}
+
+vec3 starField(vec2 uv, float cell, float thr, float gain){
+  vec3 acc = vec3(0.0);
+  vec2 sp = uv * cell;
+  vec2 id = floor(sp);
+  vec2 gv = fract(sp) - 0.5;
+  for(int y = -1; y <= 1; y++){
+    for(int x = -1; x <= 1; x++){
+      vec2 off = vec2(float(x), float(y));
+      vec2 nid = id + off;
+      if(h21(nid) < thr) continue;
+      vec2 rp = (h22(nid + 1.7) - 0.5) * 0.72;
+      vec2 d = gv - off - rp;
+      float r2 = dot(d, d);
+      float bright = pow(h21(nid + 5.3), 4.0);
+      float core = exp(-r2 * 300.0) * (0.30 + bright * 3.4);
+      float halo = exp(-r2 * 16.0) * bright * 0.42;
+      vec3 c = blackbody(h21(nid + 9.1));
+      acc += c * (core + halo) * gain;
+      if(bright > 0.42){
+        float ax = exp(-abs(d.x) * 170.0) * exp(-abs(d.y) * 10.0);
+        float ay = exp(-abs(d.y) * 170.0) * exp(-abs(d.x) * 10.0);
+        acc += c * (ax + ay) * bright * 0.5 * gain;
+      }
+    }
+  }
+  return acc;
+}
+
+void main(){
+  vec2 frag = gl_FragCoord.xy;
+  vec2 uv = (frag - 0.5 * uRes) / uRes.y;
+  float t = uTime;
+
+  // --- газ территорий -------------------------------------------------
+  vec2 wp = uv * 1.25 + vec2(t * 0.006, t * 0.004);
+  vec2 warp = vec2(fbm(wp, 4), fbm(wp + 7.31, 4)) - 0.5;
+  vec2 q = uv * 1.55 + warp * 1.15;
+
+  float gas = fbm(q, 6);
+  gas = pow(max(gas, 0.0), 1.5);
+
+  // академическое облако: крупное, плотное, тёплое
+  vec2 cA = vec2(-0.46, 0.03);
+  float dA = length((uv - cA) / vec2(1.22, 0.80));
+  float mA = smoothstep(0.78, 0.02, dA);
+  // повседневное: меньше и рыхлее
+  vec2 cB = vec2(0.50, -0.07);
+  float dB = length((uv - cB) / vec2(0.92, 1.02));
+  float mB = smoothstep(0.60, 0.03, dB);
+  mB *= 0.55 + 0.45 * fbm(uv * 3.1 + 21.0, 3);
+  // джазовая перемычка
+  vec2 mid = mix(cA, cB, clamp((uv.x - cA.x) / (cB.x - cA.x), 0.0, 1.0));
+  float fil = smoothstep(0.20, 0.0, abs(uv.y - mid.y - 0.04)) *
+              smoothstep(0.70, 0.30, abs(uv.x + 0.02));
+
+  vec3 colA = vec3(1.00, 0.60, 0.30);
+  vec3 colB = vec3(0.46, 0.62, 1.00);
+  vec3 colJ = vec3(1.00, 0.82, 0.52);
+
+  vec3 neb = colA * mA * gas * 1.35
+           + colB * mB * gas * 1.05
+           + colJ * fil * gas * 0.42;
+
+  // --- пыль: отдельная октава, перекрывает всё за собой ----------------
+  float dust = fbm(q * 2.35 + 11.7, 5);
+  dust = smoothstep(0.42, 0.86, dust);
+  float occl = 1.0 - dust * 0.80;
+
+  vec3 col = neb * (1.0 - dust * 0.68);
+
+  // --- звёзды: три слоя с разным параллаксом ---------------------------
+  vec2 par = uMouse * 0.06;
+  col += starField(uv + par * 0.35, 13.0, 0.955, 0.55) * (1.0 - dust * 0.55);
+  col += starField(uv + par * 0.70, 8.0,  0.930, 0.85) * occl;
+  col += starField(uv + par * 1.30, 4.6,  0.905, 1.25) * occl;
+
+  // подсветка газа изнутри — свет источников затекает в вещество
+  col += neb * 0.35 * smoothstep(0.25, 0.9, gas);
+
+  // --- дефекты оптики ---------------------------------------------------
+  float vig = 1.0 - 0.55 * pow(length(uv * vec2(0.85, 1.25)), 2.3);
+  col *= clamp(vig, 0.0, 1.0);
+
+  float ab = length(uv) * 0.0016;
+  col.r *= 1.0 + ab * 2.2;
+  col.b *= 1.0 - ab * 1.4;
+
+  float grain = h21(frag + fract(t) * 91.7) - 0.5;
+  col += grain * 0.030;
+
+  // тонмаппинг и посадка на цвет фона
+  col = col / (col + vec3(0.85));
+  col = pow(max(col, 0.0), vec3(0.87));
+  col = max(col, vec3(0.020, 0.027, 0.047));
+
+  outColor = vec4(col, 1.0);
+}`;
+
+  function compile(type, src){
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+      console.error(gl.getShaderInfoLog(s));
+      return null;
+    }
+    return s;
+  }
+  var vs = compile(gl.VERTEX_SHADER, VS);
+  var fs = compile(gl.FRAGMENT_SHADER, FS);
+  if(!vs || !fs){ stage.classList.add('failed'); return; }
+  var prog = gl.createProgram();
+  gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+  if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){
+    console.error(gl.getProgramInfoLog(prog));
+    stage.classList.add('failed'); return;
+  }
+  gl.useProgram(prog);
+  var uRes = gl.getUniformLocation(prog, 'uRes');
+  var uTime = gl.getUniformLocation(prog, 'uTime');
+  var uMouse = gl.getUniformLocation(prog, 'uMouse');
+  var vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+
+  var mx = 0, my = 0, tx = 0, ty = 0;
+  stage.addEventListener('pointermove', function(e){
+    var r = stage.getBoundingClientRect();
+    tx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+    ty = ((e.clientY - r.top) / r.height - 0.5) * -2;
+  });
+  stage.addEventListener('pointerleave', function(){ tx = 0; ty = 0; });
+
+  function resize(){
+    var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    var w = Math.max(1, Math.round(cv.clientWidth * dpr));
+    var h = Math.max(1, Math.round(cv.clientHeight * dpr));
+    if(cv.width !== w || cv.height !== h){
+      cv.width = w; cv.height = h;
+      gl.viewport(0, 0, w, h);
+    }
+  }
+  if(window.ResizeObserver){ new ResizeObserver(resize).observe(cv); }
+  window.addEventListener('resize', resize);
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var start = performance.now();
+
+  function frame(now){
+    resize();
+    mx += (tx - mx) * 0.055;
+    my += (ty - my) * 0.055;
+    var t = reduce ? 12.0 : (now - start) / 1000;
+    gl.uniform2f(uRes, cv.width, cv.height);
+    gl.uniform1f(uTime, t);
+    gl.uniform2f(uMouse, mx, my);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if(!reduce) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</html>

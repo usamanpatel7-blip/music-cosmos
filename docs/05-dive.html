@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Нырок в планету</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --void:#03050C;
+  --ink:#E9EDF7; --ink-2:#A7B2C9; --muted:#6C7896;
+  --accent:#FFB36B;
+  --paper:#080B14;
+}
+*{box-sizing:border-box}
+html,body{margin:0; height:100%; background:var(--void); overflow:hidden}
+body{
+  color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+#sky{position:fixed; inset:0; display:block; width:100%; height:100%; cursor:default}
+#sky.pointing{cursor:pointer}
+
+/* ---------- подписи планет ---------- */
+.lab{
+  position:fixed; z-index:3; pointer-events:none; transform:translate(-50%,0);
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.16em;
+  text-transform:uppercase; white-space:nowrap; text-align:center;
+  text-shadow:0 2px 14px #000, 0 0 4px #000; transition:opacity .2s;
+}
+.lab b{display:block; font-weight:500; color:rgba(240,246,255,.94)}
+.lab i{
+  display:block; font-style:normal; font-size:9.5px; letter-spacing:.13em;
+  margin-top:3px; color:rgba(150,168,200,.8);
+}
+.lab.has::after{
+  content:"● есть заметка"; display:block; margin-top:5px; font-size:8.5px;
+  letter-spacing:.1em; color:var(--accent); opacity:.9;
+}
+
+/* ---------- заголовок сцены ---------- */
+.brand{
+  position:fixed; left:26px; top:22px; z-index:4; transition:opacity .5s;
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--muted);
+}
+.hint{
+  position:fixed; right:26px; bottom:20px; z-index:4; transition:opacity .5s;
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); text-align:right;
+}
+.fps{
+  position:fixed; left:26px; bottom:20px; z-index:4; transition:opacity .5s;
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em;
+  color:#3D4A66;
+}
+
+/* ---------- статья ---------- */
+#article{
+  position:fixed; inset:0; z-index:6; overflow-y:auto; overflow-x:hidden;
+  opacity:0; pointer-events:none; background:var(--paper);
+  transition:opacity .45s ease;
+}
+#article.on{opacity:1; pointer-events:auto}
+.halo{
+  position:absolute; left:50%; top:-42vh; width:120vh; height:120vh; z-index:0;
+  transform:translateX(-50%); border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle at 50% 60%, var(--accent) 0%, transparent 62%);
+  opacity:.13; filter:blur(30px);
+}
+.art{position:relative; z-index:1; max-width:none; margin:0 auto; padding:0 26px 140px}
+.art-in{max-width:660px; margin:0 auto}
+
+.back{
+  position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:12px;
+  padding:18px 0 16px; margin-bottom:26px;
+  background:linear-gradient(180deg,var(--paper) 62%, transparent);
+}
+.back button{
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--ink-2); background:transparent;
+  border:1px solid rgba(160,180,215,.22); border-radius:20px;
+  padding:8px 15px; cursor:pointer; transition:.15s;
+}
+.back button:hover{border-color:var(--accent); color:var(--accent)}
+.back span{
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muted);
+}
+
+.a-head{margin-bottom:40px}
+.a-kicker{
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--accent); margin-bottom:14px;
+}
+h1{
+  margin:0 0 14px; font-family:Spectral,Georgia,serif; font-weight:300;
+  font-size:clamp(2.3rem,6vw,3.9rem); line-height:1.02; letter-spacing:-.02em;
+}
+.a-sub{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted);
+  display:flex; flex-wrap:wrap; gap:6px 18px;
+}
+
+/* блоки */
+.blk{margin-bottom:38px}
+.blk-tag{
+  font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:12px;
+  display:flex; align-items:center; gap:9px;
+}
+.blk-tag::before{content:""; width:16px; height:1px; background:var(--accent); opacity:.7}
+.blk-tag em{font-style:normal; color:#5A6480; letter-spacing:.12em; text-transform:none; font-size:10px}
+
+.essay p{
+  margin:0 0 17px; font-family:Spectral,Georgia,serif; font-weight:300;
+  font-size:1.16rem; line-height:1.72; color:#D6DDEC;
+}
+.essay p:last-child{margin-bottom:0}
+.essay strong{font-weight:600; color:#F0F4FF}
+
+.personal{
+  border-left:2px solid var(--accent); padding:2px 0 2px 22px;
+}
+.personal p{
+  margin:0 0 14px; font-family:Spectral,Georgia,serif; font-style:italic;
+  font-weight:300; font-size:1.1rem; line-height:1.68; color:#C9D3E6;
+}
+.personal p:last-child{margin-bottom:0}
+
+/* статистика фразами */
+.stats{display:flex; flex-direction:column; gap:14px}
+.stat{display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:baseline}
+.stat b{
+  font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:1.5rem;
+  color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:-.02em;
+  min-width:92px; text-align:right;
+}
+.stat span{font-size:.97rem; color:var(--ink-2); line-height:1.5}
+
+/* пустое состояние */
+.empty{
+  border:1px dashed rgba(160,180,215,.2); border-radius:12px;
+  padding:26px 24px; text-align:center;
+}
+.empty p{margin:0; color:var(--muted); font-size:.95rem; line-height:1.6}
+.empty p b{display:block; color:var(--ink-2); font-weight:500; margin-bottom:6px; font-size:1rem}
+
+.nextnav{
+  margin-top:56px; padding-top:24px; border-top:1px solid rgba(160,180,215,.13);
+  display:flex; flex-wrap:wrap; gap:10px;
+}
+.nextnav button{
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-2); background:rgba(255,255,255,.03);
+  border:1px solid rgba(160,180,215,.16); border-radius:8px; padding:9px 14px;
+  cursor:pointer; transition:.15s;
+}
+.nextnav button:hover{border-color:var(--accent); color:var(--accent)}
+
+/* появление блоков */
+.rise{opacity:0; transform:translateY(22px)}
+#article.on .rise{opacity:1; transform:none; transition:opacity .6s ease, transform .6s cubic-bezier(.22,.9,.3,1)}
+#article.on .rise:nth-child(1){transition-delay:.05s}
+#article.on .rise:nth-child(2){transition-delay:.13s}
+#article.on .rise:nth-child(3){transition-delay:.21s}
+#article.on .rise:nth-child(4){transition-delay:.29s}
+#article.on .rise:nth-child(5){transition-delay:.37s}
+#article.on .rise:nth-child(6){transition-delay:.45s}
+
+@media (prefers-reduced-motion: reduce){ .rise{transition:none!important; opacity:1; transform:none} }
+@media (max-width:560px){ .art{padding:0 18px 110px} .brand,.fps{left:16px} .hint{right:16px} }
+</style>
+
+<canvas id="sky"></canvas>
+<p class="brand" id="brand">Music Cosmos · прототип нырка</p>
+<p class="hint" id="hint">наведите · щёлкните по планете</p>
+<p class="fps" id="fps"></p>
+
+<div id="article">
+  <div class="halo" id="halo"></div>
+  <div class="art"><div class="art-in">
+    <div class="back">
+      <button id="backBtn">← назад в космос</button>
+      <span id="crumb"></span>
+    </div>
+    <div id="artBody"></div>
+  </div></div>
+</div>
+
+<script>
+(function(){
+var cv = document.getElementById('sky');
+var gl = cv.getContext('webgl2', {antialias:true, alpha:false, powerPreference:'high-performance'});
+if(!gl){ document.body.innerHTML = '<p style="color:#889;font:14px sans-serif;padding:40px">WebGL2 недоступен.</p>'; return; }
+
+var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* =============== данные =============== */
+// Материалы вымышленные, но каждый — узнаваемая минеральная порода.
+var P = [
+  { id:'baroque', name:'Барокко', years:'1600–1750', tracks:443, r:0.132, x:-0.60, y: 0.10,
+    c1:[1.00,0.74,0.30], c2:[0.42,0.22,0.05], c3:[1.00,0.95,0.80],
+    crystal:0.30, rough:0.42, spin:0.055, note:true },
+  { id:'classicism', name:'Классицизм', years:'1750–1820', tracks:227, r:0.098, x:-0.30, y:-0.24,
+    c1:[0.93,0.93,0.90], c2:[0.44,0.46,0.52], c3:[1.00,1.00,1.00],
+    crystal:0.10, rough:0.70, spin:0.040, note:false },
+  { id:'romantic', name:'Романтизм', years:'1815–1910', tracks:508, r:0.142, x:-0.72, y:-0.30,
+    c1:[1.00,0.62,0.66], c2:[0.48,0.16,0.26], c3:[1.00,0.88,0.92],
+    crystal:0.16, rough:0.34, spin:0.035, note:false },
+  { id:'impress', name:'Импрессионизм', years:'1890–1920', tracks:59, r:0.070, x:-0.26, y: 0.26,
+    c1:[0.52,0.95,0.92], c2:[0.14,0.32,0.52], c3:[0.90,0.80,1.00],
+    crystal:0.55, rough:0.16, spin:0.075, note:false },
+  { id:'modern', name:'Модернизм', years:'1900–1975', tracks:236, r:0.100, x:-0.53, y:-0.53,
+    c1:[0.62,0.68,0.76], c2:[0.16,0.18,0.24], c3:[0.86,0.92,1.00],
+    crystal:0.42, rough:0.50, spin:0.048, note:false },
+  { id:'avant', name:'Авангард', years:'1910–1975', tracks:47, r:0.066, x:-0.14, y:-0.05,
+    c1:[0.30,0.26,0.40], c2:[0.03,0.02,0.06], c3:[0.72,0.56,1.00],
+    crystal:0.92, rough:0.20, spin:0.090, note:true },
+  { id:'rock', name:'Рок', years:'1960–н.в.', tracks:1013, r:0.150, x: 0.62, y:-0.06,
+    c1:[1.00,0.38,0.18], c2:[0.10,0.07,0.08], c3:[1.00,0.78,0.42],
+    crystal:0.34, rough:0.62, spin:0.030, note:true },
+  { id:'pop', name:'Поп', years:'1980–н.в.', tracks:237, r:0.100, x: 0.32, y: 0.30,
+    c1:[1.00,0.86,0.30], c2:[0.52,0.30,0.06], c3:[1.00,0.98,0.86],
+    crystal:0.14, rough:0.30, spin:0.052, note:false },
+  { id:'electro', name:'Электроника', years:'1990–н.в.', tracks:100, r:0.078, x: 0.86, y: 0.34,
+    c1:[0.56,0.36,1.00], c2:[0.08,0.06,0.26], c3:[0.46,0.98,1.00],
+    crystal:0.66, rough:0.12, spin:0.082, note:false },
+  { id:'blues', name:'Блюз', years:'1940–1980', tracks:49, r:0.062, x: 0.42, y:-0.42,
+    c1:[0.34,0.58,0.92], c2:[0.05,0.10,0.24], c3:[0.72,0.88,1.00],
+    crystal:0.24, rough:0.44, spin:0.060, note:false }
+];
+
+/* =============== тексты =============== */
+var ART = {
+baroque:{
+ stats:[
+  ['1718','медиана года сочинения — самая старая территория библиотеки'],
+  ['443','трека, из них 257 — Бах: почти каждый второй'],
+  ['×9','во столько раз барокко старше вашей электроники']
+ ],
+ essay:[
+  'Барокко почти всё написано <strong>под заказ и к сроку</strong>. Кантата к воскресенью, сюита к приезду курфюрста, урок для ученика. Это музыка служебная, и в этом её странная свобода: автор не выражал себя, он выполнял работу — а личное просачивалось само, помимо задания.',
+  'Держится всё на двух вещах. Внизу — <strong>бассо континуо</strong>, непрерывно шагающий бас, на который, как на верёвку, нанизано остальное. Сверху — орнамент, который исполнитель домысливал сам: в нотах стоял скелет, мясо нарастало вживую. Поэтому две записи одной пьесы могут звучать как разные сочинения.',
+  'И ещё теория аффектов: считалось, что определённые интонации вызывают определённое состояние почти механически, как лекарство. Отсюда ощущение, что барокко не уговаривает вас, а просто <strong>переставляет вам настройку</strong> — быстро и без предисловий.'
+ ],
+ personal:[
+  'Я долго думал, что барокко — это про парики и позолоту, пока не понял, что это самая рабочая музыка из всех, что я слушаю. Её писали как письма: сегодня надо, значит сегодня и напишем.',
+  'Слушаю его чаще всего утром и почти никогда вечером. Кажется, дело в этом шагающем басе — он задаёт темп, в который потом можно вставить день.'
+ ]
+},
+avant:{
+ stats:[
+  ['47','треков — одна из самых маленьких территорий'],
+  ['1962','медианный год: всё уместилось в двадцать лет'],
+  ['6','композиторов на всю территорию — здесь вы точечны']
+ ],
+ essay:[
+  'Авангард середины века начинается с простой мысли: если язык износился, надо менять не слова, а <strong>саму грамматику</strong>. Отсюда сериализм, где высота, длительность и громкость подчинены одному ряду, и алеаторика, где часть решений отдана случаю или исполнителю.',
+  'Слушать это как «мелодию» бесполезно — её там нет по замыслу. Зато есть <strong>событие и тишина между событиями</strong>. Ухо, привыкшее ждать развития, сперва скучает, а потом переключается на другой масштаб: начинает слышать фактуру, атаку, затухание.',
+  'Самое честное описание этой музыки — она не рассказывает историю, она <strong>устраивает вам условия</strong>. Что именно в этих условиях произойдёт, зависит от вас больше, чем в любой другой музыке.'
+ ],
+ personal:[
+  'Сюда я захожу редко и всегда осознанно — фоном это не работает совсем. Зато после получаса Лигети обычная музыка звучит неприлично сладкой, и это ощущение мне нравится.',
+  'Сорок семь треков — но перечитывая список, вижу, что почти все добавлены в один год. Похоже, это был период, а не привычка.'
+ ]
+},
+rock:{
+ stats:[
+  ['1013','треков — самая населённая планета библиотеки'],
+  ['60%','всей вашей неакадемической музыки приходится сюда'],
+  ['1984','медианный год — вы слушаете рок старше себя']
+ ],
+ essay:[
+  'Рок держится на том, чего почти нет в академической музыке: на <strong>тембре как содержании</strong>. Одна и та же последовательность аккордов — это разные вещи, если у одного чистый звук, а у другого перегруз. В партитуру это не записывается, оно живёт только в записи.',
+  'Поэтому здесь центральная единица не произведение, а <strong>альбом</strong>: сорок минут, собранные как высказывание, с порядком, паузами и обложкой. Отдельный трек из него вынимается хуже, чем ария из оперы.',
+  'И ещё одно отличие: у рока нет исполнительской традиции в академическом смысле. Есть <strong>каноническая запись</strong>, и всё остальное — каверы. Музыка навсегда срослась с конкретными людьми в конкретной комнате в конкретный год.'
+ ],
+ personal:[
+  'Самая большая планета — и при этом та, о которой мне труднее всего писать. Похоже, потому, что она не про открытие, а про фон всей жизни: тут нет момента, когда я «пришёл» к року.',
+  'Медианный 1984-й отрезвляет. Я думал, что слушаю что-то своё, а слушаю то, что было до меня.'
+ ]
+}
+};
+
+/* =============== GL =============== */
+function sh(t, s){ var x = gl.createShader(t); gl.shaderSource(x, s); gl.compileShader(x);
+  if(!gl.getShaderParameter(x, gl.COMPILE_STATUS)){ console.error(gl.getShaderInfoLog(x), s); return null; } return x; }
+function prog(v, f){ var p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, v));
+  gl.attachShader(p, sh(gl.FRAGMENT_SHADER, f)); gl.linkProgram(p);
+  if(!gl.getProgramParameter(p, gl.LINK_STATUS)){ console.error(gl.getProgramInfoLog(p)); return null; } return p; }
+
+var NOISE = `
+vec3 h33(vec3 p){
+  p = vec3(dot(p,vec3(127.1,311.7,74.7)), dot(p,vec3(269.5,183.3,246.1)), dot(p,vec3(113.5,271.9,124.6)));
+  return fract(sin(p)*43758.5453);
+}
+float h13(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); }
+float n3(vec3 p){
+  vec3 i = floor(p), f = fract(p);
+  f = f*f*(3.0-2.0*f);
+  float a = mix(mix(mix(h13(i+vec3(0,0,0)), h13(i+vec3(1,0,0)), f.x),
+                    mix(h13(i+vec3(0,1,0)), h13(i+vec3(1,1,0)), f.x), f.y),
+                mix(mix(h13(i+vec3(0,0,1)), h13(i+vec3(1,0,1)), f.x),
+                    mix(h13(i+vec3(0,1,1)), h13(i+vec3(1,1,1)), f.x), f.y), f.z);
+  return a;
+}
+float fbm3(vec3 p, int oct){
+  float s = 0.0, a = 0.5;
+  for(int i = 0; i < 6; i++){ if(i >= oct) break; s += a*n3(p); p *= 2.03; a *= 0.5; }
+  return s;
+}
+// нормаль ближайшей ячейки — даёт огранку
+vec3 facet(vec3 p){
+  vec3 i = floor(p), f = fract(p);
+  float best = 9.0; vec3 bo = vec3(0.0);
+  for(int z = -1; z <= 1; z++)
+  for(int y = -1; y <= 1; y++)
+  for(int x = -1; x <= 1; x++){
+    vec3 o = vec3(float(x), float(y), float(z));
+    vec3 c = o + h33(i+o) - f;
+    float d = dot(c,c);
+    if(d < best){ best = d; bo = c; }
+  }
+  return normalize(-bo + vec3(1e-5));
+}`;
+
+/* --- фон: чистое звёздное поле, без тумана --- */
+var pBg = prog(`#version 300 es
+void main(){ vec2 p = vec2(float((gl_VertexID<<1)&2), float(gl_VertexID&2)); gl_Position = vec4(p-1.0,0.0,1.0); }`,
+`#version 300 es
+precision highp float;
+out vec4 o;
+uniform vec2 uRes; uniform vec2 uPan; uniform float uZoom; uniform float uFade;
+float h21(vec2 p){ p = fract(p*vec2(127.11,311.7)); p += dot(p,p+34.77); return fract(p.x*p.y); }
+vec3 layer(vec2 uv, float cell, float thr, float g){
+  vec3 acc = vec3(0.0);
+  vec2 sp = uv*cell; vec2 id = floor(sp); vec2 gv = fract(sp)-0.5;
+  for(int y=-1;y<=1;y++) for(int x=-1;x<=1;x++){
+    vec2 off = vec2(float(x),float(y)); vec2 nid = id+off;
+    if(h21(nid) < thr) continue;
+    vec2 d = gv - off - (vec2(h21(nid+1.3), h21(nid+7.7))-0.5)*0.7;
+    float r2 = dot(d,d);
+    float b = pow(h21(nid+5.1), 5.0);
+    float t = h21(nid+3.3);
+    vec3 c = mix(vec3(1.0,0.86,0.72), vec3(0.76,0.86,1.0), t);
+    acc += c*exp(-r2*340.0)*(0.35+b*3.4)*g;
+  }
+  return acc;
+}
+void main(){
+  vec2 uv = (gl_FragCoord.xy - 0.5*uRes)/uRes.y;
+  vec3 c = vec3(0.0);
+  c += layer(uv + uPan*0.10, 15.0, 0.955, 0.42);
+  c += layer(uv + uPan*0.22, 9.0,  0.940, 0.70);
+  c += layer(uv + uPan*0.40, 5.2,  0.918, 1.05);
+  c = c/(c+0.9);
+  c *= uFade;
+  o = vec4(max(c, vec3(0.011,0.014,0.030)*uFade), 1.0);
+}`);
+
+/* --- планета --- */
+var pPl = prog(`#version 300 es
+in vec2 aPos;
+uniform vec2 uRes; uniform vec2 uCenter; uniform float uRadius;
+out vec2 vUV;
+void main(){
+  vUV = aPos*1.42;
+  vec2 frag = uCenter + aPos*uRadius*1.42;
+  gl_Position = vec4(frag/uRes*2.0-1.0, 0.0, 1.0);
+}`,
+`#version 300 es
+precision highp float;
+in vec2 vUV;
+out vec4 o;
+uniform vec3 uC1, uC2, uC3;
+uniform float uCrystal, uRough, uSeed, uTime, uAlpha, uHi, uSpin;
+` + NOISE + `
+void main(){
+  float r2 = dot(vUV, vUV);
+  vec3 L = normalize(vec3(-0.42, 0.52, 0.74));
+  if(r2 > 1.0){
+    float g = smoothstep(2.02, 1.0, r2);
+    float a = g*g*(0.30 + uHi*0.55);
+    o = vec4(uC1*a*1.25, a*0.72);
+    return;
+  }
+  float z = sqrt(max(0.0, 1.0 - r2));
+  vec3 n = vec3(vUV, z);
+  float ang = uTime*uSpin + uSeed*3.7;
+  float ca = cos(ang), sa = sin(ang);
+  vec3 p = vec3(n.x*ca + n.z*sa, n.y, -n.x*sa + n.z*ca);
+
+  float f = fbm3(p*2.35 + uSeed*11.0, 4);
+  float veins = fbm3(p*6.1 + uSeed*3.0, 3);
+
+  vec3 sn = n;
+  if(uCrystal > 0.02){
+    vec3 fc = facet(p*3.1 + uSeed*5.0);
+    sn = normalize(mix(n, normalize(n*0.55 + fc*0.85), uCrystal));
+  }
+
+  vec3 base = mix(uC2, uC1, smoothstep(0.30, 0.68, f));
+  base = mix(base, uC3, smoothstep(0.70, 0.94, veins)*0.62);
+
+  float diff = max(0.0, dot(sn, L));
+  float wrap = max(0.0, dot(sn, L)*0.5 + 0.5);
+  vec3 spd = reflect(-L, sn);
+  float spec = pow(max(0.0, spd.z), mix(78.0, 9.0, uRough));
+  float rim = pow(1.0 - z, 3.4);
+
+  vec3 col = base*(0.07 + 0.62*diff + 0.30*wrap*wrap);
+  col += vec3(1.0)*spec*(1.0 - uRough)*0.85;
+  col += mix(uC1, uC3, 0.5)*rim*(0.55 + uHi*0.7);
+  col *= (1.0 + uHi*0.35);
+
+  float edge = smoothstep(1.0, 0.978, r2);
+  o = vec4(col*uAlpha, edge*uAlpha);
+}`);
+
+/* --- рой треков на орбитах --- */
+var pSw = prog(`#version 300 es
+in vec4 aOrb;   // 0: индекс планеты, 1: фаза, 2: радиус, 3: размер
+in vec2 aTil;   // сжатие эллипса, поворот
+uniform vec2 uRes; uniform float uTime; uniform float uDpr;
+uniform vec4 uP[10];   // xy центр px, z радиус px, w альфа
+uniform vec3 uPC[10];
+out vec3 vC; out float vA;
+void main(){
+  int idx = int(aOrb.x + 0.5);
+  vec4 pl = uP[idx];
+  float a = aOrb.y + uTime*(0.05 + aOrb.z*0.10);
+  float rr = pl.z*(1.30 + aOrb.z*1.25);
+  vec2 e = vec2(cos(a)*rr, sin(a)*rr*aTil.x);
+  float c = cos(aTil.y), s = sin(aTil.y);
+  vec2 off = vec2(e.x*c - e.y*s, e.x*s + e.y*c);
+  gl_Position = vec4((pl.xy + off)/uRes*2.0 - 1.0, 0.0, 1.0);
+  gl_PointSize = max(1.0, aOrb.w*uDpr);
+  vC = uPC[idx];
+  vA = pl.w*(0.30 + 0.70*(0.5 + 0.5*sin(a*2.0 + aOrb.y)));
+}`,
+`#version 300 es
+precision highp float;
+in vec3 vC; in float vA;
+out vec4 o;
+void main(){
+  vec2 d = gl_PointCoord - 0.5;
+  float r2 = dot(d,d);
+  if(r2 > 0.25) discard;
+  float v = exp(-r2*26.0);
+  o = vec4(mix(vec3(1.0), vC, 0.45)*v*vA, 1.0);
+}`);
+
+var quad = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+var vaoQ = gl.createVertexArray();
+gl.bindVertexArray(vaoQ);
+var locQ = gl.getAttribLocation(pPl, 'aPos');
+gl.enableVertexAttribArray(locQ);
+gl.vertexAttribPointer(locQ, 2, gl.FLOAT, false, 0, 0);
+gl.bindVertexArray(null);
+
+// рой
+var orb = [], til = [];
+for(var i = 0; i < P.length; i++){
+  var n = Math.min(230, 26 + Math.round(P[i].tracks*0.18));
+  for(var k = 0; k < n; k++){
+    orb.push(i, Math.random()*6.283, Math.random(), 0.9 + Math.random()*1.8);
+    til.push(0.16 + Math.random()*0.42, Math.random()*3.14);
+  }
+}
+var SWN = orb.length/4;
+var vaoS = gl.createVertexArray();
+gl.bindVertexArray(vaoS);
+var bO = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, bO);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(orb), gl.STATIC_DRAW);
+var lO = gl.getAttribLocation(pSw, 'aOrb');
+gl.enableVertexAttribArray(lO); gl.vertexAttribPointer(lO, 4, gl.FLOAT, false, 0, 0);
+var bT = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, bT);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(til), gl.STATIC_DRAW);
+var lT = gl.getAttribLocation(pSw, 'aTil');
+gl.enableVertexAttribArray(lT); gl.vertexAttribPointer(lT, 2, gl.FLOAT, false, 0, 0);
+gl.bindVertexArray(null);
+
+/* =============== камера и состояние =============== */
+var W = 0, H = 0, DPR = 1;
+var cam = {x:0, y:0, z:1};
+var home = {x:0, y:0, z:1};
+var dive = 0, diveTarget = 0, active = -1, hover = -1;
+var mouse = {x:-1e5, y:-1e5};
+var labels = [];
+
+for(i = 0; i < P.length; i++){
+  var el = document.createElement('div');
+  el.className = 'lab' + (P[i].note ? ' has' : '');
+  el.innerHTML = '<b>' + P[i].name + '</b><i>' + P[i].years + ' · ' + P[i].tracks + '</i>';
+  document.body.appendChild(el);
+  labels.push(el);
+}
+
+function ease(t){ return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2; }
+function proj(p){
+  var s = cam.z*H;
+  return {
+    x: (p.x - cam.x)*s + W/2,
+    y: H/2 - (p.y - cam.y)*s,
+    r: p.r*s
+  };
+}
+
+function computeFit(){
+  var mx = 0.01, my = 0.01;
+  for(var i = 0; i < P.length; i++){
+    mx = Math.max(mx, Math.abs(P[i].x) + P[i].r*1.55);
+    my = Math.max(my, Math.abs(P[i].y) + P[i].r*1.55 + 0.055);
+  }
+  var ar = W/H;
+  home.z = Math.min((ar*0.5)/mx, 0.5/my)*0.97;
+}
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 1.75);
+  var w = Math.round(cv.clientWidth*DPR), h = Math.round(cv.clientHeight*DPR);
+  if(w === W && h === H) return;
+  W = w; H = h; cv.width = W; cv.height = H;
+  gl.viewport(0, 0, W, H);
+  computeFit();
+}
+
+/* =============== отрисовка =============== */
+var t0 = performance.now(), frames = 0, fpsT = t0, fpsEl = document.getElementById('fps');
+
+function draw(now){
+  resize();
+  var time = (now - t0)/1000;
+  if(reduce) time = 6.0;
+
+  // плавное движение к цели нырка
+  dive += (diveTarget - dive)*0.075;
+  if(Math.abs(diveTarget - dive) < 0.0012) dive = diveTarget;
+  var d = ease(Math.min(1, Math.max(0, dive)));
+
+  if(active >= 0){
+    var A = P[active];
+    var zTo = 0.44/A.r;                       // планета вырастает до ~88% высоты кадра
+    cam.x = home.x + (A.x - home.x)*d;
+    cam.y = home.y + (A.y - home.y)*d;
+    cam.z = home.z*(1 - d) + zTo*d;
+  } else {
+    cam.x = home.x; cam.y = home.y; cam.z = home.z;
+  }
+
+  var skyFade = 1 - Math.min(1, d*1.5);
+
+  gl.clearColor(0.011, 0.014, 0.030, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.disable(gl.DEPTH_TEST);
+
+  // фон
+  gl.useProgram(pBg);
+  gl.uniform2f(gl.getUniformLocation(pBg, 'uRes'), W, H);
+  gl.uniform2f(gl.getUniformLocation(pBg, 'uPan'), cam.x*0.9, cam.y*0.9);
+  gl.uniform1f(gl.getUniformLocation(pBg, 'uZoom'), cam.z);
+  gl.uniform1f(gl.getUniformLocation(pBg, 'uFade'), skyFade);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  // рой
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE);
+  var up = new Float32Array(40), upc = new Float32Array(30);
+  for(i = 0; i < P.length; i++){
+    var s = proj(P[i]);
+    var al = (active < 0 || active === i) ? 1 : (1 - d);
+    if(active === i) al = 1 - Math.min(1, d*1.9);
+    up[i*4] = s.x; up[i*4+1] = H - s.y; up[i*4+2] = s.r; up[i*4+3] = al*skyFade*0.9;
+    upc[i*3] = P[i].c1[0]; upc[i*3+1] = P[i].c1[1]; upc[i*3+2] = P[i].c1[2];
+  }
+  gl.useProgram(pSw);
+  gl.uniform2f(gl.getUniformLocation(pSw, 'uRes'), W, H);
+  gl.uniform1f(gl.getUniformLocation(pSw, 'uTime'), time);
+  gl.uniform1f(gl.getUniformLocation(pSw, 'uDpr'), DPR);
+  gl.uniform4fv(gl.getUniformLocation(pSw, 'uP'), up);
+  gl.uniform3fv(gl.getUniformLocation(pSw, 'uPC'), upc);
+  gl.bindVertexArray(vaoS);
+  gl.drawArrays(gl.POINTS, 0, SWN);
+  gl.bindVertexArray(null);
+
+  // планеты — от дальних к ближним
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.useProgram(pPl);
+  gl.bindVertexArray(vaoQ);
+  gl.uniform2f(gl.getUniformLocation(pPl, 'uRes'), W, H);
+  gl.uniform1f(gl.getUniformLocation(pPl, 'uTime'), time);
+  var order = P.map(function(_, k){ return k; }).sort(function(a, b){ return P[a].r - P[b].r; });
+  for(var oi = 0; oi < order.length; oi++){
+    i = order[oi];
+    var pp = proj(P[i]);
+    var alpha = 1;
+    if(active >= 0) alpha = (active === i) ? 1 : Math.max(0, 1 - d*2.1);
+    if(active === i && d > 0.72) alpha = Math.max(0, 1 - (d - 0.72)/0.28);
+    if(alpha <= 0.002) continue;
+    if(pp.x < -pp.r*2 || pp.x > W + pp.r*2 || pp.y < -pp.r*2 || pp.y > H + pp.r*2) continue;
+    gl.uniform2f(gl.getUniformLocation(pPl, 'uCenter'), pp.x, H - pp.y);
+    gl.uniform1f(gl.getUniformLocation(pPl, 'uRadius'), pp.r);
+    gl.uniform3fv(gl.getUniformLocation(pPl, 'uC1'), P[i].c1);
+    gl.uniform3fv(gl.getUniformLocation(pPl, 'uC2'), P[i].c2);
+    gl.uniform3fv(gl.getUniformLocation(pPl, 'uC3'), P[i].c3);
+    gl.uniform1f(gl.getUniformLocation(pPl, 'uCrystal'), P[i].crystal);
+    gl.uniform1f(gl.getUniformLocation(pPl, 'uRough'), P[i].rough);
+    gl.uniform1f(gl.getUniformLocation(pPl, 'uSpin'), P[i].spin);
+    gl.uniform1f(gl.getUniformLocation(pPl, 'uSeed'), i*1.7 + 0.3);
+    gl.uniform1f(gl.getUniformLocation(pPl, 'uAlpha'), alpha);
+    gl.uniform1f(gl.getUniformLocation(pPl, 'uHi'), (hover === i && active < 0) ? 1 : 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+  gl.bindVertexArray(null);
+  gl.disable(gl.BLEND);
+
+  // подписи
+  for(i = 0; i < P.length; i++){
+    var q = proj(P[i]);
+    var vis = (active < 0) ? 1 : 0;
+    labels[i].style.opacity = vis * (hover === i || active < 0 ? 1 : 1) * skyFade;
+    labels[i].style.left = (q.x/DPR) + 'px';
+    labels[i].style.top = ((q.y + q.r*1.16)/DPR) + 'px';
+  }
+
+  // fps
+  frames++;
+  if(now - fpsT > 700){
+    fpsEl.textContent = Math.round(frames*1000/(now - fpsT)) + ' fps · ' + SWN + ' частиц · ' + P.length + ' планет';
+    frames = 0; fpsT = now;
+  }
+
+  requestAnimationFrame(draw);
+}
+
+/* =============== взаимодействие =============== */
+function pick(){
+  if(active >= 0) return -1;
+  var best = -1, bd = 1e9;
+  for(var i = 0; i < P.length; i++){
+    var s = proj(P[i]);
+    var dx = s.x - mouse.x, dy = s.y - mouse.y;
+    var dd = dx*dx + dy*dy;
+    if(dd < s.r*s.r*1.12 && dd < bd){ bd = dd; best = i; }
+  }
+  return best;
+}
+cv.addEventListener('pointermove', function(e){
+  var r = cv.getBoundingClientRect();
+  mouse.x = (e.clientX - r.left)*DPR;
+  mouse.y = (e.clientY - r.top)*DPR;
+  hover = pick();
+  cv.classList.toggle('pointing', hover >= 0);
+});
+cv.addEventListener('pointerleave', function(){ mouse.x = mouse.y = -1e5; hover = -1; });
+
+var artEl = document.getElementById('article');
+var bodyEl = document.getElementById('artBody');
+var crumbEl = document.getElementById('crumb');
+var haloEl = document.getElementById('halo');
+
+function hex(c){
+  return '#' + c.map(function(v){
+    var x = Math.round(Math.min(1, Math.max(0, v))*255).toString(16);
+    return x.length < 2 ? '0' + x : x;
+  }).join('');
+}
+function tint(c, k){ return hex([c[0]*k, c[1]*k, c[2]*k]); }
+
+function buildArticle(i){
+  var pl = P[i], a = ART[pl.id];
+  var h = '';
+  h += '<div class="a-head rise">'
+     +   '<div class="a-kicker">территория ' + (i+1) + ' из ' + P.length + '</div>'
+     +   '<h1>' + pl.name + '</h1>'
+     +   '<div class="a-sub"><span>' + pl.years + '</span><span>' + pl.tracks + ' треков</span>'
+     +   '<span>' + (pl.note ? 'заметка есть' : 'заметка не написана') + '</span></div>'
+     + '</div>';
+
+  if(a){
+    h += '<div class="blk rise"><div class="blk-tag">Что это за музыка</div><div class="essay">';
+    a.essay.forEach(function(p){ h += '<p>' + p + '</p>'; });
+    h += '</div></div>';
+
+    h += '<div class="blk rise"><div class="blk-tag">Что говорят цифры</div><div class="stats">';
+    a.stats.forEach(function(s){ h += '<div class="stat"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>'; });
+    h += '</div></div>';
+
+    h += '<div class="blk rise"><div class="blk-tag">Личное <em>· пример заметки</em></div><div class="personal">';
+    a.personal.forEach(function(p){ h += '<p>' + p + '</p>'; });
+    h += '</div></div>';
+  } else {
+    h += '<div class="blk rise"><div class="blk-tag">Что говорят цифры</div><div class="stats">'
+       + '<div class="stat"><b>' + pl.tracks + '</b><span>треков на этой территории</span></div>'
+       + '<div class="stat"><b>' + pl.years + '</b><span>охват по времени</span></div>'
+       + '</div></div>';
+    h += '<div class="blk rise"><div class="empty">'
+       + '<p><b>Заметка ещё не написана</b>'
+       + 'Цифры собираются сами, но текст про эту территорию пока не существует. '
+       + 'Так выглядит планета, до которой не дошли руки — это нормальное состояние, а не ошибка.</p>'
+       + '</div></div>';
+  }
+
+  h += '<div class="nextnav rise">';
+  var pool = [];
+  for(var k = 0; k < P.length; k++) if(k !== i) pool.push(k);
+  pool.sort(function(x, y){ return (P[y].note?1:0) - (P[x].note?1:0); });
+  pool.slice(0, 4).forEach(function(k){
+    h += '<button data-go="' + k + '">' + P[k].name + (P[k].note ? ' ●' : '') + '</button>';
+  });
+  h += '</div>';
+
+  bodyEl.innerHTML = h;
+  crumbEl.textContent = 'Космос / ' + pl.name;
+  document.documentElement.style.setProperty('--accent', hex(pl.c1));
+  document.documentElement.style.setProperty('--paper', tint(pl.c2, 0.20));
+  haloEl.style.background = 'radial-gradient(circle at 50% 60%, ' + hex(pl.c1) + ' 0%, transparent 62%)';
+
+  bodyEl.querySelectorAll('[data-go]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var k = +b.getAttribute('data-go');
+      artEl.classList.remove('on');
+      artEl.scrollTop = 0;
+      setTimeout(function(){ enter(k); }, 340);
+    });
+  });
+}
+
+var artTimer = null;
+function enter(i){
+  active = i; diveTarget = 1;
+  computeFit();
+  document.getElementById('brand').style.opacity = '0';
+  document.getElementById('hint').style.opacity = '0';
+  fpsEl.style.opacity = '0';
+  buildArticle(i);
+  clearTimeout(artTimer);
+  artTimer = setTimeout(function(){
+    artEl.classList.add('on');
+    artEl.scrollTop = 0;
+    cv.style.pointerEvents = 'none';
+  }, 640);
+}
+function leave(){
+  artEl.classList.remove('on');
+  cv.style.pointerEvents = '';
+  clearTimeout(artTimer);
+  artTimer = setTimeout(function(){
+    diveTarget = 0;
+    document.getElementById('brand').style.opacity = '';
+    document.getElementById('hint').style.opacity = '';
+    fpsEl.style.opacity = '';
+    setTimeout(function(){ if(diveTarget === 0) active = -1; }, 900);
+  }, 300);
+}
+
+cv.addEventListener('click', function(){
+  var i = pick();
+  if(i >= 0) enter(i);
+});
+document.getElementById('backBtn').addEventListener('click', leave);
+window.addEventListener('keydown', function(e){ if(e.key === 'Escape' && active >= 0) leave(); });
+
+resize();
+requestAnimationFrame(draw);
+})();
+</script>
+
+</html>

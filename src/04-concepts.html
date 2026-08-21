@@ -1,0 +1,735 @@
+<title>Пять концепций Music Cosmos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --bg:#060B18; --panel:#0A1122; --line:#18233C; --line-2:#101a2e;
+  --ink:#DCE6F7; --ink-2:#93A4C4; --muted:#5B6C8C;
+  --amber:#FF9E45; --cyan:#4FB8FF; --ice:#BFE6FF;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{
+  margin:0; color:var(--ink);
+  font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;
+  font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px; margin:0 auto; padding:26px 20px 70px}
+
+header{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px 26px; margin-bottom:20px}
+h1{margin:0; font-weight:600; font-size:clamp(1.4rem,3.2vw,2rem); letter-spacing:.01em}
+h1 span{color:var(--amber)}
+.sub{font-family:"IBM Plex Mono",monospace; font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+
+/* ---- вкладки ---- */
+.tabs{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px}
+.tab{
+  font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.05em;
+  color:var(--ink-2); background:var(--panel); border:1px solid var(--line);
+  border-radius:6px; padding:8px 13px; cursor:pointer; display:flex; align-items:center; gap:8px;
+  transition:border-color .15s,color .15s;
+}
+.tab:hover{border-color:var(--cyan); color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--bg); background:var(--ice); border-color:var(--ice); font-weight:500}
+.tab i{font-style:normal; opacity:.6; font-size:.64rem}
+.tab[aria-selected="true"] i{opacity:.75}
+
+/* ---- сцена ---- */
+.stage{position:relative; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#050912; height:clamp(400px,64vh,760px)}
+canvas{display:block; width:100%; height:100%}
+.stage .badge{
+  position:absolute; left:14px; top:12px; z-index:2; pointer-events:none;
+  font-family:"IBM Plex Mono",monospace; font-size:.62rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted);
+}
+.stage .tip{
+  position:absolute; right:14px; bottom:11px; z-index:2; pointer-events:none;
+  font-family:"IBM Plex Mono",monospace; font-size:.62rem; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muted);
+}
+
+/* ---- описание ---- */
+.desc{margin-top:16px; display:grid; grid-template-columns:1.6fr 1fr 1fr; gap:18px 26px}
+@media (max-width:760px){ .desc{grid-template-columns:1fr} }
+.desc h2{margin:0 0 6px; font-size:1.02rem; font-weight:600; letter-spacing:.01em; color:var(--ice)}
+.desc p{margin:0; font-size:.9rem; color:var(--ink-2)}
+.meta{display:flex; flex-direction:column; gap:9px}
+.mrow{display:flex; gap:10px; align-items:baseline}
+.mrow b{
+  font-family:"IBM Plex Mono",monospace; font-size:.6rem; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--muted); min-width:74px; font-weight:400;
+}
+.mrow span{font-size:.86rem; color:var(--ink-2)}
+.mrow span.good{color:#6FE3B0}
+.mrow span.warn{color:var(--amber)}
+
+.foot{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:.79rem; max-width:88ch}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Пять концепций <span>одной библиотеки</span></h1>
+    <p class="sub">Одни и те же данные · пять визуальных языков · нажимайте вкладки</p>
+  </header>
+
+  <div class="tabs" role="tablist" id="tabs"></div>
+
+  <div class="stage">
+    <canvas id="cv"></canvas>
+    <span class="badge" id="badge"></span>
+    <span class="tip" id="tip">наведите курсор</span>
+  </div>
+
+  <div class="desc">
+    <div><h2 id="d-title"></h2><p id="d-text"></p></div>
+    <div class="meta">
+      <div class="mrow"><b>Сильное</b><span id="d-pro"></span></div>
+      <div class="mrow"><b>Слабое</b><span id="d-con"></span></div>
+    </div>
+    <div class="meta">
+      <div class="mrow"><b>Нагрузка</b><span id="d-cost"></span></div>
+      <div class="mrow"><b>Глубина</b><span id="d-depth"></span></div>
+    </div>
+  </div>
+
+  <p class="foot">Данные синтетические, но пропорции взяты из вашей библиотеки: классика заметно больше поп-половины, а внутри классики самые крупные территории — барокко и романтизм. Всё рисуется обычным 2D-канвасом с аддитивным наложением: ни одного тяжёлого шейдера, ни размытия, ни тумана. Ничто не перекрывает обзор — светятся только линии и точки.</p>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var W = 0, H = 0, DPR = 1;
+  var mouse = {x:-1e4, y:-1e4, on:false};
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ================== данные ================== */
+  var TERR = [
+    {r:0, n:'Барокко',            w:9,  t:0.08, era:1700},
+    {r:0, n:'Классицизм',         w:6,  t:0.20, era:1785},
+    {r:0, n:'Романтизм',          w:11, t:0.14, era:1848},
+    {r:0, n:'Поздний романтизм',  w:6,  t:0.26, era:1888},
+    {r:0, n:'Импрессионизм',      w:4,  t:0.42, era:1905},
+    {r:0, n:'Модернизм',          w:8,  t:0.56, era:1935},
+    {r:0, n:'Авангард',           w:3,  t:0.90, era:1962},
+    {r:0, n:'Минимализм',         w:4,  t:0.74, era:1982},
+    {r:0, n:'Современная',        w:4,  t:0.82, era:2008},
+    {r:1, n:'Рок',                w:10, t:0.52, era:1984},
+    {r:1, n:'Поп',                w:5,  t:0.62, era:1998},
+    {r:1, n:'Электроника',        w:4,  t:0.86, era:2012},
+    {r:1, n:'Хип-хоп',            w:3,  t:0.70, era:2006},
+    {r:1, n:'R&B / соул',         w:3,  t:0.46, era:1976},
+    {r:1, n:'Саундтреки',         w:3,  t:0.38, era:2001},
+    {r:1, n:'Блюз',               w:2,  t:0.16, era:1958},
+    {r:1, n:'Фолк',               w:2,  t:0.30, era:1970}
+  ];
+  var REALM = ['Классика', 'Поп'];
+
+  function rnd(s){ var x = Math.sin(s * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }
+
+  // яркая палитра: тёплое → ледяное → фиолетовое. Никакой приглушённости.
+  var RAMP = [[255,142,60],[255,206,110],[196,246,228],[79,184,255],[168,140,255]];
+  function tcol(t, a){
+    t = Math.max(0, Math.min(1, t)) * (RAMP.length - 1);
+    var i = Math.floor(t), f = t - i;
+    if(i >= RAMP.length - 1){ i = RAMP.length - 2; f = 1; }
+    var A = RAMP[i], B = RAMP[i+1];
+    var r = Math.round(A[0] + (B[0]-A[0])*f),
+        g = Math.round(A[1] + (B[1]-A[1])*f),
+        b = Math.round(A[2] + (B[2]-A[2])*f);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+
+  /* ================== 1. НЕЙРОСЕТЬ ================== */
+  var neural = {
+    title: 'Нейросеть',
+    label: 'слои и связи',
+    build: function(){
+      var self = this;
+      self.cols = [];
+      var counts = [2, 17, 54, 84, 120];
+      var names  = ['realm', 'terr', 'artist', 'album', 'track'];
+      for(var c = 0; c < counts.length; c++){
+        var arr = [];
+        for(var i = 0; i < counts[c]; i++){
+          var t;
+          if(c === 0) t = i === 0 ? 0.18 : 0.66;
+          else if(c === 1) t = TERR[i].t;
+          else t = TERR[Math.floor(rnd(c * 31 + i * 7) * TERR.length)].t;
+          arr.push({t:t, kind:names[c], lbl: c === 0 ? REALM[i] : (c === 1 ? TERR[i].n : '')});
+        }
+        self.cols.push(arr);
+      }
+      // связи: настоящая иерархия + плотная «сетка всех связей» ради графики
+      self.edges = [];
+      for(c = 1; c < self.cols.length; c++){
+        var prev = self.cols[c-1], cur = self.cols[c];
+        for(i = 0; i < cur.length; i++){
+          var parent = Math.floor(rnd(c * 17 + i * 3.3) * prev.length);
+          cur[i].parent = parent;
+          self.edges.push({c:c, a:parent, b:i, main:true});
+          var extra = 3 + Math.floor(rnd(c * 5 + i) * 4);
+          for(var e = 0; e < extra; e++){
+            var j = Math.floor(rnd(c * 91 + i * 13 + e * 2.7) * prev.length);
+            if(j !== parent) self.edges.push({c:c, a:j, b:i, main:false});
+          }
+        }
+      }
+    },
+    layout: function(){
+      var padX = 74, padY = 34;
+      for(var c = 0; c < this.cols.length; c++){
+        var arr = this.cols[c];
+        var x = padX + (W - padX*2) * (c / (this.cols.length - 1));
+        for(var i = 0; i < arr.length; i++){
+          arr[i].x = x;
+          arr[i].y = padY + (H - padY*2) * ((i + 0.5) / arr.length);
+        }
+      }
+    },
+    hit: function(){
+      var best = null, bd = 26 * 26;
+      for(var c = 0; c < this.cols.length; c++)
+        for(var i = 0; i < this.cols[c].length; i++){
+          var n = this.cols[c][i];
+          var dx = n.x - mouse.x, dy = n.y - mouse.y, d = dx*dx + dy*dy;
+          if(d < bd){ bd = d; best = {c:c, i:i}; }
+        }
+      return best;
+    },
+    draw: function(time, hov){
+      // подсвеченная цепочка: вверх к предкам, вниз к потомкам
+      var mark = {};
+      if(hov){
+        var key = function(c,i){ return c + ':' + i; };
+        mark[key(hov.c, hov.i)] = 1;
+        var c = hov.c, i = hov.i;
+        while(c > 0){ var p = this.cols[c][i].parent; mark[key(c-1, p)] = 1; i = p; c--; }
+        var front = [{c:hov.c, i:hov.i}];
+        while(front.length){
+          var cur = front.pop();
+          if(cur.c >= this.cols.length - 1) continue;
+          var nxt = this.cols[cur.c + 1];
+          for(var k = 0; k < nxt.length; k++)
+            if(nxt[k].parent === cur.i && !mark[key(cur.c+1, k)]){
+              mark[key(cur.c+1, k)] = 1;
+              front.push({c:cur.c+1, i:k});
+            }
+        }
+      }
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.lineWidth = 1;
+      for(var e = 0; e < this.edges.length; e++){
+        var ed = this.edges[e];
+        var A = this.cols[ed.c - 1][ed.a], B = this.cols[ed.c][ed.b];
+        var lit = hov && mark[ed.c - 1 + ':' + ed.a] && mark[ed.c + ':' + ed.b];
+        var a = lit ? 0.85 : (hov ? 0.030 : (ed.main ? 0.16 : 0.075));
+        var pulse = 0.5 + 0.5 * Math.sin(time * 0.6 + e * 0.7);
+        if(!hov) a *= 0.75 + 0.45 * pulse;
+        ctx.strokeStyle = tcol((A.t + B.t) / 2, a);
+        ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      for(var c2 = 0; c2 < this.cols.length; c2++)
+        for(var i2 = 0; i2 < this.cols[c2].length; i2++){
+          var n = this.cols[c2][i2];
+          var on = !hov || mark[c2 + ':' + i2];
+          var rr = c2 <= 1 ? 4.4 : 2.9;
+          ctx.beginPath(); ctx.arc(n.x, n.y, rr, 0, 6.2832);
+          ctx.fillStyle = on ? tcol(n.t, 1) : 'rgba(120,140,175,.30)';
+          ctx.fill();
+          if(on && n.lbl && H / this.cols[c2].length > 15){
+            ctx.font = '10px "IBM Plex Mono", monospace';
+            ctx.fillStyle = on && hov ? 'rgba(230,242,255,.95)' : 'rgba(190,210,240,.62)';
+            ctx.textAlign = c2 === 0 ? 'right' : 'left';
+            ctx.fillText(n.lbl, n.x + (c2 === 0 ? -9 : 9), n.y + 3.5);
+          }
+        }
+      ctx.textAlign = 'left';
+    }
+  };
+
+  /* ================== 2. ХОРДЫ ================== */
+  var chord = {
+    title: 'Хорды',
+    label: 'кольцо родства',
+    build: function(){
+      var tot = 0, i;
+      for(i = 0; i < TERR.length; i++) tot += TERR[i].w;
+      this.arcs = []; var a0 = -Math.PI / 2;
+      for(i = 0; i < TERR.length; i++){
+        var span = (TERR[i].w / tot) * 6.2832 * 0.94;
+        this.arcs.push({t:TERR[i].t, n:TERR[i].n, a0:a0, a1:a0 + span, mid:a0 + span/2});
+        a0 += span + (6.2832 * 0.06) / TERR.length;
+      }
+      this.links = [];
+      for(i = 0; i < 300; i++){
+        var A = Math.floor(rnd(i * 3.1) * TERR.length);
+        var B = Math.floor(rnd(i * 7.7 + 11) * TERR.length);
+        if(A === B) continue;
+        var aff = 1 - Math.abs(TERR[A].t - TERR[B].t);
+        if(rnd(i * 13.3) > aff * 0.9) continue;
+        this.links.push({a:A, b:B, w:0.25 + rnd(i * 5.5) * 1.5});
+      }
+    },
+    layout: function(){
+      this.cx = W / 2; this.cy = H / 2;
+      this.R = Math.min(W, H) * 0.38;
+    },
+    hit: function(){
+      var dx = mouse.x - this.cx, dy = mouse.y - this.cy;
+      var d = Math.sqrt(dx*dx + dy*dy);
+      if(d < this.R * 0.80 || d > this.R * 1.18) return null;
+      var ang = Math.atan2(dy, dx);
+      for(var i = 0; i < this.arcs.length; i++){
+        var a = this.arcs[i], s = a.a0, e = a.a1;
+        var m = ang; while(m < s) m += 6.2832; while(m > s + 6.2832) m -= 6.2832;
+        if(m >= s && m <= e) return i;
+      }
+      return null;
+    },
+    draw: function(time, hov){
+      var cx = this.cx, cy = this.cy, R = this.R;
+      var rot = reduce ? 0 : time * 0.035;
+      ctx.globalCompositeOperation = 'lighter';
+      for(var i = 0; i < this.links.length; i++){
+        var L = this.links[i];
+        var aA = this.arcs[L.a].mid + rot, aB = this.arcs[L.b].mid + rot;
+        var x1 = cx + Math.cos(aA) * R * 0.96, y1 = cy + Math.sin(aA) * R * 0.96;
+        var x2 = cx + Math.cos(aB) * R * 0.96, y2 = cy + Math.sin(aB) * R * 0.96;
+        var lit = hov !== null && (L.a === hov || L.b === hov);
+        var a = lit ? 0.85 : (hov !== null ? 0.035 : 0.26);
+        var g = ctx.createLinearGradient(x1, y1, x2, y2);
+        g.addColorStop(0, tcol(TERR[L.a].t, a));
+        g.addColorStop(1, tcol(TERR[L.b].t, a));
+        ctx.strokeStyle = g; ctx.lineWidth = lit ? L.w * 1.7 : L.w;
+        ctx.beginPath(); ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo(cx, cy, x2, y2); ctx.stroke();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      for(i = 0; i < this.arcs.length; i++){
+        var A = this.arcs[i];
+        var on = hov === null || hov === i;
+        ctx.strokeStyle = tcol(A.t, on ? 1 : 0.28);
+        ctx.lineWidth = hov === i ? 11 : 7; ctx.lineCap = 'butt';
+        ctx.beginPath(); ctx.arc(cx, cy, R * 1.045, A.a0 + rot, A.a1 + rot); ctx.stroke();
+        if(on){
+          var m = A.mid + rot;
+          var lx = cx + Math.cos(m) * R * 1.13, ly = cy + Math.sin(m) * R * 1.13;
+          ctx.font = '10px "IBM Plex Mono", monospace';
+          ctx.fillStyle = hov === i ? 'rgba(235,246,255,.98)' : 'rgba(190,210,240,.55)';
+          ctx.textAlign = Math.cos(m) > 0 ? 'left' : 'right';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(A.n, lx, ly);
+        }
+      }
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    }
+  };
+
+  /* ================== 3. ГРЕБНИ ================== */
+  var ridge = {
+    title: 'Гребни',
+    label: 'библиотека как спектр',
+    build: function(){
+      this.rows = TERR.slice().sort(function(a, b){ return a.era - b.era; });
+    },
+    layout: function(){
+      this.x0 = 66; this.x1 = W - 30;
+      this.y0 = 44; this.y1 = H - 42;
+    },
+    yearToX: function(y){ return this.x0 + (this.x1 - this.x0) * (y - 1640) / (2030 - 1640); },
+    hit: function(){
+      if(mouse.x < this.x0 || mouse.x > this.x1) return null;
+      var n = this.rows.length;
+      var band = (this.y1 - this.y0) / n;
+      var i = Math.floor((mouse.y - this.y0) / band);
+      return (i >= 0 && i < n) ? i : null;
+    },
+    draw: function(time, hov){
+      var n = this.rows.length;
+      var band = (this.y1 - this.y0) / n;
+      var amp = band * 2.9;
+      // сетка десятилетий
+      ctx.strokeStyle = 'rgba(90,115,155,.16)'; ctx.lineWidth = 1;
+      ctx.font = '9px "IBM Plex Mono", monospace'; ctx.fillStyle = 'rgba(120,145,185,.55)';
+      for(var y = 1650; y <= 2020; y += 50){
+        var gx = this.yearToX(y);
+        ctx.beginPath(); ctx.moveTo(gx, this.y0 - 12); ctx.lineTo(gx, this.y1 + 8); ctx.stroke();
+        ctx.textAlign = 'center'; ctx.fillText(y, gx, this.y1 + 24);
+      }
+      ctx.textAlign = 'left';
+      // гребни снизу вверх, чтобы ближние перекрывали дальние
+      for(var i = n - 1; i >= 0; i--){
+        var R = this.rows[i];
+        var base = this.y0 + band * (i + 0.85);
+        var spread = R.r === 0 ? 34 : 15;      // классика растянута по векам, поп сжат
+        var pts = [];
+        for(var px = this.x0; px <= this.x1; px += 3){
+          var yr = 1640 + (px - this.x0) / (this.x1 - this.x0) * (2030 - 1640);
+          var d = (yr - R.era) / spread;
+          var v = Math.exp(-d * d) * R.w / 11;
+          var wob = reduce ? 0 : Math.sin(yr * 0.09 + time * 0.7 + i) * 0.05;
+          v *= (1 + wob);
+          v += Math.exp(-Math.pow((yr - R.era - spread * 1.9) / (spread * 1.3), 2)) * R.w / 34;
+          pts.push([px, base - v * amp]);
+        }
+        var lit = hov === null || hov === i;
+        // заливка
+        ctx.globalCompositeOperation = 'source-over';
+        var g = ctx.createLinearGradient(0, base - amp, 0, base);
+        g.addColorStop(0, tcol(R.t, lit ? 0.30 : 0.06));
+        g.addColorStop(1, 'rgba(6,11,24,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.moveTo(pts[0][0], base);
+        for(var k = 0; k < pts.length; k++) ctx.lineTo(pts[k][0], pts[k][1]);
+        ctx.lineTo(pts[pts.length-1][0], base); ctx.closePath(); ctx.fill();
+        // контур
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = tcol(R.t, lit ? 0.95 : 0.16);
+        ctx.lineWidth = hov === i ? 2.2 : 1.3;
+        ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+        for(k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0], pts[k][1]);
+        ctx.stroke();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.font = (hov === i ? '600 ' : '') + '10px "IBM Plex Mono", monospace';
+        ctx.fillStyle = lit ? 'rgba(220,235,255,.9)' : 'rgba(140,165,200,.35)';
+        ctx.textAlign = 'right';
+        ctx.fillText(R.n, this.x0 - 8, base - 1);
+        ctx.textAlign = 'left';
+      }
+      if(mouse.on && mouse.x > this.x0 && mouse.x < this.x1){
+        ctx.strokeStyle = 'rgba(191,230,255,.5)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(mouse.x, this.y0 - 12); ctx.lineTo(mouse.x, this.y1 + 8); ctx.stroke();
+        var yv = Math.round(1640 + (mouse.x - this.x0) / (this.x1 - this.x0) * (2030 - 1640));
+        ctx.font = '600 11px "IBM Plex Mono", monospace';
+        ctx.fillStyle = 'rgba(220,240,255,.95)'; ctx.textAlign = 'center';
+        ctx.fillText(yv, mouse.x, this.y0 - 18);
+        ctx.textAlign = 'left';
+      }
+    }
+  };
+
+  /* ================== 4. ПОТОК ================== */
+  var flow = {
+    title: 'Поток',
+    label: 'русло от корня к треку',
+    build: function(){
+      this.leaves = [];
+      for(var i = 0; i < TERR.length; i++){
+        var cnt = Math.max(2, Math.round(TERR[i].w * 0.9));
+        for(var k = 0; k < cnt; k++)
+          this.leaves.push({terr:i, t:TERR[i].t + (rnd(i*9+k)-0.5)*0.10, w:0.4 + rnd(i*3+k)*1.6});
+      }
+    },
+    layout: function(){
+      var padY = 26;
+      this.xa = 58; this.xb = W * 0.46; this.xc = W - 58;
+      // корни
+      var tw = [0, 0];
+      for(var i = 0; i < TERR.length; i++) tw[TERR[i].r] += TERR[i].w;
+      var totW = tw[0] + tw[1];
+      this.roots = [];
+      var yy = padY, gapR = 26;
+      for(var r = 0; r < 2; r++){
+        var h = (H - padY*2 - gapR) * (tw[r] / totW);
+        this.roots.push({y0:yy, y1:yy + h, t:r === 0 ? 0.16 : 0.64, n:REALM[r]});
+        yy += h + gapR;
+      }
+      // территории
+      var cur = [this.roots[0].y0, this.roots[1].y0];
+      this.mid = [];
+      for(i = 0; i < TERR.length; i++){
+        var rr = TERR[i].r;
+        var hh = (this.roots[rr].y1 - this.roots[rr].y0) * (TERR[i].w / tw[rr]) * 0.92;
+        this.mid.push({y0:cur[rr], y1:cur[rr] + hh, t:TERR[i].t, n:TERR[i].n});
+        cur[rr] += hh + (this.roots[rr].y1 - this.roots[rr].y0) * 0.08 / 9;
+      }
+      // листья
+      var totL = 0;
+      for(i = 0; i < this.leaves.length; i++) totL += this.leaves[i].w;
+      var y = padY, avail = H - padY*2;
+      for(i = 0; i < this.leaves.length; i++){
+        var lh = avail * (this.leaves[i].w / totL) * 0.94;
+        this.leaves[i].y0 = y; this.leaves[i].y1 = y + lh;
+        y += lh + avail * 0.06 / this.leaves.length;
+      }
+    },
+    hit: function(){
+      if(mouse.x > this.xb - 40 && mouse.x < this.xb + 40)
+        for(var i = 0; i < this.mid.length; i++)
+          if(mouse.y >= this.mid[i].y0 && mouse.y <= this.mid[i].y1) return i;
+      return null;
+    },
+    band: function(x1, ya0, ya1, x2, yb0, yb1, col){
+      var cx1 = x1 + (x2 - x1) * 0.45, cx2 = x1 + (x2 - x1) * 0.55;
+      ctx.beginPath();
+      ctx.moveTo(x1, ya0);
+      ctx.bezierCurveTo(cx1, ya0, cx2, yb0, x2, yb0);
+      ctx.lineTo(x2, yb1);
+      ctx.bezierCurveTo(cx2, yb1, cx1, ya1, x1, ya1);
+      ctx.closePath();
+      ctx.fillStyle = col; ctx.fill();
+    },
+    draw: function(time, hov){
+      ctx.globalCompositeOperation = 'lighter';
+      var i;
+      // корень → территория
+      for(i = 0; i < this.mid.length; i++){
+        var R = this.roots[TERR[i].r], M = this.mid[i];
+        var lit = hov === null || hov === i;
+        var g = ctx.createLinearGradient(this.xa, 0, this.xb, 0);
+        g.addColorStop(0, tcol(R.t, lit ? 0.10 : 0.018));
+        g.addColorStop(1, tcol(M.t, lit ? 0.14 : 0.022));
+        this.band(this.xa, R.y0 + (R.y1-R.y0)*0.02, R.y1 - (R.y1-R.y0)*0.02, this.xb, M.y0, M.y1, g);
+      }
+      // территория → лист
+      for(i = 0; i < this.leaves.length; i++){
+        var L = this.leaves[i], M2 = this.mid[L.terr];
+        var lit2 = hov === null || hov === L.terr;
+        var g2 = ctx.createLinearGradient(this.xb, 0, this.xc, 0);
+        g2.addColorStop(0, tcol(M2.t, lit2 ? 0.11 : 0.018));
+        g2.addColorStop(1, tcol(L.t, lit2 ? 0.17 : 0.024));
+        var f0 = M2.y0 + (M2.y1 - M2.y0) * rnd(i * 2.3) * 0.85;
+        this.band(this.xb, f0, f0 + (M2.y1 - M2.y0) * 0.12, this.xc, L.y0, L.y1, g2);
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      // стойки
+      for(i = 0; i < this.roots.length; i++){
+        ctx.fillStyle = tcol(this.roots[i].t, 0.95);
+        ctx.fillRect(this.xa - 7, this.roots[i].y0, 7, this.roots[i].y1 - this.roots[i].y0);
+        ctx.save(); ctx.translate(this.xa - 15, (this.roots[i].y0 + this.roots[i].y1) / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.font = '600 11px "IBM Plex Mono", monospace';
+        ctx.fillStyle = 'rgba(225,240,255,.9)'; ctx.textAlign = 'center';
+        ctx.fillText(REALM[i].toUpperCase(), 0, 0); ctx.restore();
+      }
+      ctx.textAlign = 'left';
+      for(i = 0; i < this.mid.length; i++){
+        var M3 = this.mid[i], on = hov === null || hov === i;
+        ctx.fillStyle = tcol(M3.t, on ? 1 : 0.3);
+        ctx.fillRect(this.xb - 3, M3.y0, 6, M3.y1 - M3.y0);
+        if(M3.y1 - M3.y0 > 13){
+          ctx.font = (hov === i ? '600 ' : '') + '10px "IBM Plex Mono", monospace';
+          ctx.fillStyle = on ? 'rgba(225,240,255,.92)' : 'rgba(140,165,200,.3)';
+          ctx.fillText(M3.n, this.xb + 9, (M3.y0 + M3.y1) / 2 + 3.5);
+        }
+      }
+    }
+  };
+
+  /* ================== 5. СОЗВЕЗДИЯ ================== */
+  var constel = {
+    title: 'Созвездия',
+    label: 'космос без тумана',
+    build: function(){
+      var GOLD = 2.39996323;
+      this.groups = [];
+      for(var i = 0; i < TERR.length; i++){
+        var pts = [], n = Math.max(12, Math.round(TERR[i].w * 10));
+        for(var k = 0; k < n; k++){
+          var a = k * GOLD + rnd(i * 13 + 1) * 6.283;
+          var f = Math.sqrt((k + 0.5) / n);
+          pts.push({
+            ax: Math.cos(a) * f, ay: Math.sin(a) * f * (0.72 + rnd(i*5+k) * 0.5),
+            m: Math.pow(rnd(i * 7 + k * 3.1), 2.6)
+          });
+        }
+        // рёбра: каждая точка к двум ближайшим — рисунок созвездия
+        var edges = [];
+        for(k = 0; k < pts.length; k++){
+          var best = [];
+          for(var j = 0; j < pts.length; j++){
+            if(j === k) continue;
+            var dx = pts[j].ax - pts[k].ax, dy = pts[j].ay - pts[k].ay;
+            best.push([dx*dx + dy*dy, j]);
+          }
+          best.sort(function(p, q){ return p[0] - q[0]; });
+          for(var b = 0; b < Math.min(2, best.length); b++)
+            if(k < best[b][1]) edges.push([k, best[b][1]]);
+        }
+        this.groups.push({t:TERR[i].t, n:TERR[i].n, w:TERR[i].w, pts:pts, edges:edges});
+      }
+    },
+    layout: function(){
+      var GOLD = 2.39996323;
+      var cxA = W * 0.31, cxB = W * 0.74, cy = H * 0.5;
+      var spread = Math.min(W, H) * 0.30;
+      var ci = 0, pi = 0;
+      for(var i = 0; i < this.groups.length; i++){
+        var isC = TERR[i].r === 0;
+        var idx = isC ? ci++ : pi++;
+        var cnt = isC ? 9 : 8;
+        var a = idx * GOLD + (isC ? 0.4 : 2.1);
+        var rr = spread * Math.sqrt((idx + 0.55) / cnt) * (isC ? 1.0 : 0.86);
+        var G = this.groups[i];
+        G.cx = (isC ? cxA : cxB) + Math.cos(a) * rr;
+        G.cy = cy + Math.sin(a) * rr * 0.88;
+        G.R = Math.min(W, H) * (0.030 + 0.026 * Math.sqrt(G.w));
+      }
+    },
+    hit: function(){
+      var best = null, bd = 1e9;
+      for(var i = 0; i < this.groups.length; i++){
+        var G = this.groups[i];
+        var dx = G.cx - mouse.x, dy = G.cy - mouse.y, d = dx*dx + dy*dy;
+        if(d < G.R * G.R * 2.4 && d < bd){ bd = d; best = i; }
+      }
+      return best;
+    },
+    draw: function(time, hov){
+      var i, k;
+      ctx.globalCompositeOperation = 'lighter';
+      for(i = 0; i < this.groups.length; i++){
+        var G = this.groups[i];
+        var lit = hov === null || hov === i;
+        ctx.strokeStyle = tcol(G.t, lit ? (hov === i ? 0.70 : 0.34) : 0.05);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(k = 0; k < G.edges.length; k++){
+          var A = G.pts[G.edges[k][0]], B = G.pts[G.edges[k][1]];
+          ctx.moveTo(G.cx + A.ax * G.R, G.cy + A.ay * G.R);
+          ctx.lineTo(G.cx + B.ax * G.R, G.cy + B.ay * G.R);
+        }
+        ctx.stroke();
+        for(k = 0; k < G.pts.length; k++){
+          var P = G.pts[k];
+          var x = G.cx + P.ax * G.R, y = G.cy + P.ay * G.R;
+          var tw = reduce ? 1 : (0.82 + 0.18 * Math.sin(time * 1.6 + k * 2.3 + i));
+          var rad = (1.15 + P.m * 3.6) * tw;
+          var al = lit ? (0.55 + P.m * 0.45) : 0.10;
+          ctx.fillStyle = tcol(G.t, al);
+          ctx.beginPath(); ctx.arc(x, y, rad, 0, 6.2832); ctx.fill();
+          if(P.m > 0.45){
+            ctx.fillStyle = tcol(G.t, al * 0.18);
+            ctx.beginPath(); ctx.arc(x, y, rad * 3.4, 0, 6.2832); ctx.fill();
+          }
+        }
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      for(i = 0; i < this.groups.length; i++){
+        var G2 = this.groups[i], on = hov === null || hov === i;
+        ctx.font = (hov === i ? '600 ' : '') + '10px "IBM Plex Mono", monospace';
+        ctx.fillStyle = on ? (hov === i ? 'rgba(235,247,255,.98)' : 'rgba(190,212,242,.55)') : 'rgba(130,155,195,.2)';
+        ctx.textAlign = 'center';
+        ctx.fillText(G2.n, G2.cx, G2.cy - G2.R - 8);
+      }
+      ctx.textAlign = 'left';
+      ctx.font = '600 12px "IBM Plex Mono", monospace';
+      ctx.fillStyle = 'rgba(255,158,69,.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText('КЛАССИКА', W * 0.31, H - 16);
+      ctx.fillStyle = 'rgba(79,184,255,.5)';
+      ctx.fillText('ПОП', W * 0.74, H - 16);
+      ctx.textAlign = 'left';
+    }
+  };
+
+  /* ================== описания ================== */
+  var META = {
+    'Нейросеть': {
+      text:'Иерархия разложена по столбцам: две половины, затем жанры и эпохи, исполнители, альбомы, треки. Все связи видны сразу и дают ту самую плотную сетку из тысяч нитей. Наводите на любой узел — подсвечивается его полный путь от корня до трека, остальное гаснет.',
+      pro:'мгновенно читается структура и путь',
+      con:'без наведения — красивый шум',
+      cost:'~1 400 линий, 2D-канвас',
+      depth:'5 уровней сразу на экране'
+    },
+    'Хорды': {
+      text:'Территории выложены по кольцу, дугами внутри — родство между ними. Композиция замкнутая и симметричная, кольцо медленно поворачивается. Наведение на сектор оставляет только его связи.',
+      pro:'связи как главный герой',
+      con:'иерархию глубже двух уровней не покажет',
+      cost:'~190 кривых, очень легко',
+      depth:'2 уровня + связи'
+    },
+    'Гребни': {
+      text:'Горизонталь — время, каждая полоса — территория. Видно то, чего не покажет ни один граф: классика растянута на три века, а вся поп-половина сжата в последние семьдесят лет. Курсор ведёт год по шкале.',
+      pro:'единственный вид, где виден масштаб времени',
+      con:'не показывает связи между территориями',
+      cost:'17 кривых, почти бесплатно',
+      depth:'1 уровень + время'
+    },
+    'Поток': {
+      text:'Русло от корня к листу: две половины разливаются на жанры, жанры — на исполнителей. Ширина ленты равна объёму. Наведение на жанр подсвечивает всё его русло целиком.',
+      pro:'пропорции читаются буквально',
+      con:'много объектов — ленты становятся нитями',
+      cost:'~90 лент с градиентом',
+      depth:'3 уровня'
+    },
+    'Созвездия': {
+      text:'Прежняя идея без тумана и газа: только точки и линии рисунка созвездий. Каждая территория — своя фигура, звёзды мерцают, ничто не перекрывает обзор. Космос остаётся, мутность уходит.',
+      pro:'ощущение места, полная читаемость',
+      con:'структура заметна слабее, чем в столбцах',
+      cost:'~450 точек, ~900 линий',
+      depth:'2 уровня, глубже — по клику'
+    }
+  };
+
+  /* ================== каркас ================== */
+  var LIST = [neural, chord, ridge, flow, constel];
+  var active = 0;
+
+  var tabsEl = document.getElementById('tabs');
+  LIST.forEach(function(c, i){
+    var b = document.createElement('button');
+    b.className = 'tab'; b.setAttribute('role', 'tab');
+    b.innerHTML = c.title + ' <i>' + c.label + '</i>';
+    b.addEventListener('click', function(){ select(i); });
+    tabsEl.appendChild(b);
+  });
+
+  function select(i){
+    active = i;
+    var btns = tabsEl.querySelectorAll('.tab');
+    for(var k = 0; k < btns.length; k++) btns[k].setAttribute('aria-selected', k === i ? 'true' : 'false');
+    var c = LIST[i], m = META[c.title];
+    document.getElementById('badge').textContent = c.title + ' · ' + c.label;
+    document.getElementById('d-title').textContent = c.title;
+    document.getElementById('d-text').textContent = m.text;
+    document.getElementById('d-pro').textContent = m.pro;
+    document.getElementById('d-pro').className = 'good';
+    document.getElementById('d-con').textContent = m.con;
+    document.getElementById('d-con').className = 'warn';
+    document.getElementById('d-cost').textContent = m.cost;
+    document.getElementById('d-depth').textContent = m.depth;
+    c.layout();
+  }
+
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    var w = Math.max(2, Math.round(cv.clientWidth * DPR));
+    var h = Math.max(2, Math.round(cv.clientHeight * DPR));
+    if(w === W && h === H) return;
+    W = w; H = h; cv.width = W; cv.height = H;
+    for(var i = 0; i < LIST.length; i++) LIST[i].layout();
+  }
+
+  cv.addEventListener('pointermove', function(e){
+    var r = cv.getBoundingClientRect();
+    mouse.x = (e.clientX - r.left) * DPR;
+    mouse.y = (e.clientY - r.top) * DPR;
+    mouse.on = true;
+  });
+  cv.addEventListener('pointerleave', function(){ mouse.on = false; mouse.x = mouse.y = -1e4; });
+
+  var t0 = performance.now();
+  function frame(now){
+    resize();
+    var time = (now - t0) / 1000;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#050912';
+    ctx.fillRect(0, 0, W, H);
+    var c = LIST[active];
+    var hov = mouse.on ? c.hit() : null;
+    if(hov === undefined) hov = null;
+    c.draw(time, hov);
+    cv.style.cursor = (hov !== null && hov !== undefined) ? 'pointer' : 'default';
+    requestAnimationFrame(frame);
+  }
+
+  for(var i = 0; i < LIST.length; i++) LIST[i].build();
+  resize();
+  select(0);
+  requestAnimationFrame(frame);
+})();
+</script>

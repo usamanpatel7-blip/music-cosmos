@@ -1,0 +1,7 @@
+# рабочие файлы
+_t_*.html
+*.xlsx
+*.tsv
+node_modules/
+.DS_Store
+Thumbs.db

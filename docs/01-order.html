@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Порядок сборки Music Cosmos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --bg:#EDEFF4; --surface:#FFFFFF; --surface-2:#F5F7FA;
+  --ink:#14161E; --ink-2:#444B5F; --muted:#6B7285;
+  --line:#D6DAE5; --line-soft:#E4E8F0;
+  --accent:#B4530C; --accent-soft:#FBEEE1;
+  --crit:#A8453A; --warn:#96751F; --ok:#2E7D5B;
+  --t0:#2F5FD0; --t1:#2F86B5; --t2:#3B9384; --t3:#98782A; --t4:#B96A28; --t5:#A8453A;
+  --shadow:0 1px 2px rgba(20,22,30,.06), 0 8px 24px -12px rgba(20,22,30,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1017; --surface:#161A24; --surface-2:#1C2130;
+    --ink:#E8EAF0; --ink-2:#B4BACB; --muted:#868EA4;
+    --line:#2A3040; --line-soft:#222836;
+    --accent:#EFA35A; --accent-soft:#2A2016;
+    --crit:#E08A7E; --warn:#D9BC63; --ok:#6FC79A;
+    --t0:#7CA5F5; --t1:#6EBCE0; --t2:#6FC3AE; --t3:#D9BC63; --t4:#E29561; --t5:#DE7A6C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1017; --surface:#161A24; --surface-2:#1C2130;
+  --ink:#E8EAF0; --ink-2:#B4BACB; --muted:#868EA4;
+  --line:#2A3040; --line-soft:#222836;
+  --accent:#EFA35A; --accent-soft:#2A2016;
+  --crit:#E08A7E; --warn:#D9BC63; --ok:#6FC79A;
+  --t0:#7CA5F5; --t1:#6EBCE0; --t2:#6FC3AE; --t3:#D9BC63; --t4:#E29561; --t5:#DE7A6C;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:980px; margin:0 auto; padding:56px 24px 80px}
+h1,h2,h3{font-family:Archivo,"IBM Plex Sans",sans-serif; text-wrap:balance; margin:0}
+h1{font-weight:800; font-size:clamp(2rem,5.2vw,3.1rem); letter-spacing:-.028em; line-height:1.08}
+h2{font-weight:700; font-size:1.5rem; letter-spacing:-.018em}
+h3{font-weight:600; font-size:1.02rem; letter-spacing:-.008em}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:3px}
+
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted);
+}
+.lede{color:var(--ink-2); font-size:1.06rem; max-width:64ch; margin-top:18px}
+.lede strong{color:var(--ink); font-weight:600}
+
+header.top{display:flex; flex-direction:column; gap:14px; padding-bottom:36px; border-bottom:1px solid var(--line)}
+
+.figures{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px; background:var(--line-soft); border:1px solid var(--line-soft);
+  border-radius:10px; overflow:hidden; margin:34px 0 0;
+}
+.fig{background:var(--surface); padding:16px 18px; display:flex; flex-direction:column; gap:3px}
+.fig b{
+  font-family:Archivo,sans-serif; font-weight:800; font-size:1.7rem;
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1.1;
+}
+.fig span{font-size:.79rem; color:var(--muted); line-height:1.35}
+.fig.alarm b{color:var(--crit)}
+
+section{margin-top:56px}
+.shead{display:flex; flex-direction:column; gap:8px; margin-bottom:22px}
+.shead p{color:var(--ink-2); max-width:66ch; font-size:.96rem}
+
+/* ---- gap table ---- */
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; min-width:660px; font-size:.9rem}
+th,td{text-align:left; padding:11px 14px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+thead th{
+  font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); font-weight:500;
+  background:var(--surface-2); border-bottom:1px solid var(--line);
+}
+tbody tr:last-child td{border-bottom:none}
+td.field{font-family:"IBM Plex Mono",monospace; font-size:.83rem; color:var(--ink); white-space:nowrap}
+td.ref{font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--muted); white-space:nowrap}
+td.note{color:var(--ink-2)}
+
+.chip{
+  display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:.7rem;
+  letter-spacing:.05em; padding:2px 8px; border-radius:20px; white-space:nowrap;
+  border:1px solid currentColor; font-weight:500;
+}
+.chip.no{color:var(--crit)}
+.chip.part{color:var(--warn)}
+.chip.yes{color:var(--ok)}
+
+.ready{
+  margin-top:20px; padding:16px 18px; border-radius:10px;
+  background:var(--surface-2); border:1px solid var(--line-soft);
+  font-size:.9rem; color:var(--ink-2);
+}
+.ready b{color:var(--ink); font-weight:600}
+.ready code{font-family:"IBM Plex Mono",monospace; font-size:.83em; color:var(--ink)}
+
+/* ---- tiers ---- */
+.legend{
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px;
+  font-size:.8rem; color:var(--muted); margin-bottom:26px;
+  padding:12px 14px; border:1px dashed var(--line); border-radius:10px;
+}
+.legend .sw{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:9px; height:9px; border-radius:50%; display:inline-block}
+
+.rail{position:relative; padding-left:34px}
+.rail::before{
+  content:""; position:absolute; left:9px; top:10px; bottom:10px; width:1px;
+  background:linear-gradient(180deg,var(--t0),var(--t1),var(--t2),var(--t3),var(--t4),var(--t5));
+  opacity:.45;
+}
+.tier{position:relative; margin-bottom:40px}
+.tier::before{
+  content:""; position:absolute; left:-30px; top:7px; width:11px; height:11px;
+  border-radius:50%; background:var(--tc); box-shadow:0 0 0 4px var(--bg), 0 0 12px var(--tc);
+}
+.tier-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; margin-bottom:4px}
+.tier-id{
+  font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:.76rem;
+  letter-spacing:.1em; color:var(--tc); text-transform:uppercase;
+}
+.tier-why{color:var(--muted); font-size:.87rem; max-width:62ch; margin-bottom:16px}
+
+.items{display:grid; gap:1px; background:var(--line-soft); border:1px solid var(--line-soft); border-radius:10px; overflow:hidden}
+.item{background:var(--surface); padding:14px 16px; display:grid; grid-template-columns:auto 1fr; gap:4px 12px}
+.item .num{
+  font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--tc);
+  font-variant-numeric:tabular-nums; padding-top:2px;
+}
+.item .body{display:flex; flex-direction:column; gap:5px; min-width:0}
+.item .desc{font-size:.89rem; color:var(--ink-2)}
+.tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:1px}
+.tag{
+  font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.04em;
+  color:var(--muted); background:var(--surface-2); border:1px solid var(--line-soft);
+  padding:1px 7px; border-radius:4px; white-space:nowrap;
+}
+.tag.blocked{color:var(--crit); border-color:currentColor; background:transparent}
+
+/* ---- decisions ---- */
+.decisions{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.dec{
+  background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:16px 18px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow);
+}
+.dec .q{font-weight:600; font-size:.95rem; color:var(--ink)}
+.dec .opt{font-size:.86rem; color:var(--ink-2)}
+.dec .opt b{font-weight:600; color:var(--ink)}
+.dec .imp{
+  font-family:"IBM Plex Mono",monospace; font-size:.7rem; color:var(--muted);
+  border-top:1px solid var(--line-soft); padding-top:8px; margin-top:2px;
+}
+
+/* ---- out of scope ---- */
+.excl{display:flex; flex-wrap:wrap; gap:8px}
+.excl span{
+  font-size:.83rem; color:var(--muted); background:var(--surface-2);
+  border:1px solid var(--line-soft); border-radius:20px; padding:4px 12px;
+  text-decoration:line-through; text-decoration-color:var(--line);
+}
+
+footer{
+  margin-top:60px; padding-top:26px; border-top:1px solid var(--line);
+  display:flex; flex-direction:column; gap:12px;
+}
+.tiebreak{display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:.87rem; color:var(--ink-2)}
+.tiebreak em{font-style:normal; color:var(--muted); font-family:"IBM Plex Mono",monospace; font-size:.75rem}
+.tiebreak .arrow{color:var(--line); font-weight:600}
+.src{font-size:.78rem; color:var(--muted)}
+
+@media (max-width:560px){
+  .wrap{padding:36px 16px 56px}
+  .rail{padding-left:26px}
+  .tier::before{left:-24px}
+}
+@media (prefers-reduced-motion: reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">ТЗ v0.1 · 58 разделов · 20 критериев приёмки</p>
+  <h1>Порядок сборки Music Cosmos</h1>
+  <p class="lede">Шесть очередей работ, выстроенных по зависимостям, а не по интересности. Порядок сдвинут одним фактом: <strong>восемь из двадцати трёх обязательных MVP-функций сейчас нечем наполнить</strong> — нужных полей нет в подготовленной таблице. Пока это не решено, всё, что рисуется поверх данных, строить рано.</p>
+
+  <div class="figures">
+    <div class="fig"><b>4 334</b><span>уникальных трека в таблице — порог AC‑09 (4 000) взят</span></div>
+    <div class="fig"><b>23</b><span>обязательных функции MVP по §55</span></div>
+    <div class="fig alarm"><b>8</b><span>из них не обеспечены данными</span></div>
+    <div class="fig alarm"><b>4</b><span>критерия приёмки нечем закрыть</span></div>
+  </div>
+</header>
+
+<section>
+  <div class="shead">
+    <h2>Что проверено в таблице</h2>
+    <p>Сверка §32 «Минимальная схема данных» с фактическим содержимым книги. Иерархии — жанровая и академическая — на месте и готовы к экспорту. Всё, что относится к весу, времени и личному слою, отсутствует.</p>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Поле</th><th>Раздел ТЗ</th><th>Для чего</th><th>Статус</th><th>Что в таблице</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="field">importance_score</td><td class="ref">§10 · AC‑06</td>
+          <td class="note">Размер звёзд артистов и композиторов</td>
+          <td><span class="chip no">нет поля</span></td>
+          <td class="note">Не заведено ни на одном листе</td>
+        </tr>
+        <tr>
+          <td class="field">plays_2021_2026</td><td class="ref">§11 · §55‑12</td>
+          <td class="note">Статистика в карточке и оверлее</td>
+          <td><span class="chip part">частично</span></td>
+          <td class="note">Не прослушивания, а <em>ранги</em> в Replay: 99 / 95 / 98 / 97 / 100 / 99 строк по годам</td>
+        </tr>
+        <tr>
+          <td class="field">plays_all_time_am</td><td class="ref">§11 · §55‑13</td>
+          <td class="note">All‑time статистика</td>
+          <td><span class="chip part">частично</span></td>
+          <td class="note">Ранг Replay All Time, 97 строк из 4 334</td>
+        </tr>
+        <tr>
+          <td class="field">date_added</td><td class="ref">§18 · AC‑13</td>
+          <td class="note">Режим My Time</td>
+          <td><span class="chip no">нет поля</span></td>
+          <td class="note">Дата добавления нигде не сохранена</td>
+        </tr>
+        <tr>
+          <td class="field">user_birth_date</td><td class="ref">§18</td>
+          <td class="note">«Мне было 23» на таймлайне</td>
+          <td><span class="chip no">нет поля</span></td>
+          <td class="note">Приватная настройка, задаётся отдельно</td>
+        </tr>
+        <tr>
+          <td class="field">composition_year</td><td class="ref">§18 · §32</td>
+          <td class="note">Music Time для академической половины</td>
+          <td><span class="chip no">нет поля</span></td>
+          <td class="note">Год релиза записи есть, год сочинения — нет</td>
+        </tr>
+        <tr>
+          <td class="field">work_id</td><td class="ref">§6 · AC‑10</td>
+          <td class="note">Свёртка movements в одно произведение</td>
+          <td><span class="chip no">нет поля</span></td>
+          <td class="note">Строки трековые: части сонат и симфоний лежат отдельными записями</td>
+        </tr>
+        <tr>
+          <td class="field">membership weights</td><td class="ref">§7 · AC‑04 · AC‑05</td>
+          <td class="note">Пограничные композиторы и мультижанровые артисты</td>
+          <td><span class="chip no">нет поля</span></td>
+          <td class="note">Принадлежность жёсткая, одна на объект</td>
+        </tr>
+        <tr>
+          <td class="field">association</td><td class="ref">§25</td>
+          <td class="note">Echo — личные ассоциации</td>
+          <td><span class="chip no">нет поля</span></td>
+          <td class="note">Данных нет; в MVP слой только читается</td>
+        </tr>
+        <tr>
+          <td class="field">relationship weights</td><td class="ref">§15 · §16</td>
+          <td class="note">Мостики между территориями</td>
+          <td><span class="chip part">выводимо</span></td>
+          <td class="note">Считается на этапе pipeline из membership, вручную не заводится</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="ready">
+    <b>Что уже готово и экспортируется без доработок:</b> realm (лист «Уникальные треки», колонка «Тип иерархии» — Стандартная / Classical / Jazz), жанр → субжанр → исполнитель → альбом → трек, эпоха/направление → композитор → произведение → исполнитель, <code>release_year</code>, <code>apple_music_catalog_id</code>. Академическая эпоха XX–XXI века уже несёт направление (спектрализм, минимализм, полистилистика, нововенская школа и далее) — это прямо закрывает §53 и снимает риск свалки «Contemporary». Uncharted Space по §34 на классическом листе почти пуст: одна неопознанная запись.
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Очереди работ</h2>
+    <p>Порядок задан зависимостями: каждая следующая очередь потребляет результат предыдущей. Внутри очереди пункты можно вести параллельно.</p>
+  </div>
+
+  <div class="legend">
+    <span>Очередь помечена спектральным классом звезды — от горячего к холодному:</span>
+    <span class="sw"><i style="background:var(--t0)"></i>раньше</span>
+    <span class="sw"><i style="background:var(--t1)"></i></span>
+    <span class="sw"><i style="background:var(--t2)"></i></span>
+    <span class="sw"><i style="background:var(--t3)"></i></span>
+    <span class="sw"><i style="background:var(--t4)"></i></span>
+    <span class="sw"><i style="background:var(--t5)"></i>позже</span>
+  </div>
+
+  <div class="rail">
+
+    <div class="tier" style="--tc:var(--t0)">
+      <div class="tier-head"><span class="tier-id">Очередь 0</span><h3>Контракт данных</h3></div>
+      <p class="tier-why">Единственный вход всей системы. Фронтенд не разбирает Excel — он читает <code>cosmos.json</code>. Пока схема не зафиксирована, любой код поверх неё придётся переписывать.</p>
+      <div class="items">
+        <div class="item"><span class="num">0.1</span><div class="body"><h3>Скрипт XLSX → cosmos.json</h3><p class="desc">Конвейер по §31: валидация → нормализация → классификация → группировка сущностей → генерация связей. Запускается до старта приложения, результат версионируется.</p><div class="tags"><span class="tag">§31</span><span class="tag">§32</span></div></div></div>
+        <div class="item"><span class="num">0.2</span><div class="body"><h3>Стабильные entity_id</h3><p class="desc">Radiohead / radiohead / RADIOHEAD сворачиваются в одну сущность. То же для композиторов, произведений, альбомов, оркестров, жанров и направлений. Display-title как идентификатор не используется.</p><div class="tags"><span class="tag">§33</span></div></div></div>
+        <div class="item"><span class="num">0.3</span><div class="body"><h3>Свёртка movements в произведения</h3><p class="desc">Части выводятся из названий треков («Piano Sonata …: II. Adagio») и собираются под общий <code>work_id</code> с сохранением порядка playback‑items. На карте это один объект.</p><div class="tags"><span class="tag">§6</span><span class="tag blocked">AC‑10 заблокирован</span></div></div></div>
+        <div class="item"><span class="num">0.4</span><div class="body"><h3>Источник importance_score</h3><p class="desc">Самое нагруженное поле продукта: от него зависит размер каждой звезды, а значит вся композиция карты. Требует решения владельца — см. блок ниже.</p><div class="tags"><span class="tag">§10</span><span class="tag blocked">AC‑06 заблокирован</span></div></div></div>
+        <div class="item"><span class="num">0.5</span><div class="body"><h3>Веса принадлежности</h3><p class="desc">Бетховен = Classical 0.55 / Early Romantic 0.45. Без этих весов пограничные объекты либо дублируются, либо жёстко приписываются одной территории — оба варианта запрещены ТЗ.</p><div class="tags"><span class="tag">§7</span><span class="tag blocked">AC‑04 · AC‑05</span></div></div></div>
+        <div class="item"><span class="num">0.6</span><div class="body"><h3>Решение по времени и статистике</h3><p class="desc">Либо дособрать <code>date_added</code>, <code>composition_year</code> и реальные прослушивания, либо сознательно урезать My Time и статистику до того, что есть. Решение влияет на объём очереди 4.</p><div class="tags"><span class="tag">§11</span><span class="tag">§18</span><span class="tag blocked">AC‑12 · AC‑13</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tier" style="--tc:var(--t1)">
+      <div class="tier-head"><span class="tier-id">Очередь 1</span><h3>Движок и камера</h3></div>
+      <p class="tier-why">Главный технический риск: 4 334 объекта при 60 FPS. Проверять его нужно на настоящих данных и в самом начале, а не после того, как поверх движка нарастили интерфейс.</p>
+      <div class="items">
+        <div class="item"><span class="num">1.1</span><div class="body"><h3>Сцена PixiJS 8 на весь вьюпорт</h3><p class="desc">GPU‑рендер карты; DOM остаётся только под панели, поиск, таймлайн и текст. Слои сцены и интерфейса не смешиваются.</p><div class="tags"><span class="tag">§36</span><span class="tag">§37</span></div></div></div>
+        <div class="item"><span class="num">1.2</span><div class="body"><h3>Камера на D3‑zoom</h3><p class="desc">wheel → zoom, drag → pan, pinch → zoom, click → select, ESC → уровень выше. Программные перелёты камеры — оттуда же.</p><div class="tags"><span class="tag">§20</span></div></div></div>
+        <div class="item"><span class="num">1.3</span><div class="body"><h3>Semantic Zoom Controller</h3><p class="desc">Шесть уровней от двух облаков до треков и исполнений. Меняется не размер, а состав и подробность того, что показано.</p><div class="tags"><span class="tag">§9</span></div></div></div>
+        <div class="item"><span class="num">1.4</span><div class="body"><h3>Предрасчёт layout и стабильные координаты</h3><p class="desc"><code>base_x</code>, <code>base_y</code>, <code>cluster_id</code>, <code>layout_weight</code> считаются заранее. В браузере — только лёгкие правки коллизий и камера. Radiohead завтра там же, где сегодня; после обновления датасета новые объекты занимают свободные области, не ломая карту.</p><div class="tags"><span class="tag">§40</span><span class="tag">§41</span></div></div></div>
+        <div class="item"><span class="num">1.5</span><div class="body"><h3>Вертикальный срез и бюджет отрисовки</h3><p class="desc">Сквозной путь «два облака → жанр → артист» на реальных 4 334 треках с замером FPS. Здесь же — деградация качества при движении камеры: меньше blur, частиц и подписей, восстановление после остановки.</p><div class="tags"><span class="tag">§42</span><span class="tag">§44</span><span class="tag">AC‑09</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tier" style="--tc:var(--t2)">
+      <div class="tier-head"><span class="tier-id">Очередь 2</span><h3>Две иерархии и чтение объекта</h3></div>
+      <p class="tier-why">Смысловое ядро продукта: ради этого он и существует. Академическая ветка живёт по своей онтологии и не сводится к «жанр → исполнитель → альбом → трек».</p>
+      <div class="items">
+        <div class="item"><span class="num">2.1</span><div class="body"><h3>Повседневная ветка</h3><p class="desc">Жанр → субжанр → исполнитель → альбом → трек. Субжанр необязателен. Год выпуска читается прямо возле альбома, альбомы внутри системы исполнителя выстроены хронологически.</p><div class="tags"><span class="tag">§4</span><span class="tag">§17</span><span class="tag">AC‑02</span></div></div></div>
+        <div class="item"><span class="num">2.2</span><div class="body"><h3>Академическая ветка</h3><p class="desc">Эпоха / направление → композитор → произведение → исполнение. XX–XXI век раскрывается направлениями, а не общим тегом Contemporary.</p><div class="tags"><span class="tag">§5</span><span class="tag">§53</span><span class="tag">AC‑03</span></div></div></div>
+        <div class="item"><span class="num">2.3</span><div class="body"><h3>Объекты на границах</h3><p class="desc">Один объект физически между территориями — без дублирования звезды. Работает и для композиторов на стыке эпох, и для артистов на стыке жанров.</p><div class="tags"><span class="tag">§7</span><span class="tag">AC‑04</span><span class="tag">AC‑05</span></div></div></div>
+        <div class="item"><span class="num">2.4</span><div class="body"><h3>Карточка объекта</h3><p class="desc">Полупрозрачная панель справа. Разная вёрстка для исполнителя и для академического произведения: у второго — список ваших исполнений с числами.</p><div class="tags"><span class="tag">§23</span><span class="tag">§24</span></div></div></div>
+        <div class="item"><span class="num">2.5</span><div class="body"><h3>Поиск и перелёт</h3><p class="desc">Одно поле на все типы сущностей. После выбора камера летит к объекту, промежуточные уровни zoom раскрываются по дороге корректно.</p><div class="tags"><span class="tag">§22</span><span class="tag">AC‑11</span></div></div></div>
+        <div class="item"><span class="num">2.6</span><div class="body"><h3>Uncharted Space</h3><p class="desc">Тёмная область для неопознанных сущностей. Не ломает дерево и не мешает остальной карте.</p><div class="tags"><span class="tag">§34</span><span class="tag">AC‑17</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tier" style="--tc:var(--t3)">
+      <div class="tier-head"><span class="tier-id">Очередь 3</span><h3>Визуальный язык</h3></div>
+      <p class="tier-why">Ровно то, что §58 ставит первым при спорных решениях. Раньше очереди 1 делать бессмысленно — нечего красить; позже очереди 4 поздно — таймлайн и мостики уже опираются на язык формы и цвета.</p>
+      <div class="items">
+        <div class="item"><span class="num">3.1</span><div class="body"><h3>Пресеты космической материи</h3><p class="desc">6–10 профилей: material, halo, texture, edge, particle_behavior, density. Назначаются жанру, субжанру, эпохе, направлению и наследуются вложенными объектами. Аудиосигнал не анализируется.</p><div class="tags"><span class="tag">§13</span><span class="tag">AC‑08</span></div></div></div>
+        <div class="item"><span class="num">3.2</span><div class="body"><h3>Цвет как территория</h3><p class="desc">Палитра принадлежит жанровой семье, эпохе, направлению — не отдельному исполнителю. Внутри области объекты различаются размером, формой, яркостью, halo и текстурой.</p><div class="tags"><span class="tag">§14</span></div></div></div>
+        <div class="item"><span class="num">3.3</span><div class="body"><h3>Адаптивные подписи</h3><p class="desc">Приоритет по zoom‑уровню, важности, выделению и расстоянию от центра камеры. Всегда подписаны выбранный объект, его родитель и несколько значимых соседей.</p><div class="tags"><span class="tag">§43</span></div></div></div>
+        <div class="item"><span class="num">3.4</span><div class="body"><h3>Visual Focus</h3><p class="desc">Выбранный объект 100 %, связанные 70–100 %, остальное пространство 20–50 %. Так связи читаются без постоянной сетки линий.</p><div class="tags"><span class="tag">§49</span></div></div></div>
+        <div class="item"><span class="num">3.5</span><div class="body"><h3>Анимация и Reduce Motion</h3><p class="desc">Разрешены плавный zoom, мягкий перелёт, дыхание halo, медленные частицы. Запрещены тряска, вспышки, агрессивный параллакс. При <code>prefers-reduced-motion: reduce</code> декоративное отключается, навигация остаётся.</p><div class="tags"><span class="tag">§45</span><span class="tag">§46</span><span class="tag">AC‑20</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tier" style="--tc:var(--t4)">
+      <div class="tier-head"><span class="tier-id">Очередь 4</span><h3>Слои поверх карты</h3></div>
+      <p class="tier-why">Каждый пункт — отдельный слой, который включается и выключается независимо. Объём очереди определяется решением 0.6: без дособранных данных два из четырёх пунктов сжимаются до заглушек.</p>
+      <div class="items">
+        <div class="item"><span class="num">4.1</span><div class="body"><h3>Таймлайн Music Time</h3><p class="desc">Время появления самой музыки. Для повседневной — год релиза, данные есть. Для академической нужен год сочинения, которого нет: без него половина шкалы работать не будет.</p><div class="tags"><span class="tag">§18</span><span class="tag">§19</span><span class="tag blocked">AC‑12 частично</span></div></div></div>
+        <div class="item"><span class="num">4.2</span><div class="body"><h3>Таймлайн My Time</h3><p class="desc">Момент появления музыки в библиотеке и возраст владельца тогда. Полностью упирается в <code>date_added</code> и дату рождения — сейчас нет ни того, ни другого.</p><div class="tags"><span class="tag">§18</span><span class="tag blocked">AC‑13 заблокирован</span></div></div></div>
+        <div class="item"><span class="num">4.3</span><div class="body"><h3>Музыкальные мостики</h3><p class="desc">По умолчанию скрыты; при выборе объекта проявляются 2–5 самых значимых. Четыре типа связи: genre_similarity, shared_direction, border_membership, editorial_bridge.</p><div class="tags"><span class="tag">§16</span><span class="tag">AC‑18</span><span class="tag">AC‑19</span></div></div></div>
+        <div class="item"><span class="num">4.4</span><div class="body"><h3>Statistics Overlay и Echo</h3><p class="desc">Статистика живёт отдельно от субъективной важности и не перегружает космос в обычном режиме. Echo — небольшой световой спутник у объектов с личной ассоциацией, только чтение.</p><div class="tags"><span class="tag">§11</span><span class="tag">§25</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tier" style="--tc:var(--t5)">
+      <div class="tier-head"><span class="tier-id">Очередь 5</span><h3>Воспроизведение Apple Music</h3></div>
+      <p class="tier-why">Последней — сознательно. §29 и AC‑16 прямо требуют, чтобы карта полностью работала без авторизации Apple Music. Это единственный крупный блок, от которого ничего не зависит.</p>
+      <div class="items">
+        <div class="item"><span class="num">5.1</span><div class="body"><h3>Backend только под токены</h3><p class="desc">Минимальный сервис выдачи developer token. Private key не должен попадать во фронтенд‑бандл. Больше backend в MVP ни для чего не нужен.</p><div class="tags"><span class="tag">§39</span></div></div></div>
+        <div class="item"><span class="num">5.2</span><div class="body"><h3>Авторизация MusicKit on the Web</h3><p class="desc">Состояния «Connect Apple Music» и «Not linked to Apple Music» как штатные, а не как ошибка.</p><div class="tags"><span class="tag">§26</span><span class="tag">§29</span><span class="tag">AC‑16</span></div></div></div>
+        <div class="item"><span class="num">5.3</span><div class="body"><h3>Play Track и Play Work</h3><p class="desc">Клик по объекту музыку не запускает — только отдельная кнопка. Для произведения формируется очередь всех playback‑items в правильном порядке, в интерфейсе при этом остаётся произведение, а не части.</p><div class="tags"><span class="tag">§27</span><span class="tag">§28</span><span class="tag">AC‑14</span><span class="tag">AC‑15</span></div></div></div>
+        <div class="item"><span class="num">5.4</span><div class="body"><h3>Now Playing и ленивая загрузка</h3><p class="desc">Компактная панель вместо полноценного плеера. Аудио не подгружается заранее: карта хранит только метаданные и идентификаторы, запрос идёт в момент воспроизведения.</p><div class="tags"><span class="tag">§27</span><span class="tag">§48</span></div></div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Решения до старта очереди 0</h2>
+    <p>Четыре вопроса, на которые нельзя ответить из кода или из таблицы. Каждый меняет объём работ, поэтому отвечать на них лучше сейчас, а не в середине сборки.</p>
+  </div>
+  <div class="decisions">
+    <div class="dec">
+      <p class="q">Откуда берётся importance_score?</p>
+      <p class="opt"><b>Руками</b> — колонка оценок в книге, честно отражает субъективную важность, но это ручная разметка сотен артистов и композиторов.<br><b>Формулой</b> — из рангов Replay, числа треков артиста и попадания в «Мне нравится», с последующей ручной правкой верхушки.</p>
+      <p class="imp">Влияет на: размер каждой звезды · AC‑06</p>
+    </div>
+    <div class="dec">
+      <p class="q">Что считать статистикой прослушиваний?</p>
+      <p class="opt"><b>Оставить ранги</b> — переформулировать §11 под то, что есть: позиция в Replay за год вместо числа прослушиваний, и тогда данные покрывают ~100 треков в год.<br><b>Дособрать</b> — выгрузить реальные счётчики и обновить таблицу.</p>
+      <p class="imp">Влияет на: карточку объекта, Statistics Overlay · §55‑12, §55‑13</p>
+    </div>
+    <div class="dec">
+      <p class="q">Нужен ли режим My Time в первой версии?</p>
+      <p class="opt"><b>Да</b> — тогда до начала работ нужны <code>date_added</code> по каждому треку и дата рождения владельца.<br><b>Нет</b> — режим уезжает за пределы MVP, таймлайн выходит с одной шкалой Music Time.</p>
+      <p class="imp">Влияет на: очередь 4 · AC‑13</p>
+    </div>
+    <div class="dec">
+      <p class="q">Как задавать веса принадлежности?</p>
+      <p class="opt"><b>Точечно</b> — веса проставляются только пограничным объектам (Бетховен, Скрябин, Цемлинский, мультижанровые артисты), остальные считаются однозначными.<br><b>Сплошь</b> — вес у каждого объекта, дороже, но карта получается мягче.</p>
+      <p class="imp">Влияет на: геометрию карты и мостики · AC‑04, AC‑05</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Вне первой версии</h2>
+    <p>Зафиксировано в §54 — перечислено здесь, чтобы к этому не возвращаться на каждом обсуждении объёма.</p>
+  </div>
+  <div class="excl">
+    <span>социальная сеть</span><span>сравнение вкусов двух людей</span><span>публичные профили</span><span>лайки</span><span>комментарии</span><span>friend system</span><span>рекомендательный движок</span><span>смена жанров пользователем</span><span>drag‑and‑drop переклассификация</span><span>live listening analytics</span><span>ежедневные тренды</span><span>AI‑рекомендации</span><span>полноценная 3D‑навигация</span>
+  </div>
+</section>
+
+<footer>
+  <p class="eyebrow">§58 · порядок приоритетов при спорном UX‑решении</p>
+  <p class="tiebreak">
+    <em>1</em> эстетика и ощущение космоса <span class="arrow">→</span>
+    <em>2</em> интерес к исследованию <span class="arrow">→</span>
+    <em>3</em> понятная иерархия <span class="arrow">→</span>
+    <em>4</em> стабильная навигация <span class="arrow">→</span>
+    <em>5</em> точность положения <span class="arrow">→</span>
+    <em>6</em> объём показанных данных
+  </p>
+  <p class="src">Источник: «Техническое задание: Music Cosmos», версия 0.1, 38 страниц. Сверка данных — по книге «musical cosmos sheet», листы «Уникальные треки» (4 334 записи), «Classical», «Статистика прослушиваний».</p>
+</footer>
+
+</div>
+
+</html>

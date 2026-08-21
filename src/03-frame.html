@@ -1,0 +1,726 @@
+<title>Первый кадр Music Cosmos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+
+<style>
+:root{
+  --void:#04060B; --panel:#080C14; --line:#161D2B; --line-2:#0F1520;
+  --ink:#E7EAF2; --ink-2:#98A2B8; --muted:#5D6880;
+  --amber:#FFB36B; --amber-dim:#7C5730;
+}
+*{box-sizing:border-box}
+html,body{background:var(--void)}
+body{
+  margin:0; color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,sans-serif;
+  font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+.head{max-width:1180px; margin:0 auto; padding:30px 22px 18px; display:flex; flex-wrap:wrap; align-items:flex-end; gap:14px 28px; justify-content:space-between}
+h1{
+  margin:0; font-family:Spectral,Georgia,serif; font-weight:300;
+  font-size:clamp(1.5rem,3.4vw,2.15rem); letter-spacing:-.015em; line-height:1.1;
+}
+h1 em{font-style:italic; color:var(--amber)}
+.sub{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); max-width:44ch}
+
+/* --------- сцена --------- */
+.frame{position:relative; margin:0 auto; max-width:1180px; padding:0 22px}
+.canvas-box{
+  position:relative; border:1px solid var(--line); border-radius:12px; overflow:hidden;
+  background:#04060B; height:clamp(420px,74vh,820px);
+}
+canvas{display:block; width:100%; height:100%; cursor:grab}
+canvas.dragging{cursor:grabbing}
+.err{position:absolute; inset:0; display:none; place-items:center; text-align:center; padding:30px; color:var(--muted); font-size:.9rem}
+.failed .err{display:grid}
+.failed canvas{display:none}
+
+.hint{
+  position:absolute; right:12px; bottom:10px; z-index:3;
+  font-family:"IBM Plex Mono",monospace; font-size:.62rem; letter-spacing:.09em;
+  color:var(--muted); text-transform:uppercase; pointer-events:none;
+  text-shadow:0 1px 6px #000;
+}
+.tag{
+  position:absolute; z-index:3; pointer-events:none; transform:translate(-50%,-50%);
+  font-family:"IBM Plex Mono",monospace; font-size:.6rem; letter-spacing:.16em;
+  text-transform:uppercase; color:rgba(231,234,242,.62); white-space:nowrap;
+  text-shadow:0 1px 8px rgba(0,0,0,.9); transition:opacity .25s;
+}
+.tag::before{
+  content:""; position:absolute; left:50%; top:-13px; width:1px; height:9px;
+  background:linear-gradient(180deg,transparent,rgba(231,234,242,.45));
+}
+
+/* --------- панель управления --------- */
+.bar{
+  max-width:1180px; margin:14px auto 0; padding:0 22px;
+  display:flex; flex-wrap:wrap; gap:10px 26px; align-items:center;
+}
+.grp{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+.grp .lab{
+  font-family:"IBM Plex Mono",monospace; font-size:.63rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); margin-right:2px;
+}
+button.tg, button.act{
+  font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.06em;
+  color:var(--ink-2); background:var(--panel); border:1px solid var(--line);
+  border-radius:6px; padding:6px 11px; cursor:pointer; transition:border-color .15s,color .15s,background .15s;
+}
+button.tg:hover, button.act:hover{border-color:var(--amber-dim); color:var(--ink)}
+button.tg[aria-pressed="true"]{color:var(--void); background:var(--amber); border-color:var(--amber)}
+button.act{color:var(--amber)}
+input[type=range]{
+  -webkit-appearance:none; appearance:none; width:150px; height:2px;
+  background:var(--line); border-radius:2px; outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
+  background:var(--amber); cursor:pointer; border:none;
+}
+input[type=range]::-moz-range-thumb{width:12px; height:12px; border-radius:50%; background:var(--amber); cursor:pointer; border:none}
+.val{font-family:"IBM Plex Mono",monospace; font-size:.68rem; color:var(--ink-2); min-width:38px; font-variant-numeric:tabular-nums}
+
+/* --------- подвал --------- */
+.notes{max-width:1180px; margin:34px auto 0; padding:0 22px 70px; display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:20px 32px}
+.note h3{margin:0 0 5px; font-size:.86rem; font-weight:500; color:var(--amber)}
+.note p{margin:0; font-size:.85rem; color:var(--ink-2)}
+.foot{max-width:1180px; margin:0 auto; padding:0 22px 60px; color:var(--muted); font-size:.78rem; max-width:82ch}
+@media (max-width:560px){ .head,.frame,.bar,.notes,.foot{padding-left:14px; padding-right:14px} }
+</style>
+
+<div class="head">
+  <h1>Кадр первый: <em>два облака</em></h1>
+  <p class="sub">Шейдерная песочница · газ, пыль, звёзды, свечение · статичный кадр, без анимации</p>
+</div>
+
+<div class="frame">
+  <div class="canvas-box" id="box">
+    <canvas id="cv"></canvas>
+    <p class="err">WebGL2 недоступен — сцену отрисовать не удалось.</p>
+    <span class="hint">колесо — масштаб · перетаскивание — сдвиг</span>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="grp">
+    <span class="lab">Слои</span>
+    <button class="tg" id="t-gas"   aria-pressed="true">газ</button>
+    <button class="tg" id="t-dust"  aria-pressed="true">пыль</button>
+    <button class="tg" id="t-stars" aria-pressed="true">звёзды</button>
+    <button class="tg" id="t-bloom" aria-pressed="true">свечение</button>
+    <button class="tg" id="t-optics" aria-pressed="true">оптика</button>
+    <button class="tg" id="t-labels" aria-pressed="true">подписи</button>
+  </div>
+  <div class="grp">
+    <span class="lab">Масштаб</span>
+    <input type="range" id="zoom" min="100" max="900" value="100" step="1" aria-label="Масштаб">
+    <span class="val" id="zoomv">1.0×</span>
+  </div>
+  <div class="grp">
+    <button class="act" id="reseed">другая композиция</button>
+    <button class="act" id="reset">сброс вида</button>
+  </div>
+</div>
+
+<div class="notes">
+  <div class="note">
+    <h3>Выключите «пыль»</h3>
+    <p>Кадр мгновенно становится плоским. Глубина здесь держится не на размере объектов, а на том, что вещество перекрывает свет за собой.</p>
+  </div>
+  <div class="note">
+    <h3>Выключите «свечение»</h3>
+    <p>Звёзды превращаются в точки. Ореолы не нарисованы у каждой — они результат одного общего прохода по всей сцене.</p>
+  </div>
+  <div class="note">
+    <h3>Выключите «оптику»</h3>
+    <p>Пропадают зерно, виньетка и лёгкое расхождение цвета к краям. Картинка становится стерильной и сразу читается как компьютерная.</p>
+  </div>
+  <div class="note">
+    <h3>Наведитесь на облако и приблизьте</h3>
+    <p>Туманность не размывается, а раскрывает новую структуру: с каждым удвоением масштаба шум получает дополнительную октаву.</p>
+  </div>
+</div>
+
+<p class="foot">Композиция синтетическая: два облака — классика слева, поп справа, — плотная структурированная масса против рыхлой и клочковатой. Цвет звёзд взят с кривой излучения чёрного тела, поэтому оттенки гарантированно сочетаются: тёплые — раннее и традиционное, холодные — радикальное и электронное. Всё, что видно, рисуется за четыре прохода: газ и пыль одним полноэкранным шейдером, звёзды одним массивом точек, свечение отдельным пост-проходом, оптика в композите.</p>
+
+<script>
+(function(){
+  var box = document.getElementById('box');
+  var cv  = document.getElementById('cv');
+  var gl  = cv.getContext('webgl2', {antialias:false, alpha:false, preserveDrawingBuffer:true});
+  if(!gl){ box.classList.add('failed'); return; }
+
+  var hasFloat = gl.getExtension('EXT_color_buffer_float');
+  var HDR_IF = hasFloat ? gl.RGBA16F : gl.RGBA8;
+  var HDR_T  = hasFloat ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE;
+
+  /* ================= общий GLSL ================= */
+  var COMMON = `
+float h21(vec2 p){
+  p = fract(p * vec2(127.11, 311.7));
+  p += dot(p, p + 34.77);
+  return fract(p.x * p.y);
+}
+vec2 h22(vec2 p){ float n = h21(p); return vec2(n, h21(p + n * 19.7)); }
+float vnoise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(h21(i), h21(i + vec2(1.0,0.0)), u.x),
+             mix(h21(i + vec2(0.0,1.0)), h21(i + vec2(1.0,1.0)), u.x), u.y);
+}
+float fbm(vec2 p, int oct){
+  float s = 0.0, a = 0.5;
+  mat2 r = mat2(0.80, 0.60, -0.60, 0.80);
+  for(int i = 0; i < 13; i++){
+    if(i >= oct) break;
+    s += a * vnoise(p);
+    p = r * p * 2.04; a *= 0.5;
+  }
+  return s;
+}
+// с ростом масштаба добавляем октавы — иначе шум просто растягивается
+int octFor(float zoom, int base, int cap){
+  return clamp(base + int(floor(log2(max(zoom, 1.0)))), base, cap);
+}
+vec3 blackbody(float t){
+  vec3 c1 = vec3(1.00, 0.52, 0.20);
+  vec3 c2 = vec3(1.00, 0.79, 0.52);
+  vec3 c3 = vec3(1.00, 0.96, 0.91);
+  vec3 c4 = vec3(0.79, 0.86, 1.00);
+  vec3 c5 = vec3(0.58, 0.70, 1.00);
+  t = clamp(t, 0.0, 1.0);
+  if(t < 0.25) return mix(c1, c2, t / 0.25);
+  if(t < 0.50) return mix(c2, c3, (t - 0.25) / 0.25);
+  if(t < 0.75) return mix(c3, c4, (t - 0.50) / 0.25);
+  return mix(c4, c5, (t - 0.75) / 0.25);
+}
+vec2 warpUV(vec2 p, float seed, float zoom){
+  int o = octFor(zoom, 4, 7);
+  vec2 w = vec2(fbm(p * 1.05 + seed, o), fbm(p * 1.05 + seed + 5.31, o)) - 0.5;
+  return p * 1.5 + w * 1.25;
+}
+float dustAt(vec2 q, float seed, float zoom){
+  float d = fbm(q * 2.55 + seed * 1.7 + 13.3, octFor(zoom, 5, 9));
+  return smoothstep(0.40, 0.86, d);
+}`;
+
+  var VS_QUAD = `#version 300 es
+void main(){
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(p - 1.0, 0.0, 1.0);
+}`;
+
+  /* ---------- проход 1: газ + пыль ---------- */
+  var FS_GAS = `#version 300 es
+precision highp float;
+out vec4 outColor;
+uniform vec2 uRes; uniform float uZoom; uniform vec2 uPan;
+uniform float uSeed; uniform int uN;
+uniform vec4 uT[26];      // xy центр, z радиус, w температура
+uniform bool uGas, uDust;
+` + COMMON + `
+void main(){
+  vec2 uv = ((gl_FragCoord.xy - 0.5 * uRes) / uRes.y) / uZoom + uPan;
+  vec3 col = vec3(0.0);
+  if(uGas){
+    vec2 q = warpUV(uv, uSeed, uZoom);
+    float detail = fbm(q * 2.15, octFor(uZoom, 7, 12));
+    detail = pow(max(detail, 0.0), 1.45);
+    vec3 acc = vec3(0.0); float den = 0.0;
+    for(int i = 0; i < 26; i++){
+      if(i >= uN) break;
+      vec2 d = (q * 0.6666 - uT[i].xy) / uT[i].z;
+      float f = exp(-dot(d, d) * 2.3);
+      den += f;
+      acc += blackbody(uT[i].w) * f;
+    }
+    vec3 gasCol = acc / max(den, 1e-4);
+    float gas = clamp(den, 0.0, 1.6) * detail;
+    col = gasCol * gas * 1.15;
+    col += gasCol * gas * gas * 0.55;          // светлые ядра
+  }
+  if(uDust){
+    vec2 q = warpUV(uv, uSeed, uZoom);
+    float dst = dustAt(q, uSeed, uZoom);
+    col *= (1.0 - dst * 0.72);
+  }
+  col = max(col, vec3(0.008, 0.011, 0.020));
+  outColor = vec4(col, 1.0);
+}`;
+
+  /* ---------- проход 2: звёзды ---------- */
+  var VS_STAR = `#version 300 es
+precision highp float;
+in vec2 aPos; in float aSize; in float aTemp; in float aBright;
+uniform vec2 uRes; uniform float uZoom; uniform vec2 uPan;
+uniform float uDpr; uniform float uSeed; uniform bool uDust;
+out vec3 vCol; out float vAtt; out float vBright;
+` + COMMON + `
+void main(){
+  vec2 frag = (aPos - uPan) * uZoom * uRes.y + 0.5 * uRes;
+  gl_Position = vec4(frag / uRes * 2.0 - 1.0, 0.0, 1.0);
+  float att = 1.0;
+  if(uDust){
+    vec2 q = warpUV(aPos, uSeed, uZoom);
+    att = 1.0 - dustAt(q, uSeed, uZoom) * 0.88;
+  }
+  vAtt = att;
+  vCol = blackbody(aTemp);
+  vBright = aBright;
+  float z = pow(uZoom, 0.55);
+  gl_PointSize = clamp(aSize * z * uDpr, 1.0, 190.0);
+}`;
+
+  var FS_STAR = `#version 300 es
+precision highp float;
+in vec3 vCol; in float vAtt; in float vBright;
+out vec4 outColor;
+void main(){
+  vec2 d = gl_PointCoord - 0.5;
+  float r2 = dot(d, d);
+  if(r2 > 0.25) discard;
+  float core = exp(-r2 * 90.0);
+  float halo = exp(-r2 * 11.0) * 0.30;
+  float v = core + halo * vBright;
+  float spikes = 0.0;
+  if(vBright > 0.55){
+    float ax = exp(-abs(d.x) * 130.0) * exp(-abs(d.y) * 7.0);
+    float ay = exp(-abs(d.y) * 130.0) * exp(-abs(d.x) * 7.0);
+    spikes = (ax + ay) * (vBright - 0.55) * 1.3;
+  }
+  vec3 c = vCol * (v * (0.5 + vBright * 3.2) + spikes);
+  outColor = vec4(c * vAtt, 1.0);
+}`;
+
+  /* ---------- проход 3: яркая часть ---------- */
+  var FS_BRIGHT = `#version 300 es
+precision highp float;
+out vec4 outColor;
+uniform sampler2D uTex; uniform vec2 uRes;
+void main(){
+  vec3 c = texture(uTex, gl_FragCoord.xy / uRes).rgb;
+  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+  float k = smoothstep(0.30, 0.95, l);
+  outColor = vec4(c * k, 1.0);
+}`;
+
+  /* ---------- проход 4: размытие ---------- */
+  var FS_BLUR = `#version 300 es
+precision highp float;
+out vec4 outColor;
+uniform sampler2D uTex; uniform vec2 uRes; uniform vec2 uDir;
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  vec2 t = uDir / uRes;
+  float w[5];
+  w[0]=0.2270; w[1]=0.1946; w[2]=0.1216; w[3]=0.0540; w[4]=0.0162;
+  vec3 s = texture(uTex, uv).rgb * w[0];
+  for(int i = 1; i < 5; i++){
+    float f = float(i);
+    s += texture(uTex, uv + t * f).rgb * w[i];
+    s += texture(uTex, uv - t * f).rgb * w[i];
+  }
+  outColor = vec4(s, 1.0);
+}`;
+
+  /* ---------- проход 5: композит ---------- */
+  var FS_COMP = `#version 300 es
+precision highp float;
+out vec4 outColor;
+uniform sampler2D uScene; uniform sampler2D uBloomA; uniform sampler2D uBloomB;
+uniform vec2 uRes; uniform bool uBloom; uniform bool uOptics; uniform float uSeed;
+` + COMMON + `
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  vec2 c0 = uv - 0.5;
+  vec3 col;
+  if(uOptics){
+    float ab = dot(c0, c0) * 0.0060;
+    col.r = texture(uScene, uv + c0 * ab).r;
+    col.g = texture(uScene, uv).g;
+    col.b = texture(uScene, uv - c0 * ab).b;
+  } else {
+    col = texture(uScene, uv).rgb;
+  }
+  if(uBloom){
+    col += texture(uBloomA, uv).rgb * 0.85;
+    col += texture(uBloomB, uv).rgb * 0.55;
+  }
+  col = col / (col + vec3(0.82));
+  col = pow(max(col, 0.0), vec3(0.88));
+  if(uOptics){
+    float vig = 1.0 - 0.62 * pow(length(c0 * vec2(1.05, 1.35)), 2.4);
+    col *= clamp(vig, 0.0, 1.0);
+    col += (h21(gl_FragCoord.xy + uSeed * 37.0) - 0.5) * 0.028;
+  }
+  col = max(col, vec3(0.016, 0.022, 0.038));
+  outColor = vec4(col, 1.0);
+}`;
+
+  /* ================= утилиты GL ================= */
+  function sh(type, src){
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){ console.error(gl.getShaderInfoLog(s), src); return null; }
+    return s;
+  }
+  function prog(vs, fs){
+    var v = sh(gl.VERTEX_SHADER, vs), f = sh(gl.FRAGMENT_SHADER, fs);
+    if(!v || !f) return null;
+    var p = gl.createProgram();
+    gl.attachShader(p, v); gl.attachShader(p, f); gl.linkProgram(p);
+    if(!gl.getProgramParameter(p, gl.LINK_STATUS)){ console.error(gl.getProgramInfoLog(p)); return null; }
+    return p;
+  }
+  var pGas = prog(VS_QUAD, FS_GAS);
+  var pStar = prog(VS_STAR, FS_STAR);
+  var pBright = prog(VS_QUAD, FS_BRIGHT);
+  var pBlur = prog(VS_QUAD, FS_BLUR);
+  var pComp = prog(VS_QUAD, FS_COMP);
+  if(!pGas || !pStar || !pBright || !pBlur || !pComp){ box.classList.add('failed'); return; }
+
+  function mkTarget(w, h){
+    var tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, HDR_IF, w, h, 0, gl.RGBA, HDR_T, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    var fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    return {tex:tex, fb:fb, w:w, h:h};
+  }
+
+  /* ================= территории ================= */
+  var CLASSIC = [
+    ['Барокко',        1.00, 0.12], ['Классицизм',    0.62, 0.24],
+    ['Романтизм',      1.15, 0.18], ['Поздний романтизм', 0.66, 0.29],
+    ['Импрессионизм',  0.38, 0.45], ['Модернизм',     0.78, 0.60],
+    ['Авангард',       0.32, 0.86], ['Минимализм',    0.40, 0.72],
+    ['Современная',    0.44, 0.79]
+  ];
+  var POP = [
+    ['Рок',        1.00, 0.55], ['Поп',          0.52, 0.63],
+    ['Электроника',0.40, 0.82], ['Хип-хоп',      0.32, 0.68],
+    ['R&B / соул', 0.30, 0.50], ['Саундтреки',   0.28, 0.44],
+    ['Блюз',       0.22, 0.20], ['Фолк',         0.16, 0.30]
+  ];
+
+  var terr = [], stars = null, seed = 3;
+
+  function rnd(s){ var x = Math.sin(s * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }
+
+  function build(){
+    terr = [];
+    var GOLD = 2.39996323;
+
+    function cloud(list, cx, cy, spread, squash, jitter, sBase){
+      var tot = 0, i;
+      for(i = 0; i < list.length; i++) tot += list[i][1];
+      for(i = 0; i < list.length; i++){
+        var a = i * GOLD + rnd(sBase + i) * 0.9;
+        var rr = spread * Math.sqrt((i + 0.62) / list.length);
+        var jx = (rnd(sBase + i * 3.1) - 0.5) * jitter;
+        var jy = (rnd(sBase + i * 7.7) - 0.5) * jitter;
+        terr.push({
+          name: list[i][0],
+          x: cx + Math.cos(a) * rr + jx,
+          y: cy + Math.sin(a) * rr * squash + jy,
+          r: 0.085 + 0.115 * Math.sqrt(list[i][1] / tot * list.length),
+          t: list[i][2],
+          w: list[i][1]
+        });
+      }
+    }
+    // классика — крупнее, плотнее, ядро смещено; поп — рыхлее и клочковатее
+    cloud(CLASSIC, -0.42,  0.010, 0.30, 0.80, 0.030, seed * 11 + 1);
+    cloud(POP,      0.50, -0.025, 0.27, 1.06, 0.075, seed * 23 + 7);
+
+    // --- звёзды ---
+    var pos = [], siz = [], tmp = [], brt = [];
+    var totalW = 0;
+    for(var i = 0; i < terr.length; i++) totalW += terr[i].w;
+    var BUDGET = 5200;
+
+    for(i = 0; i < terr.length; i++){
+      var T = terr[i];
+      var n = Math.max(40, Math.round(BUDGET * T.w / totalW));
+      for(var k = 0; k < n; k++){
+        var a = k * GOLD + rnd(seed * 97 + i * 13 + 1) * 6.283;
+        var f = Math.sqrt((k + 0.5) / n);
+        var jr = 0.82 + rnd(seed + i * 31 + k * 0.7) * 0.42;
+        var rad = T.r * 1.55 * f * jr;
+        var ex = 1.0 + rnd(seed + i * 5.5) * 0.35;
+        pos.push(T.x + Math.cos(a) * rad * ex, T.y + Math.sin(a) * rad);
+        // яркость: несколько крупных светил на территорию, остальное фон
+        var q = rnd(seed * 3 + i * 101 + k * 2.3);
+        var big = (k < Math.max(2, n * 0.012)) ? 1.0 : 0.0;
+        var b = big > 0.5 ? (0.62 + q * 0.38) : Math.pow(q, 5.0) * 0.55;
+        brt.push(b);
+        siz.push(big > 0.5 ? (7.0 + b * 15.0) : (1.3 + b * 6.0));
+        tmp.push(Math.min(1, Math.max(0, T.t + (rnd(seed + k * 1.7 + i) - 0.5) * 0.16)));
+      }
+    }
+    // дальний фон — редкая пыль звёзд по всему кадру
+    for(i = 0; i < 900; i++){
+      pos.push((rnd(seed * 7 + i * 1.3) - 0.5) * 3.0, (rnd(seed * 13 + i * 2.1) - 0.5) * 1.7);
+      var bb = Math.pow(rnd(seed + i * 3.9), 6.0) * 0.4;
+      brt.push(bb); siz.push(1.0 + bb * 3.0);
+      tmp.push(rnd(seed * 5 + i * 0.9));
+    }
+
+    stars = {
+      n: brt.length,
+      pos: new Float32Array(pos), siz: new Float32Array(siz),
+      tmp: new Float32Array(tmp), brt: new Float32Array(brt)
+    };
+    upload();
+    layoutTags();
+  }
+
+  var vao = null, bPos, bSiz, bTmp, bBrt;
+  function upload(){
+    if(!vao){
+      vao = gl.createVertexArray();
+      bPos = gl.createBuffer(); bSiz = gl.createBuffer();
+      bTmp = gl.createBuffer(); bBrt = gl.createBuffer();
+    }
+    gl.bindVertexArray(vao);
+    function attr(buf, data, loc, size){
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+    }
+    attr(bPos, stars.pos, gl.getAttribLocation(pStar, 'aPos'), 2);
+    attr(bSiz, stars.siz, gl.getAttribLocation(pStar, 'aSize'), 1);
+    attr(bTmp, stars.tmp, gl.getAttribLocation(pStar, 'aTemp'), 1);
+    attr(bBrt, stars.brt, gl.getAttribLocation(pStar, 'aBright'), 1);
+    gl.bindVertexArray(null);
+  }
+
+  /* ================= подписи ================= */
+  var tagEls = [];
+  function layoutTags(){
+    for(var i = 0; i < tagEls.length; i++) tagEls[i].remove();
+    tagEls = [];
+    for(i = 0; i < terr.length; i++){
+      var el = document.createElement('span');
+      el.className = 'tag';
+      el.textContent = terr[i].name;
+      box.appendChild(el);
+      tagEls.push(el);
+    }
+    placeTags();
+  }
+  function placeTags(){
+    var on = st.labels;
+    var W = box.clientWidth, H = box.clientHeight;
+    for(var i = 0; i < terr.length; i++){
+      var T = terr[i];
+      var x = (T.x - pan[0]) * zoom * H + W / 2;
+      var y = (T.y - pan[1]) * zoom * H;
+      y = H / 2 - y;
+      var el = tagEls[i];
+      var vis = on && x > 40 && x < W - 40 && y > 26 && y < H - 20;
+      el.style.opacity = vis ? '1' : '0';
+      el.style.left = x + 'px';
+      el.style.top = (y - T.r * zoom * H - 16) + 'px';
+    }
+  }
+
+  /* ================= состояние ================= */
+  var st = {gas:true, dust:true, stars:true, bloom:true, optics:true, labels:true};
+  var zoom = 1, pan = [0, 0];
+  var scene = null, half = null, quart = null, pingH = null, pingQ = null;
+  var W = 0, H = 0, DPR = 1;
+
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    var w = Math.max(2, Math.round(cv.clientWidth * DPR));
+    var h = Math.max(2, Math.round(cv.clientHeight * DPR));
+    if(w === W && h === H) return false;
+    W = w; H = h; cv.width = W; cv.height = H;
+    scene = mkTarget(W, H);
+    half  = mkTarget(Math.max(2, W >> 1), Math.max(2, H >> 1));
+    pingH = mkTarget(Math.max(2, W >> 1), Math.max(2, H >> 1));
+    quart = mkTarget(Math.max(2, W >> 2), Math.max(2, H >> 2));
+    pingQ = mkTarget(Math.max(2, W >> 2), Math.max(2, H >> 2));
+    return true;
+  }
+
+  function fsQuad(){ gl.drawArrays(gl.TRIANGLES, 0, 3); }
+
+  function render(){
+    resize();
+    gl.disable(gl.DEPTH_TEST);
+
+    // --- 1. газ и пыль в scene ---
+    gl.bindFramebuffer(gl.FRAMEBUFFER, scene.fb);
+    gl.viewport(0, 0, W, H);
+    gl.disable(gl.BLEND);
+    gl.useProgram(pGas);
+    gl.uniform2f(gl.getUniformLocation(pGas, 'uRes'), W, H);
+    gl.uniform1f(gl.getUniformLocation(pGas, 'uZoom'), zoom);
+    gl.uniform2f(gl.getUniformLocation(pGas, 'uPan'), pan[0], pan[1]);
+    gl.uniform1f(gl.getUniformLocation(pGas, 'uSeed'), seed * 1.7);
+    gl.uniform1i(gl.getUniformLocation(pGas, 'uN'), terr.length);
+    gl.uniform1i(gl.getUniformLocation(pGas, 'uGas'), st.gas ? 1 : 0);
+    gl.uniform1i(gl.getUniformLocation(pGas, 'uDust'), st.dust ? 1 : 0);
+    var arr = new Float32Array(26 * 4);
+    for(var i = 0; i < terr.length && i < 26; i++){
+      arr[i*4] = terr[i].x; arr[i*4+1] = terr[i].y;
+      arr[i*4+2] = terr[i].r; arr[i*4+3] = terr[i].t;
+    }
+    gl.uniform4fv(gl.getUniformLocation(pGas, 'uT'), arr);
+    fsQuad();
+
+    // --- 2. звёзды поверх, аддитивно ---
+    if(st.stars){
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE);
+      gl.useProgram(pStar);
+      gl.uniform2f(gl.getUniformLocation(pStar, 'uRes'), W, H);
+      gl.uniform1f(gl.getUniformLocation(pStar, 'uZoom'), zoom);
+      gl.uniform2f(gl.getUniformLocation(pStar, 'uPan'), pan[0], pan[1]);
+      gl.uniform1f(gl.getUniformLocation(pStar, 'uDpr'), DPR);
+      gl.uniform1f(gl.getUniformLocation(pStar, 'uSeed'), seed * 1.7);
+      gl.uniform1i(gl.getUniformLocation(pStar, 'uDust'), st.dust ? 1 : 0);
+      gl.bindVertexArray(vao);
+      gl.drawArrays(gl.POINTS, 0, stars.n);
+      gl.bindVertexArray(null);
+      gl.disable(gl.BLEND);
+    }
+
+    // --- 3. свечение ---
+    if(st.bloom){
+      gl.useProgram(pBright);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, half.fb);
+      gl.viewport(0, 0, half.w, half.h);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, scene.tex);
+      gl.uniform1i(gl.getUniformLocation(pBright, 'uTex'), 0);
+      gl.uniform2f(gl.getUniformLocation(pBright, 'uRes'), half.w, half.h);
+      fsQuad();
+
+      gl.useProgram(pBlur);
+      function blur(src, dst, dx, dy){
+        gl.bindFramebuffer(gl.FRAMEBUFFER, dst.fb);
+        gl.viewport(0, 0, dst.w, dst.h);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, src.tex);
+        gl.uniform1i(gl.getUniformLocation(pBlur, 'uTex'), 0);
+        gl.uniform2f(gl.getUniformLocation(pBlur, 'uRes'), dst.w, dst.h);
+        gl.uniform2f(gl.getUniformLocation(pBlur, 'uDir'), dx, dy);
+        fsQuad();
+      }
+      blur(half, pingH, 1.4, 0); blur(pingH, half, 0, 1.4);
+      blur(half, pingH, 2.6, 0); blur(pingH, half, 0, 2.6);
+      // широкая составляющая на четверти разрешения
+      blur(half, quart, 2.0, 0); blur(quart, pingQ, 0, 2.0);
+      blur(pingQ, quart, 3.4, 0); blur(quart, pingQ, 0, 3.4);
+    }
+
+    // --- 4. композит на экран ---
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, W, H);
+    gl.useProgram(pComp);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, scene.tex);
+    gl.uniform1i(gl.getUniformLocation(pComp, 'uScene'), 0);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, (st.bloom ? half : scene).tex);
+    gl.uniform1i(gl.getUniformLocation(pComp, 'uBloomA'), 1);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, (st.bloom ? pingQ : scene).tex);
+    gl.uniform1i(gl.getUniformLocation(pComp, 'uBloomB'), 2);
+    gl.uniform2f(gl.getUniformLocation(pComp, 'uRes'), W, H);
+    gl.uniform1i(gl.getUniformLocation(pComp, 'uBloom'), st.bloom ? 1 : 0);
+    gl.uniform1i(gl.getUniformLocation(pComp, 'uOptics'), st.optics ? 1 : 0);
+    gl.uniform1f(gl.getUniformLocation(pComp, 'uSeed'), seed);
+    fsQuad();
+
+    placeTags();
+  }
+
+  /* ================= управление ================= */
+  function bindToggle(id, key){
+    var b = document.getElementById(id);
+    b.addEventListener('click', function(){
+      st[key] = !st[key];
+      b.setAttribute('aria-pressed', st[key] ? 'true' : 'false');
+      render();
+    });
+  }
+  bindToggle('t-gas','gas'); bindToggle('t-dust','dust'); bindToggle('t-stars','stars');
+  bindToggle('t-bloom','bloom'); bindToggle('t-optics','optics'); bindToggle('t-labels','labels');
+
+  // точка, к которой тянется масштабирование: по умолчанию — ядро классики,
+  // иначе то место, где последний раз был курсор
+  var anchor = [-0.42, 0.01];
+  function worldAt(clientX, clientY){
+    var r = cv.getBoundingClientRect();
+    var sx = ((clientX - r.left) - r.width / 2) / r.height;
+    var sy = (r.height / 2 - (clientY - r.top)) / r.height;
+    return [pan[0] + sx / zoom, pan[1] + sy / zoom];
+  }
+
+  var zr = document.getElementById('zoom'), zv = document.getElementById('zoomv');
+  zr.addEventListener('input', function(){
+    zoom = zr.value / 100;
+    // при увеличении плавно наводимся на точку интереса, а не в пустоту между облаками
+    var k = Math.min(1, Math.max(0, zoom - 1));
+    pan[0] = anchor[0] * k; pan[1] = anchor[1] * k;
+    zv.textContent = zoom.toFixed(1) + '×';
+    render();
+  });
+
+  document.getElementById('reseed').addEventListener('click', function(){
+    seed = 1 + Math.floor(Math.random() * 9999);
+    build(); render();
+  });
+  document.getElementById('reset').addEventListener('click', function(){
+    zoom = 1; pan = [0,0]; zr.value = 100; zv.textContent = '1.0×';
+    render();
+  });
+
+  cv.addEventListener('wheel', function(e){
+    e.preventDefault();
+    var w = worldAt(e.clientX, e.clientY);
+    var k = Math.exp(-e.deltaY * 0.0016);
+    var nz = Math.min(9, Math.max(1, zoom * k));
+    // держим точку под курсором на месте
+    var sx = (w[0] - pan[0]) * zoom, sy = (w[1] - pan[1]) * zoom;
+    pan[0] = w[0] - sx / nz; pan[1] = w[1] - sy / nz;
+    zoom = nz; anchor = w;
+    zr.value = Math.round(zoom * 100);
+    zv.textContent = zoom.toFixed(1) + '×';
+    render();
+  }, {passive:false});
+
+  var drag = false, lx = 0, ly = 0;
+  cv.addEventListener('pointerdown', function(e){
+    drag = true; lx = e.clientX; ly = e.clientY;
+    cv.classList.add('dragging'); cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove', function(e){
+    if(!drag){ anchor = worldAt(e.clientX, e.clientY); return; }
+    var h = cv.clientHeight;
+    pan[0] -= (e.clientX - lx) / (h * zoom);
+    pan[1] += (e.clientY - ly) / (h * zoom);
+    lx = e.clientX; ly = e.clientY;
+    render();
+  });
+  function endDrag(){ drag = false; cv.classList.remove('dragging'); }
+  cv.addEventListener('pointerup', endDrag);
+  cv.addEventListener('pointercancel', endDrag);
+
+  if(window.ResizeObserver){
+    var ro = new ResizeObserver(function(){ render(); });
+    ro.observe(cv);
+  }
+  window.addEventListener('resize', render);
+
+  build();
+  render();
+})();
+</script>
