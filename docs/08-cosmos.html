@@ -7,7 +7,7 @@
 <style>
   :root{
     --bg:#04060d; --ink:#e8ecf7; --dim:#8b93ad; --line:rgba(140,160,220,.18);
-    --panel:rgba(8,12,24,.76); --acc:#9a8bff;
+    --panel:rgba(7,10,20,.82); --acc:#9a8bff;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   }
@@ -18,7 +18,7 @@
   #ui{pointer-events:none;}
   .panel{position:absolute;background:var(--panel);border:1px solid var(--line);
     border-radius:11px;padding:11px 13px;font-family:var(--mono);font-size:11.5px;
-    line-height:1.55;color:var(--dim);backdrop-filter:blur(8px);}
+    line-height:1.55;color:var(--dim);backdrop-filter:blur(9px);}
   #hud{left:14px;top:14px;min-width:224px;pointer-events:none;}
   #hud b{color:var(--ink);font-weight:600;}
   #crumb{color:var(--ink);font-size:12.5px;margin-bottom:7px;}
@@ -93,7 +93,6 @@ function hsl(h,s,l){ function f(n){ var k=(n+h*12)%12, a=s*Math.min(l,1-l);
 function hash(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); }
   return ((h>>>0)%100000)/100000; }
 
-/* порода — по характеру жанра */
 var KIND={ 'Средневековье':0,'Ренессанс':0,'Барокко':0,'Классицизм':1,'Романтизм':2,
  'Поздний романтизм':2,'Импрессионизм':3,'Модернизм XX века':8,'Авангард XX века':4,
  'Минимализм':5,'Современная академическая музыка':7,'Классический кроссовер':9,
@@ -109,7 +108,6 @@ var POPHUE={ 'Рок':0.015,'Британский рок':0.98,'Поп':0.92,'Р
  'Инструментальная музыка':0.47,'Диско':0.86,'Сезонная музыка':0.35,'Регги':0.28,
  'Латиноамериканская / мировая музыка':0.06,'Вокальная музыка':0.70,
  'Корейская инди-музыка':0.90,'Трибьюты / каверы':0.66,'Жанр не найден':0.55 };
-
 function galHue(g){
   if(g[1]===0){ var y=g[2]||1900, t=Math.max(0,Math.min(1,(y-1100)/900));
     return 0.615+0.215*t; }
@@ -117,13 +115,11 @@ function galHue(g){
 }
 function galKind(g){ var k=KIND[g[0]]; return k===undefined?9:k; }
 
-/* ================================================================== раскладка */
-function phyl(i,n){ var a=i*2.39996, r=Math.sqrt((i+0.5)/n);
-  return [Math.cos(a)*r, Math.sin(a)*r]; }
+/* ================================================================== раскладка
+   Правило: структура, а не клякса. Классика — дуга времени, популярная —
+   трёхрукавная спираль. Галактика — спиральный диск, рукав = группа
+   направлений. Система — концентрические орбиты, кольцо за кольцом по годам. */
 
-/* дети должны заполнять родителя: иначе на глубине кадр пустеет там,
-   где реальных записей мало. Масштабируем поддерево целиком — и места,
-   и радиусы, — так что плотность одинакова на любой высоте. */
 function fit(it, target){
   var mx=0,i,a;
   for(i=0;i<it.length;i++){ a=it[i];
@@ -132,41 +128,76 @@ function fit(it, target){
   var k=target/mx;
   for(i=0;i<it.length;i++){ it[i].x*=k; it[i].y*=k; it[i].r*=k; }
 }
-function relax(it, cx, cy, R, iters, pull){
+function relax(it, R, iters, pull){
   for(var t=0;t<iters;t++){
     for(var i=0;i<it.length;i++){
       var a=it[i];
       for(var j=i+1;j<it.length;j++){
         var b=it[j], dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1e-6;
-        var need=(a.r+b.r)*1.14;
+        var need=(a.r+b.r)*1.16;
         if(d<need){ var f=(need-d)/d*0.5; a.x-=dx*f; a.y-=dy*f; b.x+=dx*f; b.y+=dy*f; }
       }
       if(pull>0){ a.x+=(a.tx-a.x)*pull; a.y+=(a.ty-a.y)*pull; }
       if(a.lx!==undefined) a.x+=(a.lx-a.x)*0.42;
-      var ddx=a.x-cx, ddy=a.y-cy, dd=Math.sqrt(ddx*ddx+ddy*ddy), lim=R-a.r;
-      if(dd>lim&&dd>0){ var s=lim/dd; a.x=cx+ddx*s; a.y=cy+ddy*s; }
+      var dd=Math.sqrt(a.x*a.x+a.y*a.y), lim=R-a.r;
+      if(dd>lim&&dd>0){ var s=lim/dd; a.x*=s; a.y*=s; }
     }
   }
 }
+function spiral(items, arms, turns, flat){
+  var byArm={}, i;
+  for(i=0;i<items.length;i++){ var a=items[i].arm%arms;
+    (byArm[a]=byArm[a]||[]).push(items[i]); }
+  for(var k=0;k<arms;k++){
+    var L=byArm[k]||[], m=L.length;
+    for(i=0;i<m;i++){
+      var t=(i+0.65)/(m+0.35);
+      var th=t*turns*6.2832 + k*6.2832/arms;
+      var rr=0.15+0.79*Math.pow(t,0.60);
+      L[i].x=Math.cos(th)*rr; L[i].y=Math.sin(th)*rr*flat;
+      L[i].tx=L[i].x; L[i].ty=L[i].y;
+    }
+  }
+}
+function orbits(items){
+  var n=items.length;
+  if(n===1){ items[0].x=0; items[0].y=0; items[0].ring=0; return [0.55]; }
+  var rings=Math.max(1,Math.round(Math.sqrt(n/1.7))), cap=[], tot=0, r;
+  for(r=0;r<rings;r++){ cap[r]=r+1.6; tot+=cap[r]; }
+  var idx=0, radii=[];
+  for(r=0;r<rings;r++){
+    var cnt=(r===rings-1)?(n-idx):Math.max(1,Math.round(n*cap[r]/tot));
+    if(cnt<1) cnt=1; if(idx+cnt>n) cnt=n-idx;
+    var rad=0.20+0.74*((r+1)/rings), ph=r*1.03;
+    radii.push(rad);
+    for(var i=0;i<cnt;i++){
+      var a=ph+i*6.2832/cnt, it=items[idx++];
+      it.x=Math.cos(a)*rad; it.y=Math.sin(a)*rad*0.90; it.ring=r;
+      var arc=6.2832*rad/Math.max(cnt,2)*0.42, gap=0.74/rings*0.42;
+      it.r=Math.min(it.r, arc, gap);
+    }
+    if(idx>=n) break;
+  }
+  return radii;
+}
 
-var BUILD0=performance.now();
 var UID=1;
 function node(o){ o.id=UID++; o.seed=(o.id*0.6180339887)%1; return o; }
+var BUILD0=performance.now();
 
-/* корень */
-var root=node({name:'Музыка',level:0,x:0,y:0,rad:1,col:[.62,.70,1],kind:1,n:SUP[0][1]+SUP[1][1],children:[]});
+var root=node({name:'Музыка',level:0,x:0,y:0,rad:1,col:[.62,.70,1],kind:1,
+  n:SUP[0][1]+SUP[1][1],children:[]});
 
-/* сверхскопления */
 var supN=[], maxSup=Math.max(SUP[0][1],SUP[1][1]);
 var supPos=[[-0.505,0.035],[0.545,-0.045]];
 for(var i=0;i<2;i++){
   var rr=0.455*Math.pow(SUP[i][1]/maxSup,0.30);
   supN.push(node({name:SUP[i][0],level:1,x:supPos[i][0],y:supPos[i][1],rad:rr,
-    col:i===0?hsl(0.66,0.50,0.70):hsl(0.03,0.55,0.68),kind:1,n:SUP[i][1],children:[],parent:root}));
+    col:i===0?hsl(0.66,0.46,0.72):hsl(0.03,0.50,0.70),kind:1,n:SUP[i][1],
+    children:[],parent:root}));
 }
 root.children=supN;
 
-/* галактики */
 var galN=[], bySup=[[],[]];
 GAL.forEach(function(g,gi){ bySup[g[1]].push(gi); });
 for(var s=0;s<2;s++){
@@ -177,88 +208,81 @@ for(var s=0;s<2;s++){
   var yi={}; withYear.forEach(function(gi,k){ yi[gi]=k; });
   var bySize=list.slice().sort(function(a,b){ return GAL[b][3]-GAL[a][3]; });
   bySize.forEach(function(gi,k){
-    var g=GAL[gi], rr=0.30*Math.pow(g[3]/mx,0.40), p;
-    if(s===0&&yi[gi]!==undefined&&withYear.length>1){
-      var t=yi[gi]/(withYear.length-1);
-      var yn=(g[2]-1100)/890;
-      var xx=-0.86+1.72*(0.62*t+0.38*Math.max(0,Math.min(1,yn)));
-      p=[xx, 0.30*Math.sin(xx*1.75)+(hash(g[0])-0.5)*0.34];
-      items.push({gi:gi,x:p[0],y:p[1],tx:p[0],ty:p[1],r:rr,lx:xx});
-    } else {
-      p=phyl(k,list.length); p=[p[0]*0.80,p[1]*0.80];
-      items.push({gi:gi,x:p[0],y:p[1],tx:p[0],ty:p[1],r:rr});
-    }
+    var g=GAL[gi], rr=0.30*Math.pow(g[3]/mx,0.40);
+    items.push({gi:gi,r:rr,arm:k%3,x:0,y:0,tx:0,ty:0});
   });
-  if(items.length===1){items[0].x=0;items[0].y=0;}
-  relax(items,0,0,0.95,140,0.03); fit(items,0.93);
+  if(s===0){
+    items.forEach(function(a,k){
+      var q=yi[a.gi];
+      var t = (q!==undefined&&withYear.length>1) ? q/(withYear.length-1)
+            : (k%2?1.05:-0.05);
+      var xx=-0.80+1.60*t;
+      a.x=xx; a.y=0.34*Math.sin(xx*1.85)+(hash(GAL[a.gi][0])-0.5)*0.20;
+      a.tx=a.x; a.ty=a.y; a.lx=xx;
+    });
+  } else {
+    spiral(items,3,0.72,0.86);
+  }
+  relax(items,0.95,120,0.05); fit(items,0.93);
   items.forEach(function(a){
     var g=GAL[a.gi], hue=galHue(g);
-    galN[a.gi]=node({name:g[0],level:2,x:P.x+a.x*P.rad,y:P.y+a.y*P.rad,rad:P.rad*a.r,
-      hue:hue,col:hsl(hue,g[1]===0?0.62:0.70,0.63),kind:galKind(g),n:g[3],
+    galN[a.gi]=node({name:g[0],level:2,x:P.x+a.x*P.rad,y:P.y+a.y*P.rad,rad:P.rad*a.r*0.86,
+      hue:hue,col:hsl(hue,g[1]===0?0.60:0.66,0.64),kind:galKind(g),n:g[3],
       year:g[2],children:[],parent:P,sup:s});
   });
   P.children=list.map(function(gi){ return galN[gi]; });
 }
 
-/* системы: композиторы и исполнители, сгруппированные по направлению */
 var sysN=[], byGal={};
 SYS.forEach(function(y,si){ (byGal[y[1]]=byGal[y[1]]||[]).push(si); });
 Object.keys(byGal).forEach(function(gk){
-  var list=byGal[gk], P=galN[+gk], mx=0, subs={}, subOrd=[];
+  var list=byGal[gk], P=galN[+gk], mx=0, subs={}, nsub=0;
   list.forEach(function(si){ mx=Math.max(mx,SYS[si][3]);
-    var b=SYS[si][2]; if(subs[b]===undefined){ subs[b]=subOrd.length; subOrd.push(b); } });
-  var cnt={}; list.forEach(function(si){ var b=subs[SYS[si][2]]; cnt[b]=(cnt[b]||0)+1; });
-  var seen={}, items=[];
-  list.slice().sort(function(a,b){ return SYS[b][3]-SYS[a][3]; }).forEach(function(si){
-    var b=subs[SYS[si][2]], c=phyl(b,Math.max(subOrd.length,1));
-    var k=seen[b]=(seen[b]||0); seen[b]++;
-    var m=phyl(k,Math.max(cnt[b],1)), spread=0.30/Math.sqrt(Math.max(subOrd.length,1));
-    var rr=0.30*Math.pow(SYS[si][3]/mx,0.36);
-    var x=c[0]*0.58+m[0]*spread, y=c[1]*0.58+m[1]*spread;
-    items.push({si:si,x:x,y:y,tx:x,ty:y,r:rr});
-  });
-  if(items.length===1){items[0].x=0;items[0].y=0;}
-  relax(items,0,0,0.94,list.length>240?30:(list.length>90?70:130),0.05); fit(items,0.93);
+    var b=SYS[si][2]; if(subs[b]===undefined) subs[b]=nsub++; });
+  var arms=list.length<7?1:(nsub>=3?3:2);
+  var items=list.slice().sort(function(a,b){ return SYS[b][3]-SYS[a][3]; })
+    .map(function(si){
+      return {si:si,r:0.30*Math.pow(SYS[si][3]/mx,0.36),
+              arm:arms===1?0:subs[SYS[si][2]]%arms,x:0,y:0,tx:0,ty:0}; });
+  if(arms===1) orbits(items); else spiral(items,arms,0.80,0.88);
+  relax(items,0.94,list.length>240?24:70,0.10); fit(items,0.93);
   items.forEach(function(a){
-    var y=SYS[a.si], hue=(P.hue+(hash(y[0])-0.5)*0.055+1)%1;
-    sysN[a.si]=node({name:y[0],level:3,x:P.x+a.x*P.rad,y:P.y+a.y*P.rad,rad:P.rad*a.r,
-      hue:hue,col:hsl(hue,0.60,0.67),kind:(P.kind+(hash(y[0])<0.26?1:0))%10,
+    var y=SYS[a.si], hue=(P.hue+(hash(y[0])-0.5)*0.05+1)%1;
+    sysN[a.si]=node({name:y[0],level:3,x:P.x+a.x*P.rad,y:P.y+a.y*P.rad,rad:P.rad*a.r*0.70,
+      hue:hue,col:hsl(hue,0.58,0.68),kind:(P.kind+(hash(y[0])<0.26?1:0))%10,
       n:y[3],sub:SUB[y[2]],children:[],parent:P});
   });
   P.children=list.map(function(si){ return sysN[si]; });
 });
 
-/* треки */
 var trkN=[], bySys={};
 TRK.forEach(function(t,ti){ (bySys[t[1]]=bySys[t[1]]||[]).push(ti); });
 Object.keys(bySys).forEach(function(sk){
   var list=bySys[sk], P=sysN[+sk];
   list.sort(function(a,b){ return (TRK[a][2]||0)-(TRK[b][2]||0); });
-  var n=list.length, items=[];
-  list.forEach(function(ti,k){
-    var t=TRK[ti], p=n===1?[0,0]:phyl(k,n), top=t[3]>0;
-    var rr=Math.min(0.30, 0.86/Math.sqrt(n+1))*(top?1.28:1.0);
-    items.push({ti:ti,top:top,x:p[0]*0.84,y:p[1]*0.84,r:rr});
-  });
+  var n=list.length;
+  var items=list.map(function(ti){
+    return {ti:ti,top:TRK[ti][3]>0,r:Math.min(0.24,0.90/Math.sqrt(n+1)),x:0,y:0}; });
+  var radii=orbits(items);
+  items.forEach(function(a){ if(a.top) a.r*=1.22; });
   fit(items,0.93);
+  P.rings=radii.map(function(r){ return r*0.93; });
   P.children=items.map(function(a){
     var t=TRK[a.ti], hue=P.hue;
     return trkN[a.ti]=node({name:t[0],level:4,
-      x:P.x+a.x*P.rad, y:P.y+a.y*P.rad, rad:P.rad*a.r,
-      hue:hue,col:hsl(hue,a.top?0.46:0.26,a.top?0.84:0.70),kind:1,n:1,
+      x:P.x+a.x*P.rad, y:P.y+a.y*P.rad, rad:P.rad*a.r*0.80,
+      hue:hue,col:hsl(hue,a.top?0.42:0.20,a.top?0.86:0.74),kind:1,n:1,
       year:t[2],rank:t[3],children:[],parent:P});
   });
 });
 
-/* нити: классика — по времени, популярная — по общим исполнителям */
-var LINKS=[];
+var LINKS=[], BRIDGE;
 (function(){
   var cl=bySup[0].filter(function(gi){ return GAL[gi][2]>0; })
                  .sort(function(a,b){ return GAL[a][2]-GAL[b][2]; });
   for(var i=0;i+1<cl.length;i++) LINKS.push([galN[cl[i]],galN[cl[i+1]],2]);
   var byName={};
-  SYS.forEach(function(y){ var g=y[1];
-    (byName[y[0]]=byName[y[0]]||{})[g]=(byName[y[0]][g]||0)+1; });
+  SYS.forEach(function(y){ (byName[y[0]]=byName[y[0]]||{})[y[1]]=1; });
   var pair={};
   Object.keys(byName).forEach(function(nm){
     var gs=Object.keys(byName[nm]); if(gs.length<2) return;
@@ -270,11 +294,11 @@ var LINKS=[];
     if(!A||!B||A.parent!==B.parent) return;
     LINKS.push([A,B,Math.min(pair[k],6)]);
   });
-  LINKS.forEach(function(L){ var m=hash(L[0].name+L[1].name);
-    L[3]=(m-0.5)*0.26; L[4]=(hash(L[1].name)-0.5)*0.26; });
+  LINKS.forEach(function(L){ L[3]=(hash(L[0].name+L[1].name)-0.5)*0.24;
+    L[4]=(hash(L[1].name)-0.5)*0.24; });
   BRIDGE=[supN[0],supN[1]];
 })();
-var BRIDGE; var BUILDMS=performance.now()-BUILD0;
+var BUILDMS=performance.now()-BUILD0;
 
 /* ================================================================== шейдеры */
 function sh(t,src){ var s=gl.createShader(t); gl.shaderSource(s,src); gl.compileShader(s);
@@ -283,37 +307,40 @@ function pr(v,f){ var p=gl.createProgram(); gl.attachShader(p,sh(gl.VERTEX_SHADE
   gl.attachShader(p,sh(gl.FRAGMENT_SHADER,f)); gl.linkProgram(p);
   if(!gl.getProgramParameter(p,gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(p)); return p; }
 var H1='#version 300 es\nprecision highp float;\n';
+var FS3='out vec2 vP; const vec2 q[3]=vec2[3](vec2(-1,-1),vec2(3,-1),vec2(-1,3));\
+void main(){ vP=q[gl_VertexID]; gl_Position=vec4(q[gl_VertexID],0,1);} ';
 
-var pWeb=pr(H1+'out vec2 vP; const vec2 q[3]=vec2[3](vec2(-1,-1),vec2(3,-1),vec2(-1,3));\
-void main(){ vP=q[gl_VertexID]; gl_Position=vec4(q[gl_VertexID],0,1);} ',
+var pWeb=pr(H1+FS3,
 H1+'in vec2 vP; out vec4 o; uniform vec2 uRes; uniform vec2 uView; uniform float uZ;\
 vec2 h2(vec2 p){p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));return fract(sin(p)*43758.545);}\
 float h1(vec2 p){return fract(sin(dot(p,vec2(41.7,289.3)))*43758.545);}\
 float fil(vec2 p){ vec2 i=floor(p),f=fract(p); float d1=8.,d2=8.;\
  for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){ vec2 g=vec2(float(x),float(y));\
    float d=length(g+h2(i+g)-f); if(d<d1){d2=d1;d1=d;} else if(d<d2)d2=d; }\
- return smoothstep(0.17,0.0,d2-d1); }\
+ return smoothstep(0.15,0.0,d2-d1); }\
 void main(){ vec2 sp=(vP*0.5+0.5)*uRes; vec2 w=uView+(sp-uRes*0.5)/uZ;\
  float lz=log2(max(uZ,1.0)/300.0); float base=6.0*pow(2.0,floor(max(lz,0.0)));\
  float fr=fract(max(lz,0.0)); float v=0.0;\
  v+=fil(w*base)*(1.0-fr*0.55);\
- v+=fil(w*base*2.31+13.7)*0.62;\
- v+=fil(w*base*5.13+71.3)*0.34*fr;\
- float gr=0.45+0.55*step(0.42,h1(floor(sp*0.85)+floor(w*base*40.0)));\
- v*=gr; v=pow(clamp(v,0.0,1.4),1.7)*0.15;\
- vec3 c=mix(vec3(0.30,0.34,0.72),vec3(0.62,0.48,0.92),clamp(v*3.0,0.,1.));\
+ v+=fil(w*base*2.31+13.7)*0.55;\
+ v+=fil(w*base*5.13+71.3)*0.30*fr;\
+ float gr=0.40+0.60*step(0.46,h1(floor(sp*0.85)+floor(w*base*40.0)));\
+ v*=gr; v=pow(clamp(v,0.0,1.4),1.9)*0.085;\
+ vec3 c=mix(vec3(0.26,0.30,0.66),vec3(0.56,0.44,0.88),clamp(v*4.0,0.,1.));\
  o=vec4(c*v,1.0); }');
 
 var pDot=pr(H1+'layout(location=0) in vec2 aQ; layout(location=1) in vec2 aPos;\
 layout(location=2) in float aR; layout(location=3) in vec3 aC; layout(location=4) in float aA;\
 layout(location=5) in float aK; uniform vec2 uRes; out vec2 vQ; out vec3 vC; out float vA; out float vK;\
-void main(){ vQ=aQ; vC=aC; vA=aA; vK=aK; vec2 p=aPos+aQ*aR*3.1;\
+void main(){ vQ=aQ; vC=aC; vA=aA; vK=aK; vec2 p=aPos+aQ*aR*2.05;\
  gl_Position=vec4(p/uRes*2.0-1.0,0,1); gl_Position.y=-gl_Position.y; }',
 H1+'in vec2 vQ; in vec3 vC; in float vA; in float vK; out vec4 o;\
-void main(){ float d=dot(vQ,vQ)*9.61; if(d>9.0) discard;\
- float halo=exp(-d*0.85); float core=exp(-d*(14.0+vK*40.0));\
- float v=halo*(0.55-vK*0.28)+core*(1.05+vK*0.9);\
- o=vec4(mix(vC,vec3(1.0),core*0.75)*v*vA,1.0); }');
+void main(){ float r2=dot(vQ,vQ)*4.2; if(r2>4.2) discard;\
+ float halo=exp(-r2*(1.25+vK*1.4))*0.085;\
+ float body=smoothstep(1.06,0.86,r2);\
+ float core=exp(-r2*(5.5+vK*9.0));\
+ float v=halo+body*0.13+core*(0.80+vK*0.35);\
+ o=vec4(vC*v*vA,1.0); }');
 
 var pLnk=pr(H1+'layout(location=0) in vec2 aP; layout(location=1) in float aE;\
 layout(location=2) in vec3 aC; layout(location=3) in float aA; uniform vec2 uRes;\
@@ -372,29 +399,40 @@ float map(vec3 p){ float d;\
    d=smin(d,sdHex(rotX(0.5)*rotY(1.1)*(p-vec3(0.18,0.0,0.10)),vec2(0.14,0.56)),0.05); }\
  return d; }\
 void main(){ vec2 uv=vUv*1.42;\
- mat3 M=rotY(uT*0.13+uSeed*6.3)*rotX(0.34+0.13*sin(uT*0.19+uSeed*5.0));\
+ mat3 M=rotY(uT*0.11+uSeed*6.3)*rotX(0.34+0.11*sin(uT*0.17+uSeed*5.0));\
  vec3 ro=vec3(0.0,0.0,3.3), rd=normalize(vec3(uv*0.58,-1.0));\
  float t=0.0; bool hit=false; float d=0.0;\
  for(int i=0;i<56;i++){ vec3 p=M*(ro+rd*t); d=map(p);\
    if(d<0.0022*t+0.0016){hit=true;break;} t+=d*0.93; if(t>5.2)break; }\
- if(!hit){ float g=exp(-dot(uv,uv)*1.9)*0.30*uA; o=vec4(uCol*g,g*0.55); return; }\
+ float g=exp(-dot(uv,uv)*1.6)*0.20*uA;\
+ if(!hit){ o=vec4(uCol*g,1.0); return; }\
  vec3 p=ro+rd*t; vec2 e=vec2(1.0,-1.0)*0.0018;\
  vec3 n=normalize(e.xyy*map(M*(p+e.xyy))+e.yyx*map(M*(p+e.yyx))\
                  +e.yxy*map(M*(p+e.yxy))+e.xxx*map(M*(p+e.xxx)));\
- vec3 L=normalize(vec3(0.55,0.72,0.62));\
- float dif=max(dot(n,L),0.0), rim=pow(1.0-max(dot(n,-rd),0.0),2.6);\
- float spe=pow(max(dot(reflect(-L,n),-rd),0.0),26.0);\
- vec3 c=uCol*(0.16+dif*0.86)+uCol*rim*0.95+vec3(1.0)*spe*0.55;\
- c+=uCol*0.35*pow(max(0.0,1.0-t*0.30),2.0);\
- o=vec4(c*uA,uA); }';
+ vec3 L=normalize(vec3(0.52,0.70,0.64));\
+ float dif=max(dot(n,L),0.0), rim=pow(1.0-max(dot(n,-rd),0.0),2.4);\
+ float spe=pow(max(dot(reflect(-L,n),-rd),0.0),30.0);\
+ vec3 c=uCol*(0.30+dif*0.62)+uCol*rim*0.70+vec3(0.9,0.93,1.0)*spe*0.42;\
+ o=vec4(c*uA*0.90+uCol*g*0.5,1.0); }';
 var pFrm=pr(H1+'layout(location=0) in vec2 aQ; uniform vec2 uRes; uniform vec2 uC; uniform float uR;\
 out vec2 vUv; void main(){ vUv=aQ; vec2 p=uC+aQ*uR*1.35;\
  gl_Position=vec4(p/uRes*2.0-1.0,0,1); gl_Position.y=-gl_Position.y; }', FORM);
 
+/* тон-маппинг: свет копится в HDR-буфере и сжимается по яркости,
+   поэтому наложение сотен свечений даёт цвет, а не белое пятно */
+var pTone=pr(H1+FS3,
+H1+'in vec2 vP; out vec4 o; uniform sampler2D uTex; uniform float uExp;\
+void main(){ vec3 c=texture(uTex,vP*0.5+0.5).rgb*uExp;\
+ float L=dot(c,vec3(0.2126,0.7152,0.0722));\
+ if(L>1e-5){ float Ln=L/(1.0+L); c*=Ln/L;\
+   c=mix(c,vec3(Ln),clamp(L*0.045-0.30,0.0,0.50)); }\
+ c=pow(clamp(c,0.0,1.0),vec3(0.92));\
+ o=vec4(c,1.0); }');
+
 /* ================================================================== буферы */
 var quad=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,quad);
 gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-var MAXD=20000, dArr=new Float32Array(MAXD*8), dN=0;
+var MAXD=24000, dArr=new Float32Array(MAXD*8), dN=0;
 var dBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,dBuf);
 gl.bufferData(gl.ARRAY_BUFFER,dArr.byteLength,gl.DYNAMIC_DRAW);
 var vaoD=gl.createVertexArray(); gl.bindVertexArray(vaoD);
@@ -406,7 +444,7 @@ gl.bindBuffer(gl.ARRAY_BUFFER,dBuf);
   gl.vertexAttribPointer(a[0],a[1],gl.FLOAT,false,32,a[2]);
   gl.vertexAttribDivisor(a[0],1); });
 gl.bindVertexArray(null);
-var MAXL=60000, lArr=new Float32Array(MAXL*7), lN=0;
+var MAXL=90000, lArr=new Float32Array(MAXL*7), lN=0;
 var lBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,lBuf);
 gl.bufferData(gl.ARRAY_BUFFER,lArr.byteLength,gl.DYNAMIC_DRAW);
 var vaoL=gl.createVertexArray(); gl.bindVertexArray(vaoL);
@@ -418,6 +456,20 @@ var vaoQ=gl.createVertexArray(); gl.bindVertexArray(vaoQ);
 gl.bindBuffer(gl.ARRAY_BUFFER,quad); gl.enableVertexAttribArray(0);
 gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0); gl.bindVertexArray(null);
 
+var HDR=!!gl.getExtension('EXT_color_buffer_float'), fbo=null, fboT=null;
+function makeFBO(){
+  if(fboT){ gl.deleteTexture(fboT); gl.deleteFramebuffer(fbo); }
+  fboT=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,fboT);
+  gl.texStorage2D(gl.TEXTURE_2D,1,HDR?gl.RGBA16F:gl.RGBA8,W,H);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  fbo=gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER,fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,fboT,0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+}
+
 function pushDot(x,y,r,c,a,k){ if(dN>=MAXD)return; var o=dN*8;
   dArr[o]=x;dArr[o+1]=y;dArr[o+2]=r;dArr[o+3]=c[0];dArr[o+4]=c[1];dArr[o+5]=c[2];
   dArr[o+6]=a;dArr[o+7]=k; dN++; }
@@ -428,37 +480,62 @@ function pushSeg(x0,y0,x1,y1,wd,c,a){ if(lN+6>MAXL)return;
   for(var i=0;i<6;i++){ lArr[o]=v[i*3];lArr[o+1]=v[i*3+1];lArr[o+2]=v[i*3+2];
     lArr[o+3]=c[0];lArr[o+4]=c[1];lArr[o+5]=c[2];lArr[o+6]=a; o+=7; }
   lN+=6; }
+function pushCircle(cx,cy,rad,segs,wd,c,a,flat){
+  if(rad<3||rad>9000) return;
+  var pv=null;
+  for(var i=0;i<=segs;i++){ var t=i/segs*6.2832;
+    var p=[cx+Math.cos(t)*rad, cy+Math.sin(t)*rad*(flat||1)];
+    if(pv) pushSeg(pv[0],pv[1],p[0],p[1],wd,c,a); pv=p; }
+}
 
 /* ================================================================== камера */
-var GZ0=560, view={x:0.02,y:0.0}, gz=GZ0, GZMIN=300, GZMAX=130000;
+var GZ0=560, view={x:0.02,y:0.0}, gz=GZ0, GZMIN=300, GZMAX=66000, FITTED=0;
 var forms=[], pick=[], labels=[], hover=null, sel=null, fly=null, T0=performance.now();
 var CR=[0.455,0.150,0.105,0.078];
 function smooth(a,b,x){ var t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); }
-function alphaFor(n,R){ var a=smooth(0.75,2.4,R);
-  if(n.level<4) a*=1.0-0.93*smooth(210.0,560.0,R); return a; }
+/* Суммарный свет тела не растёт с его размером: иначе, влетая внутрь,
+   мы заливаем экран одним объектом. Плюс родитель, в котором мы уже
+   находимся, гаснет почти полностью — от него остаётся только контур. */
+function dim(R){ return R<=64?1:Math.pow(64/R,0.58); }
+function alphaFor(n,R){
+  var a=smooth(0.9,3.2,R)*dim(R);
+  if(n.level<4) a*=1.0-0.985*smooth(150.0,700.0,R);
+  return a;
+}
+function formA(R){ return smooth(46,110,R)*(1.0-smooth(190,470,R)); }
 
 var TT=0, stat={n:0,f:0};
 function traverse(n,depth,cnt){
   var R=n.rad*gz;
   var sx=W*0.5+(n.x-view.x)*gz, sy=H*0.5+(n.y-view.y)*gz;
-  var m=R*3.2+40;
+  var m=R*2.2+40;
   if(sx+m<0||sx-m>W||sy+m<0||sy-m>H) return;
   if(n.level>0){
     var a=alphaFor(n,R);
     if(a>0.012){
       cnt.n++; if(cnt.lv) cnt.lv[n.level]++;
       if(!cnt.count){
-        var hi=(hover===n||sel===n);
-        pushDot(sx,sy,Math.max(1.1,R*0.95),n.col,a*(hi?1.9:1.0),n.level>=4?0.85:0.15);
-        if(R>26&&(n.level<=2||R>64)) labels.push([sx,sy+R*1.05+13,n.name,a,n.level]);
+        var hi=(hover===n||sel===n)?1.7:1.0;
+        var bx0=Math.max(0,sx-R), bx1=Math.min(W,sx+R),
+            by0=Math.max(0,sy-R), by1=Math.min(H,sy+R);
+        cnt.light+=a*hi*Math.min(R*R*3.1416,
+          Math.max(0,bx1-bx0)*Math.max(0,by1-by0))*0.55;
+        var fa=(n.level>=2&&n.level<=3)?formA(R):0;
+        pushDot(sx,sy,Math.max(1.0,R*0.95),n.col,a*hi*(1.0-0.72*fa),n.level>=4?0.9:0.2);
+        var lim=n.level<=2?30:(n.level===3?46:54);
+        if(R>lim) labels.push([sx,sy,R,n.name,a,n.level]);
         if(R>6) pick.push([sx,sy,R,n]);
-        var fa=smooth(58,124,R)*(1.0-smooth(200,430,R));
-        if(fa>0.02&&n.level>=2&&n.level<=3){ var q=R*1.4;
-          if(sx+q>0&&sx-q<W&&sy+q>0&&sy-q<H) forms.push([sx,sy,R,n,fa*a]); }
+        if(fa>0.02){ var q=R*1.4;
+          if(sx+q>0&&sx-q<W&&sy+q>0&&sy-q<H) forms.push([sx,sy,R,n,fa*a*hi]); }
+        if(n.level===3&&n.rings&&R>70){
+          var oa=smooth(70,160,R)*(1.0-smooth(900,2200,R))*0.14*a;
+          if(oa>0.004) for(var k=0;k<n.rings.length;k++)
+            pushCircle(sx,sy,n.rings[k]*R,64,1.0,n.col,oa,0.90);
+        }
       }
     }
   }
-  if(R*(CR[n.level]||0)>0.85&&depth<5&&cnt.n<12000){
+  if(R*(CR[n.level]||0)>0.85&&depth<5&&cnt.n<14000){
     var ch=n.children;
     for(var i=0;i<ch.length;i++) traverse(ch[i],depth+1,cnt);
   }
@@ -470,68 +547,83 @@ function drawLinks(){
   for(var i=0;i<LINKS.length;i++){
     var L=LINKS[i], A=L[0], B=L[1];
     var cR=(A.rad+B.rad)*0.5*gz;
-    var a=smooth(1.6,7.0,cR)*(1.0-smooth(150,340,cR))*0.20*(0.6+L[2]*0.22);
-    if(hover&&(hover===A||hover===B)) a*=3.0; else if(hover) a*=0.5;
-    if(a<0.008) continue;
+    var a=smooth(1.8,8.0,cR)*(1.0-smooth(130,330,cR))*0.16*(0.6+L[2]*0.20);
+    if(hover&&(hover===A||hover===B)) a*=3.2; else if(hover) a*=0.5;
+    if(a<0.006) continue;
     var cx=(A.x+B.x)*0.5+L[3]*(A.parent?A.parent.rad:0.4),
         cy=(A.y+B.y)*0.5+L[4]*(A.parent?A.parent.rad:0.4);
     var pv=null, N=24;
     for(var s=0;s<=N;s++){
       var t=s/N, w=bez(A.x,A.y,cx,cy,B.x,B.y,t), p=scr(w[0],w[1]);
       if(pv){ var c=[A.col[0]*(1-t)+B.col[0]*t,A.col[1]*(1-t)+B.col[1]*t,A.col[2]*(1-t)+B.col[2]*t];
-        pushSeg(pv[0],pv[1],p[0],p[1],1.5,c,a*(0.45+0.55*Math.sin(t*3.1416))); }
+        pushSeg(pv[0],pv[1],p[0],p[1],1.4,c,a*(0.45+0.55*Math.sin(t*3.1416))); }
       pv=p;
     }
-    var ph=(TT*0.11+i*0.31)%1.0;
+    var ph=(TT*0.10+i*0.31)%1.0;
     for(var k=0;k<2;k++){
       var tp=(ph+k*0.5)%1.0, w2=bez(A.x,A.y,cx,cy,B.x,B.y,tp), p2=scr(w2[0],w2[1]);
-      var cc=[(A.col[0]+B.col[0])*0.5+0.25,(A.col[1]+B.col[1])*0.5+0.25,(A.col[2]+B.col[2])*0.5+0.3];
-      pushDot(p2[0],p2[1],3.2,cc,a*2.6*Math.sin(tp*3.1416),0.9);
+      pushDot(p2[0],p2[1],2.6,[0.80,0.80,0.95],a*3.0*Math.sin(tp*3.1416),0.95);
     }
   }
   var A=BRIDGE[0], B=BRIDGE[1], bR=A.rad*gz;
-  var ba=(1.0-smooth(240,560,bR))*0.34; if(ba<0.01) return;
+  var ba=(1.0-smooth(220,520,bR))*0.24; if(ba<0.008) return;
   var bx=(A.x+B.x)*0.5, by=(A.y+B.y)*0.5+0.34, pv2=null;
   for(var s2=0;s2<=30;s2++){ var t2=s2/30, w3=bez(A.x,A.y,bx,by,B.x,B.y,t2), p3=scr(w3[0],w3[1]);
-    if(pv2) pushSeg(pv2[0],pv2[1],p3[0],p3[1],1.7,[0.62,0.58,0.95],ba*(0.4+0.6*Math.sin(t2*3.1416)));
+    if(pv2) pushSeg(pv2[0],pv2[1],p3[0],p3[1],1.5,[0.56,0.54,0.90],ba*(0.4+0.6*Math.sin(t2*3.1416)));
     pv2=p3; }
   var tp2=(TT*0.07)%1.0, w4=bez(A.x,A.y,bx,by,B.x,B.y,tp2), p4=scr(w4[0],w4[1]);
-  pushDot(p4[0],p4[1],4.0,[0.85,0.8,1.0],ba*2.2,0.9);
+  pushDot(p4[0],p4[1],3.2,[0.80,0.78,0.98],ba*2.4,0.95);
+}
+/* тонкая граница того, внутри чего мы сейчас — держит ориентацию при переходе */
+function drawBounds(nodes){
+  for(var i=0;i<nodes.length;i++){
+    var n=nodes[i], R=n.rad*gz, p=scr(n.x,n.y);
+    var a=smooth(0.5*Math.min(W,H),1.3*Math.min(W,H),R)*0.11;
+    if(a<0.004) continue;
+    pushCircle(p[0],p[1],R,110,1.0,n.col,a,1);
+  }
 }
 function crumb(){
-  var n=root, path=[], guard=0;
+  var n=root, path=[], nodes=[], guard=0;
   while(guard++<8){
     var ch=n.children; if(!ch||!ch.length) break;
     var best=null;
     for(var i=0;i<ch.length;i++){ var c=ch[i], R=c.rad*gz;
       var dx=(c.x-view.x)*gz, dy=(c.y-view.y)*gz;
       if(R>0.42*Math.min(W,H)&&dx*dx+dy*dy<R*R){ best=c; break; } }
-    if(!best) break; path.push(best.name); n=best;
+    if(!best) break; path.push(best.name); nodes.push(best); n=best;
   }
-  return path;
+  crumb.nodes=nodes; return path;
 }
 
 /* ================================================================== рендер */
-var uW={}, uD={}, uL={}, uF={};
+var uW={}, uD={}, uL={}, uF={}, uT={};
 ['uRes','uView','uZ'].forEach(function(k){uW[k]=gl.getUniformLocation(pWeb,k);});
 uD.uRes=gl.getUniformLocation(pDot,'uRes'); uL.uRes=gl.getUniformLocation(pLnk,'uRes');
 ['uRes','uC','uR','uCol','uSeed','uA','uT','uKind'].forEach(function(k){uF[k]=gl.getUniformLocation(pFrm,k);});
-var fpsA=16.7, areaB=2.2e6;
+uT.uTex=gl.getUniformLocation(pTone,'uTex'); uT.uExp=gl.getUniformLocation(pTone,'uExp');
+var fpsA=16.7, areaB=2.2e6, EXPO=1.0, TARGETL=0.42;
 function resize(){
   var w=Math.max(1,wrap.clientWidth||window.innerWidth||1440);
   var h=Math.max(1,wrap.clientHeight||window.innerHeight||820);
   var nw=Math.round(w*DPR), nh=Math.round(h*DPR);
-  if(nw!==W||nh!==H){ W=nw;H=nh; cv.width=W;cv.height=H; uc.width=W;uc.height=H; }
+  if(nw!==W||nh!==H){ W=nw;H=nh; cv.width=W;cv.height=H; uc.width=W;uc.height=H; makeFBO();
+    if(!FITTED){ FITTED=1; GZ0=Math.min(W/2.15,H/1.30); GZMIN=GZ0*0.62;
+      gz=GZ0; view.x=0.02; view.y=0.0; } }
 }
-function frame(now){
-  resize(); TT=(now-T0)/1000;
-  if(fly){ var t=Math.min(1,(now-fly.t0)/fly.dur), e=t*t*(3-2*t), v=fly.i.at(e);
-    view.x=v[0]; view.y=v[1]; gz=W/Math.max(v[2],1e-9); if(t>=1) fly=null; }
-  gz=Math.max(GZMIN,Math.min(GZMAX,gz));
+function render(now){
+  TT=(now-T0)/1000;
   dN=0; lN=0; forms.length=0; pick.length=0; labels.length=0;
-  var cnt={n:0}; traverse(root,0,cnt); stat.n=cnt.n;
-  drawLinks();
+  var cnt={n:0,light:0}; traverse(root,0,cnt); stat.n=cnt.n;
+  var path=crumb(); drawBounds(crumb.nodes||[]); drawLinks();
 
+  /* адаптация зрения: сколько света в кадре, столько и убираем.
+     Иначе плотная галактика заливает экран, а одинокий трек тонет в черноте. */
+  var est=cnt.light/Math.max(W*H,1);
+  var want=Math.max(0.18,Math.min(8.0,TARGETL/Math.max(est,2e-4)));
+  EXPO+=(want-EXPO)*0.11; stat.e=EXPO; stat.est=est;
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER,fbo);
   gl.viewport(0,0,W,H); gl.disable(gl.DEPTH_TEST);
   gl.useProgram(pWeb); gl.bindVertexArray(vaoQ);
   gl.uniform2f(uW.uRes,W,H); gl.uniform2f(uW.uView,view.x,view.y); gl.uniform1f(uW.uZ,gz);
@@ -545,9 +637,8 @@ function frame(now){
     gl.uniform2f(uD.uRes,W,H); gl.drawArraysInstanced(gl.TRIANGLE_STRIP,0,4,dN); }
   forms.sort(function(a,b){return b[2]-a[2];});
   var used=0, nf=0;
-  for(var q=0;q<forms.length&&nf<48;q++){ var ar=2.7*forms[q][2]; ar*=ar;
+  for(var q=0;q<forms.length&&nf<28;q++){ var ar=2.7*forms[q][2]; ar*=ar;
     if(used+ar>areaB&&nf>0) break; used+=ar; nf++; }
-  gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ONE,gl.ONE);
   gl.useProgram(pFrm); gl.bindVertexArray(vaoQ); gl.uniform2f(uF.uRes,W,H); gl.uniform1f(uF.uT,TT);
   for(var i=0;i<nf;i++){ var f=forms[i];
     gl.uniform2f(uF.uC,f[0],f[1]); gl.uniform1f(uF.uR,f[2]);
@@ -555,19 +646,52 @@ function frame(now){
     gl.uniform1f(uF.uSeed,f[3].seed); gl.uniform1f(uF.uA,Math.min(1,f[4]));
     gl.uniform1i(uF.uKind,f[3].kind|0);
     gl.drawArrays(gl.TRIANGLE_STRIP,0,4); }
-  stat.f=nf; gl.bindVertexArray(null);
+  stat.f=nf;
 
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+  gl.viewport(0,0,W,H); gl.disable(gl.BLEND);
+  gl.useProgram(pTone); gl.bindVertexArray(vaoQ);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,fboT);
+  gl.uniform1i(uT.uTex,0); gl.uniform1f(uT.uExp,EXPO);
+  gl.drawArrays(gl.TRIANGLES,0,3);
+  gl.bindVertexArray(null);
+  drawLabels();
+  return path;
+}
+/* подписи: сначала крупные и верхнеуровневые, пересечения отбрасываются */
+function drawLabels(){
   ux.setTransform(1,0,0,1,0,0); ux.clearRect(0,0,W,H); ux.scale(DPR,DPR);
   ux.textAlign='center'; ux.textBaseline='top';
-  for(var j=0;j<labels.length;j++){ var L=labels[j];
-    ux.font=(L[4]<=1?'600 13px ':(L[4]===2?'600 12px ':'11px '))+'Inter,system-ui,sans-serif';
-    ux.fillStyle='rgba(232,236,247,'+(Math.min(1,L[3])*(L[4]<=2?0.94:0.58)).toFixed(3)+')';
-    ux.fillText(L[2].length>34?L[2].slice(0,33)+'…':L[2],L[0]/DPR,L[1]/DPR); }
-
+  labels.sort(function(a,b){ return a[5]===b[5] ? b[2]-a[2] : a[5]-b[5]; });
+  var placed=[], k=0, VW=W/DPR, VH=H/DPR;
+  for(var j=0;j<labels.length&&k<34;j++){
+    var L=labels[j], lv=L[5];
+    ux.font=(lv<=1?'600 13.5px ':(lv===2?'600 12.5px ':(lv===3?'12px ':'11px ')))+
+      'Inter,system-ui,sans-serif';
+    var txt=L[3].length>32?L[3].slice(0,31)+'…':L[3];
+    var w=ux.measureText(txt).width, h=15;
+    var x=L[0]/DPR, y=(L[1]+L[2]*1.02)/DPR+7;
+    var b=[x-w/2-5,y-2,x+w/2+5,y+h];
+    var ok=(b[2]>0&&b[0]<VW&&b[3]>0&&b[1]<VH);
+    for(var q=0;ok&&q<placed.length;q++){ var o=placed[q];
+      if(b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]) ok=false; }
+    if(!ok) continue;
+    placed.push(b); k++;
+    ux.fillStyle='rgba(6,9,18,0.55)';
+    ux.fillRect(b[0],b[1],b[2]-b[0],b[3]-b[1]);
+    ux.fillStyle='rgba(233,238,250,'+(Math.min(1,L[4])*(lv<=2?0.96:0.74)).toFixed(3)+')';
+    ux.fillText(txt,x,y);
+  }
+}
+function frame(now){
+  resize();
+  if(fly){ var t=Math.min(1,(now-fly.t0)/fly.dur), e=t*t*(3-2*t), v=fly.i.at(e);
+    view.x=v[0]; view.y=v[1]; gz=W/Math.max(v[2],1e-9); if(t>=1) fly=null; }
+  gz=Math.max(GZMIN,Math.min(GZMAX,gz));
+  var path=render(now);
   var dt=now-(frame.last||now); frame.last=now; fpsA=fpsA*0.9+dt*0.1;
   if(fpsA>26) areaB=Math.max(4e5,areaB*0.90); else if(fpsA<17) areaB=Math.min(6e6,areaB*1.05);
-  var p=crumb();
-  document.getElementById('crumb').innerHTML='Музыка'+p.map(function(s){
+  document.getElementById('crumb').innerHTML='Музыка'+path.map(function(s){
     return ' <span>›</span> '+esc(s); }).join('');
   document.getElementById('mz').textContent='×'+fmt(gz/GZ0);
   document.getElementById('mn').textContent=stat.n;
@@ -668,7 +792,7 @@ window.addEventListener('keydown',function(e){
 function flyTo(n){
   var w0=W/gz, w1=Math.max(1e-9,n.rad*(n.level>=4?9:2.9));
   fly={t0:performance.now(),i:interpZoom([view.x,view.y,w0],[n.x,n.y,w1])};
-  fly.dur=Math.max(700,Math.min(2100,Math.abs(fly.i.S)*520));
+  fly.dur=Math.max(800,Math.min(2400,Math.abs(fly.i.S)*620));
 }
 function interpZoom(p0,p1){
   var rho=Math.SQRT2, rho2=2, rho4=4;
@@ -688,13 +812,27 @@ function interpZoom(p0,p1){
 
 /* ============================================================== диагностика */
 window.tree=root;
+window.setTarget=function(v){ TARGETL=v; return TARGETL; };
 window.probe=function(z,tx,ty){ var s=[gz,view.x,view.y]; gz=z; view.x=tx; view.y=ty;
   dN=0;lN=0;forms.length=0;labels.length=0;pick.length=0;
   var cnt={n:0,lv:[0,0,0,0,0]}; traverse(root,0,cnt);
-  var o={n:cnt.n,lv:cnt.lv.join('/'),forms:forms.length,labels:labels.length,
-    top:forms.slice().sort(function(a,b){return b[2]-a[2];}).slice(0,5)
-      .map(function(f){return f[3].name+' k'+f[3].kind+' R'+Math.round(f[2]);})};
+  var o={n:cnt.n,lv:cnt.lv.join('/'),forms:forms.length,labels:labels.length};
   gz=s[0];view.x=s[1];view.y=s[2]; return o; };
+window.shot=function(z,tx,ty){
+  var s=[gz,view.x,view.y];
+  if(z){ gz=Math.max(GZMIN,Math.min(GZMAX,z)); view.x=tx; view.y=ty; }
+  for(var w=0;w<70;w++) render(performance.now());   /* дать экспозиции устояться */
+  var px=new Uint8Array(W*H*4);
+  gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,px);
+  var sum=0,clip=0,bright=0,dark=0,N=W*H,i,r,g,b,L;
+  for(i=0;i<N;i++){ r=px[i*4];g=px[i*4+1];b=px[i*4+2];
+    L=0.2126*r+0.7152*g+0.0722*b; sum+=L;
+    if(r>246&&g>246&&b>246) clip++;
+    if(L>190) bright++; if(L<10) dark++; }
+  gz=s[0];view.x=s[1];view.y=s[2];
+  return {mean:+(sum/N).toFixed(1),clip:+(clip*100/N).toFixed(2),
+    bright:+(bright*100/N).toFixed(2),dark:+(dark*100/N).toFixed(1),
+    obj:stat.n,forms:stat.f,expo:+EXPO.toFixed(2),est:+stat.est.toFixed(4)}; };
 window.audit=function(steps){
   steps=steps||160; var sw=W,sh=H; if(sw<10){W=1440;H=880;}
   var sx=view.x, sy=view.y, sz=gz;
@@ -711,11 +849,12 @@ window.audit=function(steps){
   return {target:t.name,minVisible:minN,maxVisible:maxN,
     sample:res.filter(function(_,i){return i%24===0;})};
 };
-window.stats=function(){ return {buildMs:+BUILDMS.toFixed(0),sup:root.children.length,gal:galN.filter(Boolean).length,
-  sys:sysN.filter(Boolean).length,trk:trkN.filter(Boolean).length,links:LINKS.length,
-  index:INDEX.length}; };
+window.stats=function(){ return {buildMs:+BUILDMS.toFixed(0),hdr:HDR,gz0:+GZ0.toFixed(0),W:W,H:H,
+  sup:root.children.length,gal:galN.filter(Boolean).length,
+  sys:sysN.filter(Boolean).length,trk:trkN.filter(Boolean).length,
+  links:LINKS.length,index:INDEX.length}; };
 window.checkGL=function(){ return {err:gl.getError(),
-  progs:[pWeb,pDot,pLnk,pFrm].map(function(p){return gl.getProgramParameter(p,gl.LINK_STATUS);})}; };
+  progs:[pWeb,pDot,pLnk,pFrm,pTone].map(function(p){return gl.getProgramParameter(p,gl.LINK_STATUS);})}; };
 
 resize(); requestAnimationFrame(frame);
 })();
