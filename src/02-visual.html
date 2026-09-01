@@ -1,4 +1,8 @@
 <title>Визуальный язык Music Cosmos</title>
+<meta name="description" content="Пять приёмов, которые отделяют космос от точек на чёрном: пыль, свет, цвет, оптический брак, форма.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Визуальный язык Music Cosmos">
+<meta property="og:description" content="Пять приёмов, которые отделяют космос от точек на чёрном: пыль, свет, цвет, оптический брак, форма.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,600;1,300&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -42,7 +46,7 @@ a{color:var(--amber)}
 }
 
 /* ---------- живая сцена ---------- */
-.stage{position:relative; margin:0 -24px 0; height:clamp(340px,52vh,540px); overflow:hidden; background:var(--void)}
+.stage{position:relative; margin:0; height:clamp(340px,52vh,540px); overflow:hidden; background:var(--void)}
 .stage canvas{display:block; width:100%; height:100%}
 .stage .fallback{
   position:absolute; inset:0; display:none; place-items:center; text-align:center;
@@ -155,8 +159,20 @@ ol.steps span{color:var(--ink-2); font-size:.92rem}
 footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:.82rem; max-width:70ch}
 
 @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
-@media (max-width:560px){ .wrap{padding:0 16px 60px} .stage{margin:0 -16px} .stage-cap{left:16px} }
+@media (max-width:560px){ .wrap{padding:0 16px 60px} .stage-cap{left:16px} }
 </style>
+
+<style>
+.site-back{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:60;
+  font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;
+  color:#8b93ad;background:rgba(7,10,20,.80);border:1px solid rgba(140,160,220,.22);
+  border-radius:9px;padding:7px 11px;text-decoration:none;backdrop-filter:blur(8px);}
+.site-back:hover{color:#e8ecf7;}
+.site-back:focus-visible{outline:2px solid #9a8bff;outline-offset:2px;}
+@media (max-width:520px){.site-back{bottom:8px;font-size:10px;padding:6px 9px;}}
+</style>
+<a class="site-back" href="index.html">← все прототипы</a>
+
 
 <div class="stage" id="stage">
   <canvas id="sky" aria-label="Демонстрация: газ, пыль и звёзды одним шейдерным проходом"></canvas>

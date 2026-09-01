@@ -3,32 +3,57 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%23070b16%22/%3E%3Ccircle cx=%2211%22 cy=%2215%22 r=%225%22 fill=%22%23f0b45c%22/%3E%3Ccircle cx=%2222%22 cy=%2219%22 r=%223.4%22 fill=%22%23ff7a6b%22/%3E%3Ccircle cx=%2224%22 cy=%229%22 r=%221.7%22 fill=%22%238fd0ff%22/%3E%3C/svg%3E">
 <title>Music Cosmos — живая карта</title>
+<meta name="description" content="Живая карта личной музыкальной библиотеки: 4334 трека, 1287 авторов, 39 жанров и эпох на WebGL2.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Music Cosmos — живая карта">
+<meta property="og:description" content="Живая карта личной музыкальной библиотеки: 4334 трека, 1287 авторов, 39 жанров и эпох на WebGL2.">
 <style>
   :root{
     --bg:#04060d; --ink:#e8ecf7; --dim:#8b93ad; --line:rgba(140,160,220,.18);
-    --panel:rgba(7,10,20,.82); --acc:#9a8bff;
+    --panel:rgba(7,10,20,.86); --acc:#9a8bff;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   }
   *{box-sizing:border-box}
-  html,body{background:var(--bg);color:var(--ink);margin:0;padding:0;font-family:var(--sans);}
-  #wrap{position:relative;width:100%;height:100vh;min-height:620px;overflow:hidden;background:var(--bg);}
+  html,body{background:var(--bg);color:var(--ink);margin:0;padding:0;
+    font-family:var(--sans);overscroll-behavior:none;}
+  #wrap{position:relative;width:100%;height:100vh;height:100dvh;min-height:360px;
+    overflow:hidden;background:var(--bg);}
   #gl,#ui{position:absolute;left:0;top:0;width:100%;height:100%;display:block;}
+  #gl{touch-action:none;outline:none;}
   #ui{pointer-events:none;}
+  :focus-visible{outline:2px solid var(--acc);outline-offset:2px;}
+  #gl:focus-visible{outline:2px solid var(--acc);outline-offset:-3px;}
+
   .panel{position:absolute;background:var(--panel);border:1px solid var(--line);
     border-radius:11px;padding:11px 13px;font-family:var(--mono);font-size:11.5px;
     line-height:1.55;color:var(--dim);backdrop-filter:blur(9px);}
-  #hud{left:14px;top:14px;min-width:224px;pointer-events:none;}
+
+  #hud{left:14px;top:14px;min-width:224px;max-width:min(360px,calc(100vw - 28px));}
   #hud b{color:var(--ink);font-weight:600;}
-  #crumb{color:var(--ink);font-size:12.5px;margin-bottom:7px;}
-  #crumb span{color:var(--dim);}
+  #crumb{color:var(--ink);font-size:12.5px;margin-bottom:7px;
+    display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;}
+  #crumb i{color:var(--dim);font-style:normal;}
+  #crumb button{font:inherit;color:var(--dim);background:none;border:0;padding:1px 3px;
+    border-radius:5px;cursor:pointer;}
+  #crumb button:hover{color:var(--ink);background:rgba(154,139,255,.16);}
+  #crumb button[aria-current]{color:var(--ink);cursor:default;}
+  #crumb button[aria-current]:hover{background:none;}
+  #metrics{display:none;}
+  body.debug #metrics{display:block;}
   #bar{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:9px;position:relative;}
   #barf{position:absolute;left:0;top:0;bottom:0;border-radius:2px;
     background:linear-gradient(90deg,#3d6dff,#9a6bff,#ff7a54);}
+  #home{display:inline-block;margin-top:8px;color:var(--dim);text-decoration:none;font-size:10.5px;}
+  #home:hover{color:var(--ink);}
+
   #keys{left:14px;bottom:14px;pointer-events:none;}
-  #card{right:14px;top:14px;width:288px;font-family:var(--sans);font-size:13px;pointer-events:none;
-        opacity:0;transition:opacity .16s;}
+  .touch-only{display:none;}
+
+  #card{right:14px;top:14px;width:288px;font-family:var(--sans);font-size:13px;
+        pointer-events:none;opacity:0;transition:opacity .16s;}
   #card.on{opacity:1;}
   #card .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
      color:var(--acc);margin-bottom:3px;}
@@ -40,39 +65,91 @@
   #card .row i{font-style:normal;color:var(--dim);flex:none}
   #card .row u{text-decoration:none;color:var(--ink);text-align:right;overflow-wrap:anywhere}
   #card .hint{margin-top:8px;font-family:var(--mono);font-size:10.5px;color:var(--dim)}
-  #find{right:14px;bottom:14px;width:288px;padding:0;overflow:hidden;font-family:var(--sans);}
+
+  /* Результаты растут вверх: поле остаётся там, куда его поставил курсор. */
+  #find{right:14px;bottom:14px;width:288px;padding:0;overflow:hidden;font-family:var(--sans);
+        display:flex;flex-direction:column-reverse;}
   #q{width:100%;border:0;outline:0;background:transparent;color:var(--ink);
-     font-family:var(--sans);font-size:13.5px;padding:11px 13px;}
+     font-family:var(--sans);font-size:16px;padding:11px 13px;}
   #q::placeholder{color:var(--dim)}
-  #res{max-height:232px;overflow-y:auto}
-  #res div{padding:7px 13px;border-top:1px solid rgba(140,160,220,.10);cursor:pointer;font-size:12.5px;
-     color:var(--ink);line-height:1.35}
-  #res div:hover{background:rgba(154,139,255,.14)}
-  #res div s{display:block;text-decoration:none;color:var(--dim);font-family:var(--mono);font-size:10.5px}
+  #q:focus-visible{outline:2px solid var(--acc);outline-offset:-2px;border-radius:10px;}
+  #res{max-height:min(46vh,300px);overflow-y:auto}
+  #res div[role=option]{padding:7px 13px;border-bottom:1px solid rgba(140,160,220,.10);
+     cursor:pointer;font-size:12.5px;color:var(--ink);line-height:1.35}
+  #res div[role=option]:hover,#res div[role=option].sel{background:rgba(154,139,255,.18)}
+  #res div s{display:block;text-decoration:none;color:var(--dim);
+     font-family:var(--mono);font-size:10.5px}
+  #res .none{padding:9px 13px;color:var(--dim);font-family:var(--mono);font-size:11px;
+     border-bottom:1px solid rgba(140,160,220,.10);}
+
+  /* Запасное представление, когда WebGL2 недоступен: библиотека читается всё равно. */
+  #nogl{position:absolute;inset:0;overflow-y:auto;padding:28px 20px 40px;
+    font-family:var(--sans);color:var(--ink);}
+  #nogl .in{max-width:720px;margin:0 auto;}
+  #nogl h1{font-size:22px;margin:0 0 6px;font-weight:600;}
+  #nogl p{color:var(--dim);font-size:14px;line-height:1.6;margin:0 0 22px;}
+  #nogl h2{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);
+    margin:26px 0 10px;font-weight:600;}
+  #nogl ol{margin:0;padding:0;list-style:none;display:grid;gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:11px;overflow:hidden;}
+  #nogl li{background:#080c17;padding:9px 13px;display:flex;justify-content:space-between;
+    gap:14px;font-size:13.5px;}
+  #nogl li span{color:var(--dim);font-family:var(--mono);font-size:11.5px;flex:none;}
+  #nogl a{color:var(--acc);}
+
+  @media (max-width:760px), (pointer:coarse){
+    .touch-only{display:inline;}
+    .mouse-only{display:none;}
+  }
+  @media (max-width:760px){
+    #hud{left:10px;right:10px;top:10px;min-width:0;max-width:none;padding:9px 11px;}
+    #keys{left:10px;right:10px;bottom:61px;top:auto;font-size:10.5px;padding:7px 10px;}
+    body.used #keys{display:none;}
+    #card{left:10px;right:10px;top:auto;bottom:99px;width:auto;
+      max-height:40vh;overflow-y:auto;}
+    body.used #card{bottom:61px;}
+    #find{left:10px;right:10px;bottom:10px;width:auto;}
+    #res{max-height:38vh;}
+  }
+  @media (max-height:520px){
+    #card{max-height:38vh;overflow-y:auto;}
+    #res{max-height:30vh;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition-duration:.001ms !important;}
+  }
 </style>
 
 <div id="wrap">
-  <canvas id="gl"></canvas>
-  <canvas id="ui"></canvas>
+  <canvas id="gl" tabindex="0" aria-label="Карта музыкальной библиотеки"></canvas>
+  <canvas id="ui" aria-hidden="true"></canvas>
 
   <div class="panel" id="hud">
-    <div id="crumb">Музыка</div>
-    <div>масштаб <b id="mz">×1</b></div>
-    <div>объектов в кадре <b id="mn">0</b></div>
-    <div>тел с формой <b id="mf">0</b></div>
-    <div>кадр <b id="mt">—</b></div>
+    <div id="crumb"></div>
+    <div id="metrics">
+      <div>масштаб <b id="mz">×1</b></div>
+      <div>объектов в кадре <b id="mn">0</b></div>
+      <div>тел с формой <b id="mf">0</b></div>
+      <div>кадр <b id="mt">—</b></div>
+    </div>
     <div id="bar"><div id="barf" style="width:2%"></div></div>
+    <a id="home" href="index.html">← все прототипы</a>
   </div>
 
-  <div class="panel" id="card"></div>
+  <div class="panel" id="card" role="status" aria-live="polite"></div>
 
   <div class="panel" id="find">
-    <input id="q" placeholder="найти трек, автора, жанр…" autocomplete="off" spellcheck="false">
-    <div id="res"></div>
+    <input id="q" placeholder="найти трек, автора, жанр…" autocomplete="off"
+           spellcheck="false" role="combobox" aria-expanded="false"
+           aria-controls="res" aria-autocomplete="list" aria-label="Поиск по библиотеке">
+    <div id="res" role="listbox" aria-label="Результаты поиска"></div>
   </div>
 
   <div class="panel" id="keys">
-    колесо — зум · тяга — панорама · клик — полёт внутрь · Esc — наружу
+    <span class="mouse-only">колесо — зум · тяга — панорама · клик — полёт внутрь ·
+      стрелки — соседи · Enter — внутрь · Esc — на уровень выше</span>
+    <span class="touch-only">щипок — зум · тяга — панорама · касание — полёт внутрь ·
+      двойное касание — наружу</span>
   </div>
 </div>
 
@@ -82,8 +159,50 @@ var DATA={"sup":[["Классическая",2454],["Популярная",1880]
 var wrap=document.getElementById('wrap');
 var cv=document.getElementById('gl'), uc=document.getElementById('ui'), ux=uc.getContext('2d');
 var gl=cv.getContext('webgl2',{antialias:false,alpha:false,powerPreference:'high-performance'});
-if(!gl){ wrap.innerHTML='<div style="padding:40px;font-family:monospace">Нужен WebGL2</div>'; return; }
+if(!gl){ noGL(); return; }
+/* Карта — способ посмотреть на библиотеку, а не сама библиотека. Без WebGL2
+   остаётся то же содержимое списком: его видно и человеку, и поисковику. */
+function plural(n,one,few,many){
+  var a=n%100, b=n%10;
+  if(a>10&&a<20) return many;
+  if(b===1) return one;
+  if(b>=2&&b<=4) return few;
+  return many;
+}
+function noGL(){
+  function top(rows,n){ return rows.slice()
+    .sort(function(a,b){ return b[3]-a[3]; }).slice(0,n); }
+  function list(rows,realm){
+    return '<ol>'+rows.map(function(r){
+      var nm=esc(r[0])+(realm?' <span style="opacity:.55">\u00b7 '+
+        (r[1]===0?'классическая':'популярная')+'</span>':'');
+      return '<li>'+nm+'<span>'+r[3]+' '+plural(r[3],'трек','трека','треков')+'</span></li>';
+    }).join('')+'</ol>';
+  }
+  var tracks=DATA.sup[0][1]+DATA.sup[1][1], na=DATA.sys.length, ng=DATA.gal.length;
+  wrap.innerHTML='<div id="nogl"><div class="in">'+
+    '<h1>Music Cosmos</h1>'+
+    '<p>Живая карта рисуется на WebGL2, а этот браузер его не даёт. Библиотека от '+
+    'этого никуда не делась \u2014 вот она списком: '+
+    tracks+' '+plural(tracks,'трек','трека','треков')+', '+
+    na+' '+plural(na,'автор','автора','авторов')+', '+
+    ng+' '+plural(ng,'жанр и эпоха','жанра и эпохи','жанров и эпох')+'.</p>'+
+    '<h2>Жанры и эпохи</h2>'+list(top(DATA.gal,20),true)+
+    '<h2>Авторы</h2>'+list(top(DATA.sys,20),false)+
+    '<p style="margin-top:26px"><a href="index.html">\u2190 все прототипы</a></p>'+
+    '</div></div>';
+}
 var DPR=Math.min(window.devicePixelRatio||1,2), W=1,H=1;
+
+/* Счётчики кадра и объектов — инструмент разработчика, а не первое, что
+   видит зритель. Включаются через ?debug. */
+var DEBUG=/[?&]debug\b/.test(location.search);
+if(DEBUG) document.body.classList.add('debug');
+
+/* Декоративное движение отключается, навигация остаётся. */
+var mqR=window.matchMedia?window.matchMedia('(prefers-reduced-motion: reduce)'):null;
+var REDUCE=!!(mqR&&mqR.matches);
+if(mqR&&mqR.addEventListener) mqR.addEventListener('change',function(e){ REDUCE=e.matches; });
 
 /* ============================================================ реальные данные */
 var SUP=DATA.sup, SUB=DATA.sub, GAL=DATA.gal, SYS=DATA.sys, TRK=DATA.trk;
@@ -406,7 +525,7 @@ void main(){ vQ=aQ; vC=aC; vA=aA; vK=aK; vec2 p=aPos+aQ*aR*2.05;\
  gl_Position=vec4(p/uRes*2.0-1.0,0,1); gl_Position.y=-gl_Position.y; }',
 H1+'in vec2 vQ; in vec3 vC; in float vA; in float vK; out vec4 o;\
 void main(){ float r2=dot(vQ,vQ)*4.2; if(r2>4.2) discard;\
- if(vK<0.0){ o=vec4(vC*exp(-r2*0.55)*0.130*vA,1.0); return; }\
+ if(vK<0.0){ o=vec4(vC*exp(-r2*0.55)*smoothstep(4.2,1.8,r2)*0.135*vA,1.0); return; }\
  float halo=exp(-r2*(1.10+vK*1.5))*0.095;\
  float body=exp(-r2*(2.60+vK*2.0))*0.150;\
  float core=exp(-r2*(6.00+vK*10.0))*(0.72+vK*0.45);\
@@ -653,6 +772,7 @@ function drawLinks(){
         pushSeg(pv[0],pv[1],p[0],p[1],1.4,c,a*(0.45+0.55*Math.sin(t*3.1416))); }
       pv=p;
     }
+    if(REDUCE) continue;
     var ph=(TT*0.10+i*0.31)%1.0;
     for(var k=0;k<2;k++){
       var tp=(ph+k*0.5)%1.0, w2=bez(A.x,A.y,cx,cy,B.x,B.y,tp), p2=scr(w2[0],w2[1]);
@@ -665,6 +785,7 @@ function drawLinks(){
   for(var s2=0;s2<=30;s2++){ var t2=s2/30, w3=bez(A.x,A.y,bx,by,B.x,B.y,t2), p3=scr(w3[0],w3[1]);
     if(pv2) pushSeg(pv2[0],pv2[1],p3[0],p3[1],1.5,[0.56,0.54,0.90],ba*(0.4+0.6*Math.sin(t2*3.1416)));
     pv2=p3; }
+  if(REDUCE) return;
   var tp2=(TT*0.07)%1.0, w4=bez(A.x,A.y,bx,by,B.x,B.y,tp2), p4=scr(w4[0],w4[1]);
   pushDot(p4[0],p4[1],3.2,[0.80,0.78,0.98],ba*2.4,0.95);
 }
@@ -733,7 +854,7 @@ function render(now){
   var used=0, nf=0;
   for(var q=0;q<forms.length&&nf<28;q++){ var ar=2.7*forms[q][2]; ar*=ar;
     if(used+ar>areaB&&nf>0) break; used+=ar; nf++; }
-  gl.useProgram(pFrm); gl.bindVertexArray(vaoQ); gl.uniform2f(uF.uRes,W,H); gl.uniform1f(uF.uT,TT);
+  gl.useProgram(pFrm); gl.bindVertexArray(vaoQ); gl.uniform2f(uF.uRes,W,H); gl.uniform1f(uF.uT,REDUCE?0.0:TT);
   for(var i=0;i<nf;i++){ var f=forms[i];
     gl.uniform2f(uF.uC,f[0],f[1]); gl.uniform1f(uF.uR,f[2]);
     gl.uniform3f(uF.uCol,f[3].col[0],f[3].col[1],f[3].col[2]);
@@ -777,24 +898,46 @@ function drawLabels(){
     ux.fillText(txt,x,y);
   }
 }
+/* Узлы интерфейса берутся один раз: раньше их искали заново каждый кадр,
+   а крошки переписывались через innerHTML шестьдесят раз в секунду. */
+var elCrumb=document.getElementById('crumb'), elBar=document.getElementById('barf'),
+    elMz=document.getElementById('mz'), elMn=document.getElementById('mn'),
+    elMf=document.getElementById('mf'), elMt=document.getElementById('mt');
+var crumbHTML='';
+function drawCrumb(path){
+  var h='<button type="button" data-i="-1">Музыка</button>';
+  for(var i=0;i<path.length;i++)
+    h+='<i>\u203a</i><button type="button" data-i="'+i+'"'+
+       (i===path.length-1?' aria-current="true"':'')+'>'+esc(path[i])+'</button>';
+  if(h!==crumbHTML){ crumbHTML=h; elCrumb.innerHTML=h; }
+}
+elCrumb.addEventListener('click',function(e){
+  var b=e.target.closest('button[data-i]'); if(!b) return;
+  var i=+b.dataset.i, ns=crumb.nodes||[];
+  sel=null; hover=null; card(null);
+  if(i<0){ fly=null; gz=GZMIN; view.x=0.02; view.y=0.0; }
+  else if(ns[i]) flyTo(ns[i]);
+});
+
+var RAF=0;
 function frame(now){
-  resize();
   if(fly){ var t=Math.min(1,(now-fly.t0)/fly.dur), e=t*t*(3-2*t), v=fly.i.at(e);
     view.x=v[0]; view.y=v[1]; gz=W/Math.max(v[2],1e-9); if(t>=1) fly=null; }
   gz=Math.max(GZMIN,Math.min(GZMAX,gz));
   var path=render(now);
   var dt=now-(frame.last||now); frame.last=now; fpsA=fpsA*0.9+dt*0.1;
   if(fpsA>26) areaB=Math.max(4e5,areaB*0.90); else if(fpsA<17) areaB=Math.min(6e6,areaB*1.05);
-  document.getElementById('crumb').innerHTML='Музыка'+path.map(function(s){
-    return ' <span>›</span> '+esc(s); }).join('');
-  document.getElementById('mz').textContent='×'+fmt(gz/GZ0);
-  document.getElementById('mn').textContent=stat.n;
-  document.getElementById('mf').textContent=stat.f;
-  document.getElementById('mt').textContent=fpsA.toFixed(1)+' мс';
-  document.getElementById('barf').style.width=
-    (2+Math.log(gz/GZMIN)/Math.log(GZMAX/GZMIN)*98).toFixed(1)+'%';
-  requestAnimationFrame(frame);
+  drawCrumb(path);
+  if(DEBUG){ elMz.textContent='\u00d7'+fmt(gz/GZ0); elMn.textContent=stat.n;
+    elMf.textContent=stat.f; elMt.textContent=fpsA.toFixed(1)+' \u043c\u0441'; }
+  elBar.style.width=(2+Math.log(gz/GZMIN)/Math.log(GZMAX/GZMIN)*98).toFixed(1)+'%';
+  RAF=requestAnimationFrame(frame);
 }
+/* В невидимой вкладке считать нечего. */
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){ if(RAF) cancelAnimationFrame(RAF); RAF=0; }
+  else if(!RAF){ T0=performance.now()-TT*1000; frame.last=0; RAF=requestAnimationFrame(frame); }
+});
 function esc(s){ return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
 function fmt(v){ if(v<10) return v.toFixed(1); if(v<1000) return Math.round(v)+'';
   var e=Math.floor(Math.log10(v)); return (v/Math.pow(10,e)).toFixed(1)+'·10'+
@@ -834,59 +977,216 @@ function card(n){
   el.innerHTML=h; el.className='on';
 }
 
-/* ==================================================================== поиск */
+/* ==================================================================== поиск
+   Приведение к общему виду: регистр, ё, диакритика, лишние пробелы. Если по
+   набранному ничего нет — пробуем ту же строку в другой раскладке: «,f[» это
+   «бах», набранный не переключившись. */
+function norm(t){
+  t=t.toLowerCase().replace(/ё/g,'е');
+  if(t.normalize) t=t.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return t.replace(/\s+/g,' ').trim();
+}
+var LAYEN="qwertyuiop[]asdfghjkl;'zxcvbnm,./`",
+    LAYRU="йцукенгшщзхъфывапролджэячсмитьбю.ё";
+function swapLayout(t){ var o='',k;
+  for(var i=0;i<t.length;i++){ k=LAYEN.indexOf(t[i]); o+=(k>=0?LAYRU[k]:t[i]); }
+  return norm(o); }
+
 var INDEX=[];
 (function(){
-  galN.forEach(function(g){ if(g) INDEX.push([g.name.toLowerCase(),g,g.parent.name]); });
-  sysN.forEach(function(s){ if(s) INDEX.push([s.name.toLowerCase(),s,s.parent.name]); });
-  trkN.forEach(function(t){ if(t) INDEX.push([t.name.toLowerCase(),t,t.parent.name]); });
+  function add(n){ if(n) INDEX.push([norm(n.name),n,n.parent.name]); }
+  galN.forEach(add); sysN.forEach(add); trkN.forEach(add);
 })();
+
 var qEl=document.getElementById('q'), rEl=document.getElementById('res');
+var hits=[], cursor=-1;
+
+function lookup(q){
+  var out=[], seen={}, i, k;
+  function push(r,rank){ if(seen[r[1].id]) return; seen[r[1].id]=1; out.push([r,rank]); }
+  for(i=0;i<INDEX.length;i++){
+    k=INDEX[i][0].indexOf(q);
+    if(k===0) push(INDEX[i],0);
+    else if(k>0) push(INDEX[i], INDEX[i][0].charAt(k-1)===' ' ? 1 : 2);
+    if(out.length>=400) break;
+  }
+  out.sort(function(a,b){
+    if(a[1]!==b[1]) return a[1]-b[1];
+    if(a[0][1].level!==b[0][1].level) return a[0][1].level-b[0][1].level;
+    return b[0][1].n-a[0][1].n;
+  });
+  return out.slice(0,8).map(function(x){ return x[0]; });
+}
+
+function draw(){
+  if(!hits.length){
+    rEl.innerHTML='<div class="none">ничего не найдено</div>';
+    qEl.setAttribute('aria-expanded','false'); return;
+  }
+  rEl.innerHTML=hits.map(function(r,k){
+    return '<div role="option" id="opt'+k+'" data-k="'+k+'"'+
+      (k===cursor?' class="sel" aria-selected="true"':' aria-selected="false"')+'>'+
+      esc(r[1].name.slice(0,52))+'<s>'+LV[r[1].level]+' · '+esc(r[2])+'</s></div>'; }).join('');
+  qEl.setAttribute('aria-expanded','true');
+  if(cursor>=0){ var el=rEl.children[cursor]; if(el&&el.scrollIntoView) el.scrollIntoView({block:'nearest'}); }
+}
+function closeRes(){ hits=[]; cursor=-1; rEl.innerHTML='';
+  qEl.setAttribute('aria-expanded','false'); qEl.removeAttribute('aria-activedescendant'); }
+function choose(k){
+  var n=hits[k]&&hits[k][1]; if(!n) return;
+  sel=n; card(n); flyTo(n); closeRes(); qEl.value=''; qEl.blur(); cv.focus();
+}
 qEl.addEventListener('input',function(){
-  var q=qEl.value.trim().toLowerCase();
-  if(q.length<2){ rEl.innerHTML=''; return; }
-  var out=[], i;
-  for(i=0;i<INDEX.length&&out.length<40;i++) if(INDEX[i][0].indexOf(q)===0) out.push(INDEX[i]);
-  for(i=0;i<INDEX.length&&out.length<60;i++) if(INDEX[i][0].indexOf(q)>0) out.push(INDEX[i]);
-  out.sort(function(a,b){ return b[1].level===a[1].level ? b[1].n-a[1].n : a[1].level-b[1].level; });
-  rEl.innerHTML=out.slice(0,8).map(function(r,k){
-    return '<div data-k="'+k+'">'+esc(r[1].name.slice(0,52))+
-      '<s>'+LV[r[1].level]+' · '+esc(r[2])+'</s></div>'; }).join('');
-  rEl._hits=out.slice(0,8);
+  var q=norm(qEl.value);
+  if(q.length<2){ closeRes(); return; }
+  hits=lookup(q);
+  if(!hits.length){ var alt=swapLayout(q); if(alt!==q&&alt.length>1) hits=lookup(alt); }
+  cursor=-1; draw();
+});
+qEl.addEventListener('keydown',function(e){
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    if(!hits.length) return;
+    e.preventDefault();
+    if(e.key==='ArrowDown') cursor = (cursor+1>=hits.length) ? 0 : cursor+1;
+    else                     cursor = (cursor<=0) ? hits.length-1 : cursor-1;
+    qEl.setAttribute('aria-activedescendant','opt'+cursor); draw(); return;
+  }
+  if(e.key==='Enter'){ e.preventDefault(); choose(cursor<0?0:cursor); return; }
+  if(e.key==='Escape'){ e.stopPropagation();
+    if(hits.length||rEl.innerHTML){ closeRes(); } else { qEl.value=''; qEl.blur(); cv.focus(); } }
 });
 rEl.addEventListener('click',function(e){
-  var d=e.target.closest('div[data-k]'); if(!d||!rEl._hits) return;
-  var n=rEl._hits[+d.dataset.k][1]; sel=n; card(n); flyTo(n);
-  rEl.innerHTML=''; qEl.value='';
+  var d=e.target.closest('div[data-k]'); if(d) choose(+d.dataset.k);
 });
 
 /* ==================================================================== ввод */
 function mouse(e){ var r=cv.getBoundingClientRect();
   return [(e.clientX-r.left)*DPR,(e.clientY-r.top)*DPR]; }
-cv.addEventListener('wheel',function(e){ e.preventDefault(); fly=null;
-  var m=mouse(e), wx=view.x+(m[0]-W*0.5)/gz, wy=view.y+(m[1]-H*0.5)/gz;
-  gz=Math.max(GZMIN,Math.min(GZMAX,gz*Math.exp(-e.deltaY*0.0016)));
-  view.x=wx-(m[0]-W*0.5)/gz; view.y=wy-(m[1]-H*0.5)/gz; },{passive:false});
-var drag=null, moved=0;
-cv.addEventListener('pointerdown',function(e){ drag=mouse(e); moved=0; cv.setPointerCapture(e.pointerId); });
-cv.addEventListener('pointermove',function(e){ var m=mouse(e);
-  if(drag){ fly=null; view.x-=(m[0]-drag[0])/gz; view.y-=(m[1]-drag[1])/gz;
-    moved+=Math.abs(m[0]-drag[0])+Math.abs(m[1]-drag[1]); drag=m; return; }
+function clampZ(z){ return Math.max(GZMIN,Math.min(GZMAX,z)); }
+/* Зум вокруг точки: мировая точка под курсором остаётся под курсором. */
+function zoomAt(px,py,k){
+  var wx=view.x+(px-W*0.5)/gz, wy=view.y+(py-H*0.5)/gz;
+  gz=clampZ(gz*k);
+  view.x=wx-(px-W*0.5)/gz; view.y=wy-(py-H*0.5)/gz;
+}
+function hitAt(m){
   var best=null,bd=1e9;
   for(var i=0;i<pick.length;i++){ var p=pick[i], dx=p[0]-m[0], dy=p[1]-m[1];
     var d=Math.sqrt(dx*dx+dy*dy);
     if(d<Math.max(p[2],15*DPR)&&d<bd){bd=d;best=p[3];} }
+  return best;
+}
+cv.addEventListener('wheel',function(e){ e.preventDefault(); fly=null;
+  var m=mouse(e); zoomAt(m[0],m[1],Math.exp(-e.deltaY*0.0016)); },{passive:false});
+
+/* Указатели считаются все: один — панорама, два — щипок.
+   Так карта работает пальцами, а не только колесом мыши. */
+var pts={}, npts=0, drag=null, moved=0, pinch=null, lastTap=0, lastPos=null;
+function pinchNow(){
+  var k=Object.keys(pts); if(k.length<2) return null;
+  var a=pts[k[0]], b=pts[k[1]];
+  return {cx:(a[0]+b[0])*0.5, cy:(a[1]+b[1])*0.5,
+          d:Math.max(1,Math.sqrt((b[0]-a[0])*(b[0]-a[0])+(b[1]-a[1])*(b[1]-a[1])))};
+}
+cv.addEventListener('pointerdown',function(e){
+  document.body.classList.add('used');
+  cv.setPointerCapture(e.pointerId);
+  if(!pts[e.pointerId]) npts++;
+  pts[e.pointerId]=mouse(e); lastPos=pts[e.pointerId];
+  if(npts>=2){ drag=null; pinch=pinchNow(); }
+  else { drag=lastPos; moved=0; fly=null; }
+});
+cv.addEventListener('pointermove',function(e){
+  if(!pts[e.pointerId]&&npts>0&&!drag) return;
+  var m=mouse(e);
+  if(pts[e.pointerId]){ pts[e.pointerId]=m; lastPos=m; }
+  if(npts>=2){
+    var st=pinchNow();
+    if(st&&pinch){
+      fly=null;
+      var wx=view.x+(pinch.cx-W*0.5)/gz, wy=view.y+(pinch.cy-H*0.5)/gz;
+      gz=clampZ(gz*st.d/pinch.d);
+      view.x=wx-(st.cx-W*0.5)/gz; view.y=wy-(st.cy-H*0.5)/gz;
+      moved+=Math.abs(st.cx-pinch.cx)+Math.abs(st.cy-pinch.cy)+Math.abs(st.d-pinch.d);
+    }
+    pinch=st; return;
+  }
+  if(drag){ fly=null; view.x-=(m[0]-drag[0])/gz; view.y-=(m[1]-drag[1])/gz;
+    moved+=Math.abs(m[0]-drag[0])+Math.abs(m[1]-drag[1]); drag=m; return; }
+  var best=hitAt(m);
   if(best!==hover){ hover=best; card(best||sel); }
-  cv.style.cursor=best?'pointer':'grab'; });
-cv.addEventListener('pointerup',function(){ drag=null;
-  if(moved<6*DPR&&hover){ sel=hover; card(sel); flyTo(hover); } });
+  cv.style.cursor=best?'pointer':'grab';
+});
+function endPointer(e){
+  if(pts[e.pointerId]){ delete pts[e.pointerId]; npts=Math.max(0,npts-1); }
+  if(npts<2) pinch=null;
+  if(npts===0){
+    var wasDrag=drag; drag=null;
+    if(wasDrag&&moved<8*DPR&&lastPos){
+      var now=performance.now();
+      if(now-lastTap<320){ lastTap=0; levelUp(); return; }
+      lastTap=now;
+      var n=hitAt(lastPos);
+      if(n){ sel=n; hover=n; card(sel); flyTo(n); }
+    }
+  } else { var k=Object.keys(pts); drag=pts[k[0]]; }
+}
+cv.addEventListener('pointerup',endPointer);
+cv.addEventListener('pointercancel',endPointer);
+
+/* Навигация с клавиатуры: стрелки — к соседу по той же ветке, Enter — внутрь,
+   Esc — на уровень выше, а не в произвольный масштаб. */
+function current(){
+  if(sel) return sel;
+  var ns=crumb.nodes||[]; return ns.length?ns[ns.length-1]:null;
+}
+function levelUp(){
+  var cur=current(), ns=crumb.nodes||[];
+  var up = cur&&cur.parent ? cur.parent : (ns.length>1?ns[ns.length-2]:root);
+  sel=null; hover=null; card(null);
+  if(up===root){ fly=null; gz=GZMIN; view.x=0.02; view.y=0.0; }
+  else flyTo(up);
+}
+function nearest(cur,dx,dy){
+  var sib=(cur.parent&&cur.parent.children)||[], best=null, bs=1e18;
+  for(var i=0;i<sib.length;i++){ var c=sib[i]; if(c===cur) continue;
+    var vx=c.x-cur.x, vy=c.y-cur.y, d=Math.sqrt(vx*vx+vy*vy)||1e-9;
+    var dot=(vx*dx+vy*dy)/d;
+    if(dot<0.34) continue;
+    var score=d/(0.34+dot);
+    if(score<bs){ bs=score; best=c; }
+  }
+  return best;
+}
+function goInto(){
+  var cur=current();
+  if(!cur){ var r=root.children[0]; if(r){ sel=r; card(r); flyTo(r); } return; }
+  var ch=cur.children;
+  if(!ch||!ch.length) return;
+  var best=ch[0];
+  for(var i=1;i<ch.length;i++) if(ch[i].n>best.n) best=ch[i];
+  sel=best; card(best); flyTo(best);
+}
 window.addEventListener('keydown',function(e){
-  if(e.key==='Escape'){ fly=null; gz=Math.max(GZMIN,gz/7); sel=null; card(null); }
-  if(e.key==='/'&&document.activeElement!==qEl){ e.preventDefault(); qEl.focus(); } });
+  if(document.activeElement===qEl) return;
+  if(e.key==='/'){ e.preventDefault(); qEl.focus(); return; }
+  if(e.key==='Escape'||e.key==='Backspace'){ e.preventDefault(); levelUp(); return; }
+  if(e.key==='Enter'){ e.preventDefault(); goInto(); return; }
+  var d=null;
+  if(e.key==='ArrowLeft') d=[-1,0]; else if(e.key==='ArrowRight') d=[1,0];
+  else if(e.key==='ArrowUp') d=[0,-1]; else if(e.key==='ArrowDown') d=[0,1];
+  if(!d) return;
+  e.preventDefault();
+  var cur=current();
+  if(!cur){ var r=root.children[0]; if(r){ sel=r; card(r); flyTo(r); } return; }
+  var nx=nearest(cur,d[0],d[1]);
+  if(nx){ sel=nx; hover=nx; card(nx); flyTo(nx); }
+});
+
 function flyTo(n){
   var w0=W/gz, w1=Math.max(1e-9,n.rad*(n.level>=4?9:2.9));
   fly={t0:performance.now(),i:interpZoom([view.x,view.y,w0],[n.x,n.y,w1])};
-  fly.dur=Math.max(800,Math.min(2400,Math.abs(fly.i.S)*620));
+  fly.dur=REDUCE?200:Math.max(800,Math.min(2400,Math.abs(fly.i.S)*620));
 }
 function interpZoom(p0,p1){
   var rho=Math.SQRT2, rho2=2, rho4=4;
@@ -950,7 +1250,10 @@ window.stats=function(){ return {buildMs:+BUILDMS.toFixed(0),hdr:HDR,gz0:+GZ0.to
 window.checkGL=function(){ return {err:gl.getError(),
   progs:[pWeb,pDot,pLnk,pFrm,pTone].map(function(p){return gl.getProgramParameter(p,gl.LINK_STATUS);})}; };
 
-resize(); requestAnimationFrame(frame);
+resize();
+if(window.ResizeObserver) new ResizeObserver(resize).observe(wrap);
+else window.addEventListener('resize',resize);
+RAF=requestAnimationFrame(frame);
 })();
 </script>
 

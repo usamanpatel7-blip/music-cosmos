@@ -3,7 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%23070b16%22/%3E%3Ccircle cx=%2211%22 cy=%2215%22 r=%225%22 fill=%22%23f0b45c%22/%3E%3Ccircle cx=%2222%22 cy=%2219%22 r=%223.4%22 fill=%22%23ff7a6b%22/%3E%3Ccircle cx=%2224%22 cy=%229%22 r=%221.7%22 fill=%22%238fd0ff%22/%3E%3C/svg%3E">
 <title>Что делать с Music Cosmos дальше</title>
+<meta name="description" content="Разбор девяти страниц Music Cosmos: 34 находки с замерами и шесть очередей работ.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Что делать с Music Cosmos дальше">
+<meta property="og:description" content="Разбор девяти страниц Music Cosmos: 34 находки с замерами и шесть очередей работ.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -210,8 +215,9 @@ footer{margin-top:60px; padding-top:26px; border-top:1px solid var(--line);
           Ван Вейка, семантический зум с перекрёстным растворением, HDR-буфер и адаптивная экспозиция.
           Не сделано: предрасчёт раскладки, деградация качества при движении, замер FPS.</td></tr>
         <tr><td class="field">2 · Иерархии и чтение</td><td><span class="chip part">половина</span></td>
-          <td class="note">Две ветки различены, карточка объекта есть, поиск с перелётом есть.
-          Нет уровней альбома и произведения, нет объектов на границах, нет Uncharted Space.</td></tr>
+          <td class="note">Две ветки различены, карточка объекта есть, поиск с перелётом,
+          клавиатурой и устойчивостью к раскладке. Нет уровней альбома и произведения,
+          нет объектов на границах, нет Uncharted Space.</td></tr>
         <tr><td class="field">3 · Визуальный язык</td><td><span class="chip no">разошёлся с 02</span></td>
           <td class="note">Десять SDF-пород и адаптивные подписи сделаны. Палитра, пыль, оптический
           «брак» и разная морфология половин — из <a href="02-visual.html">творческого направления</a>
@@ -570,47 +576,49 @@ footer{margin-top:60px; padding-top:26px; border-top:1px solid var(--line);
         <div class="item"><div class="num">A1</div><div class="body"><h3>Один источник вместо двух копий</h3>
           <div class="desc">Пятистрочная обёртка генерируется скриптом, <code>docs/</code>
           собирается из <code>src/</code> и не правится руками.</div>
-          <div class="tags"><span class="tag">T5</span><span class="tag win">полдня</span></div></div></div>
+          <div class="tags"><span class="tag done">сделано</span><span class="tag">T5</span><span class="tag win">полдня</span></div></div></div>
         <div class="item"><div class="num">A2</div><div class="body"><h3>Безопасный экспорт данных</h3>
           <div class="desc">Полное экранирование JSON, разрыв последовательности
           <code>&lt;/script&gt;</code>, обязательная проверка результата разбором.
           Сломанный экспорт должен падать на сборке, а не в браузере зрителя.</div>
-          <div class="tags"><span class="tag">T2</span><span class="tag blocked">хрупкость</span></div></div></div>
+          <div class="tags"><span class="tag done">сделано</span><span class="tag">T2</span><span class="tag blocked">хрупкость</span></div></div></div>
         <div class="item"><div class="num">A3</div><div class="body"><h3>Мобильная раскладка карты и индекса</h3>
           <div class="desc">Панели в один слой, HUD сворачивается, карточка объекта — снизу,
           подсказки управления по типу ввода. Проверка на 390 px как обязательная.</div>
-          <div class="tags"><span class="tag">U1</span><span class="tag">U6</span></div></div></div>
+          <div class="tags"><span class="tag done">сделано</span><span class="tag">U1</span><span class="tag">U6</span></div></div></div>
         <div class="item"><div class="num">A4</div><div class="body"><h3>Мультитач: pinch и двойной тап</h3>
           <div class="desc">Без этого карта на телефоне нерабочая, а показывают её чаще всего
           именно с телефона.</div>
-          <div class="tags"><span class="tag">U2</span></div></div></div>
+          <div class="tags"><span class="tag done">сделано</span><span class="tag">U2</span></div></div></div>
         <div class="item"><div class="num">A5</div><div class="body"><h3>Поиск, который выдерживает ввод</h3>
           <div class="desc">Результаты растут вверх и не двигают поле; стрелки и Enter;
           нормализация кириллицы, латиницы и <code>ё</code>; устойчивость к одной опечатке;
           явное «ничего не найдено».</div>
-          <div class="tags"><span class="tag">U3</span><span class="tag">U4</span><span class="tag">U5</span><span class="tag">§22</span></div></div></div>
+          <div class="tags"><span class="tag done">сделано</span><span class="tag">U3</span><span class="tag">U4</span><span class="tag">U5</span><span class="tag">§22</span></div></div></div>
         <div class="item"><div class="num">A6</div><div class="body"><h3>Esc — на уровень выше по дереву</h3>
           <div class="desc">Выход к родителю текущего узла вместо деления масштаба.
           Плюс клавиатурная навигация по карте: соседние объекты стрелками, Enter — внутрь.</div>
-          <div class="tags"><span class="tag">P4</span><span class="tag">U4</span><span class="tag">§20</span></div></div></div>
+          <div class="tags"><span class="tag done">сделано</span><span class="tag">P4</span><span class="tag">U4</span><span class="tag">§20</span></div></div></div>
         <div class="item"><div class="num">A7</div><div class="body"><h3>Отладку — под флаг, навигацию — на её место</h3>
           <div class="desc">Счётчики кадра и объектов по <code>?debug</code>. В освободившийся
           угол — крошки, кнопка «наверх» и ссылка на остальные прототипы.</div>
-          <div class="tags"><span class="tag">U6</span><span class="tag">U7</span></div></div></div>
+          <div class="tags"><span class="tag done">сделано</span><span class="tag">U6</span><span class="tag">U7</span></div></div></div>
         <div class="item"><div class="num">A8</div><div class="body"><h3>Reduce Motion, пауза в фоне, дешёвая оптимизация кадра</h3>
           <div class="desc">Уважение к настройке движения в 03, 07 и 08; остановка цикла в
           невидимой вкладке; ResizeObserver вместо чтения размеров каждый кадр; кэш узлов DOM;
           переиспользование массивов в обходе дерева.</div>
-          <div class="tags"><span class="tag">U8</span><span class="tag">T6</span><span class="tag">T7</span><span class="tag">AC-20</span></div></div></div>
+          <div class="tags"><span class="tag done">сделано</span><span class="tag">U8</span><span class="tag">T6</span><span class="tag">T7</span><span class="tag">AC-20</span></div></div></div>
         <div class="item"><div class="num">A9</div><div class="body"><h3>Типографика и витрина</h3>
-          <div class="desc">Один набор шрифтов на весь сайт, положенный рядом с файлами, а не
-          загружаемый из сети; favicon, описание и картинка ссылки на всех девяти страницах;
-          снимок карты как og-изображение.</div>
-          <div class="tags"><span class="tag">T10</span><span class="tag">T11</span></div></div></div>
+          <div class="desc">Иконка, описание и og-теги стоят на всех десяти страницах. Приложение
+          (карта, масштабы, индекс) переведено на системный шрифт: раньше оно объявляло Inter
+          и нигде его не грузило. Документы остались на веб-шрифтах — класть их рядом с файлами
+          не вышло: страницы должны открываться двойным щелчком, а шрифт с <code>file://</code>
+          браузер не отдаёт. Осталось og-изображение: ему нужен публичный адрес сайта.</div>
+          <div class="tags"><span class="tag done">почти</span><span class="tag">T10</span><span class="tag">T11</span></div></div></div>
         <div class="item"><div class="num">A10</div><div class="body"><h3>Достойная деградация без WebGL2</h3>
           <div class="desc">Вместо затирания страницы — снимок карты и список библиотеки по
           тем же данным. Заодно это готовое содержимое для поисковиков и для превью ссылки.</div>
-          <div class="tags"><span class="tag">T9</span></div></div></div>
+          <div class="tags"><span class="tag done">сделано</span><span class="tag">T9</span></div></div></div>
       </div>
     </div>
 

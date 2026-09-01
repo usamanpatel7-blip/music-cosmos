@@ -1,6 +1,15 @@
+# Экранирование по JSON плюс угловые скобки: результат вшивается в <script>,
+# и последовательность </script> внутри названия закрыла бы тег и положила страницу.
 function jesc(s,  o,i,c){ o="";
   for(i=1;i<=length(s);i++){ c=substr(s,i,1);
-    if(c=="\\") o=o "\\\\"; else if(c=="\"") o=o "\\\""; else o=o c }
+    if(c=="\\")      o=o "\\\\";
+    else if(c=="\"")  o=o "\\\"";
+    else if(c=="\n")  o=o "\\n";
+    else if(c=="\r")  o=o "\\r";
+    else if(c=="\t")  o=o "\\t";
+    else if(c=="<")   o=o "\\u003c";
+    else if(c==">")   o=o "\\u003e";
+    else o=o c }
   return o }
 BEGIN{FS="\t"; ng=0; ns=0; nt=0; nb=0}
 FILENAME==ARGV[1]{ ep=$2; g=ep; p=index(g," / "); if(p>0) g=substr(g,1,p-1);
@@ -26,8 +35,7 @@ END{
   printf "\"sub\":[";
   for(i=0;i<nb;i++) printf "%s\"%s\"", (i?",":""), jesc(BN[i]);
   printf "],\n\"gal\":[";
-  for(i=0;i<ng;i++){ y = (GN[i] in GY) ? GY[i==-1?0:0] : 0;
-    yy = (GN[i] in GY) ? GY[GN[i]] : 0;
+  for(i=0;i<ng;i++){ yy = (GN[i] in GY) ? GY[GN[i]] : 0;
     printf "%s[\"%s\",%d,%d,%d]", (i?",":""), jesc(GN[i]), GS[i], yy, GC[i] }
   printf "],\n\"sys\":[";
   for(i=0;i<ns;i++) printf "%s[\"%s\",%d,%d,%d]", (i?",":""), jesc(SN[i]), SG[i], SB[i], SC[i];

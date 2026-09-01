@@ -3,7 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%23070b16%22/%3E%3Ccircle cx=%2211%22 cy=%2215%22 r=%225%22 fill=%22%23f0b45c%22/%3E%3Ccircle cx=%2222%22 cy=%2219%22 r=%223.4%22 fill=%22%23ff7a6b%22/%3E%3Ccircle cx=%2224%22 cy=%229%22 r=%221.7%22 fill=%22%238fd0ff%22/%3E%3C/svg%3E">
 <title>Масштабы Music Cosmos</title>
+<meta name="description" content="Непрерывный зум сквозь четыре уровня — от вселенной до отдельного трека. Кадр не пустеет.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Масштабы Music Cosmos">
+<meta property="og:description" content="Непрерывный зум сквозь четыре уровня — от вселенной до отдельного трека. Кадр не пустеет.">
 <style>
   :root{
     --bg:#04060d; --ink:#e8ecf7; --dim:#8b93ad; --line:rgba(140,160,220,.18);
@@ -34,6 +39,18 @@
     background:linear-gradient(90deg,#3d6dff,#9a6bff,#ff7a54);}
   #note{right:14px;bottom:14px;max-width:270px;}
 </style>
+
+<style>
+.site-back{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:60;
+  font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;
+  color:#8b93ad;background:rgba(7,10,20,.80);border:1px solid rgba(140,160,220,.22);
+  border-radius:9px;padding:7px 11px;text-decoration:none;backdrop-filter:blur(8px);}
+.site-back:hover{color:#e8ecf7;}
+.site-back:focus-visible{outline:2px solid #9a8bff;outline-offset:2px;}
+@media (max-width:520px){.site-back{bottom:8px;font-size:10px;padding:6px 9px;}}
+</style>
+<a class="site-back" href="index.html">← все прототипы</a>
+
 
 <div id="wrap">
   <canvas id="gl"></canvas>
@@ -370,6 +387,7 @@ function drawLinks(n,ch,R){
         pushSeg(pv[0],pv[1],p[0],p[1],1.5,c,a*(0.45+0.55*Math.sin(t*3.1416))); }
       pv=p;
     }
+    if(REDUCE) continue;
     var ph=(TT*0.12+i*0.37)%1.0;
     for(var k=0;k<2;k++){
       var tp=(ph+k*0.5)%1.0, w2=bez(A.x,A.y,cx,cy,B.x,B.y,tp), p2=scr(w2[0],w2[1]);
@@ -384,6 +402,7 @@ function drawBridge(n,ch){
   var pv=null;
   for(var s=0;s<=30;s++){ var t=s/30, w=bez(A.x,A.y,n.bridge.cx,n.bridge.cy,B.x,B.y,t), p=scr(w[0],w[1]);
     if(pv) pushSeg(pv[0],pv[1],p[0],p[1],1.7,[0.62,0.58,0.95],a*(0.4+0.6*Math.sin(t*3.1416))); pv=p; }
+  if(REDUCE) return;
   var tp=(TT*0.07)%1.0, w3=bez(A.x,A.y,n.bridge.cx,n.bridge.cy,B.x,B.y,tp), p3=scr(w3[0],w3[1]);
   pushDot(p3[0],p3[1],4.2,[0.85,0.8,1.0],a*2.2,0.9);
 }
@@ -414,6 +433,11 @@ function resize(){
   var nw=Math.round(w*DPR), nh=Math.round(h*DPR);
   if(nw!==W||nh!==H){ W=nw;H=nh; cv.width=W;cv.height=H; uc.width=W;uc.height=H; }
 }
+var RAF=0;
+/* Декоративное движение отключается по настройке системы, навигация остаётся. */
+var mqR=window.matchMedia?window.matchMedia('(prefers-reduced-motion: reduce)'):null;
+var REDUCE=!!(mqR&&mqR.matches);
+if(mqR&&mqR.addEventListener) mqR.addEventListener('change',function(e){ REDUCE=e.matches; });
 function frame(now){
   resize(); TT=(now-T0)/1000;
   if(fly){ var t=Math.min(1,(now-fly.t0)/fly.dur), e=t*t*(3-2*t), v=fly.i.at(e);
@@ -446,7 +470,7 @@ function frame(now){
   for(var q=0;q<forms.length&&nf<48;q++){ var ar=2.7*forms[q][2]; ar*=ar;
     if(used+ar>areaB&&nf>0) break; used+=ar; nf++; }
   gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ONE,gl.ONE);
-  gl.useProgram(pFrm); gl.bindVertexArray(vaoQ); gl.uniform2f(uF.uRes,W,H); gl.uniform1f(uF.uT,TT);
+  gl.useProgram(pFrm); gl.bindVertexArray(vaoQ); gl.uniform2f(uF.uRes,W,H); gl.uniform1f(uF.uT,REDUCE?0.0:TT);
   for(var i=0;i<nf;i++){ var f=forms[i];
     gl.uniform2f(uF.uC,f[0],f[1]); gl.uniform1f(uF.uR,f[2]);
     gl.uniform3f(uF.uCol,f[3].col[0],f[3].col[1],f[3].col[2]);
@@ -477,7 +501,7 @@ function frame(now){
   document.getElementById('barf').style.width=(2+lg*98).toFixed(1)+'%';
   for(var k=1;k<=4;k++){ var on=(p.length>=k-1&&p.length<=k);
     document.getElementById('l'+k).className='lv'+(on?' on':''); }
-  requestAnimationFrame(frame);
+  RAF=requestAnimationFrame(frame);
 }
 function fmt(v){ if(v<10) return v.toFixed(1); if(v<1000) return Math.round(v)+'';
   var e=Math.floor(Math.log10(v)); return (v/Math.pow(10,e)).toFixed(1)+'·10'+String(e).replace(/\d/g,function(d){return '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d];}); }
@@ -554,7 +578,12 @@ window.checkGL=function(){ var e=gl.getError();
   return {err:e, progs:[pWeb,pDot,pLnk,pFrm].map(function(p){
     return gl.getProgramParameter(p,gl.LINK_STATUS);})}; };
 
-resize(); requestAnimationFrame(frame);
+/* В невидимой вкладке цикл останавливается. */
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){ if(RAF) cancelAnimationFrame(RAF); RAF=0; }
+  else if(!RAF){ RAF=requestAnimationFrame(frame); }
+});
+resize(); RAF=requestAnimationFrame(frame);
 })();
 </script>
 

@@ -1,4 +1,8 @@
 <title>Нырок в планету</title>
+<meta name="description" content="Переход от карты к тексту: планета уходит, статья занимает экран.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Нырок в планету">
+<meta property="og:description" content="Переход от карты к тексту: планета уходит, статья занимает экран.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -171,6 +175,18 @@ h1{
 @media (prefers-reduced-motion: reduce){ .rise{transition:none!important; opacity:1; transform:none} }
 @media (max-width:560px){ .art{padding:0 18px 110px} .brand,.fps{left:16px} .hint{right:16px} }
 </style>
+
+<style>
+.site-back{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:60;
+  font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;
+  color:#8b93ad;background:rgba(7,10,20,.80);border:1px solid rgba(140,160,220,.22);
+  border-radius:9px;padding:7px 11px;text-decoration:none;backdrop-filter:blur(8px);}
+.site-back:hover{color:#e8ecf7;}
+.site-back:focus-visible{outline:2px solid #9a8bff;outline-offset:2px;}
+@media (max-width:520px){.site-back{bottom:8px;font-size:10px;padding:6px 9px;}}
+</style>
+<a class="site-back" href="index.html">← все прототипы</a>
+
 
 <canvas id="sky"></canvas>
 <p class="brand" id="brand">Music Cosmos · прототип нырка</p>
