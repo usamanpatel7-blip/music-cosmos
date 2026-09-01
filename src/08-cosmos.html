@@ -97,16 +97,71 @@ var KIND={ 'Средневековье':0,'Ренессанс':0,'Барокко
  'Кантри':9,'Нью-эйдж':3,'Саундтреки / мюзиклы':3,'Инструментальная музыка':3,
  'Латиноамериканская / мировая музыка':2,'Вокальная музыка':2,'Корейская инди-музыка':4,
  'Регги':5,'Трибьюты / каверы':4,'Жанр не найден':4 };
-var POPHUE={ 'Рок':0.015,'Британский рок':0.98,'Поп':0.92,'Ретро-поп / рок':0.88,
- 'Электронная музыка':0.52,'Рэп / хип-хоп':0.075,'R&B / соул / фанк':0.045,'Блюз':0.60,
- 'Фолк':0.30,'Кантри':0.11,'Джаз':0.13,'Нью-эйдж':0.44,'Саундтреки / мюзиклы':0.80,
- 'Инструментальная музыка':0.47,'Диско':0.86,'Сезонная музыка':0.35,'Регги':0.28,
- 'Латиноамериканская / мировая музыка':0.06,'Вокальная музыка':0.70,
- 'Корейская инди-музыка':0.90,'Трибьюты / каверы':0.66,'Жанр не найден':0.55 };
-function galHue(g){
-  if(g[1]===0){ var y=g[2]||1900, t=Math.max(0,Math.min(1,(y-1100)/900));
-    return 0.615+0.215*t; }
-  var h=POPHUE[g[0]]; return h===undefined?0.10:h;
+/* ==================================================================== палитра
+   Это не астрономическая карта, и цвет здесь выбран, а не выведен из физики.
+   Две половины окрашены по-разному, и это само по себе утверждение:
+   у академической есть время — она градиент; у повседневной времени нет,
+   есть семьи — она мозаика.
+
+   Градиент идёт от тёплого к холодному: старое тёплое, радикальное холодное.
+   Раскладывается он по порядку эпох, а не по году. Год врёт: одиннадцать
+   эпох из пятнадцати лежат после 1815-го, и на линейной шкале все они
+   получали почти один оттенок — отсюда и бралось сиреневое пятно на обзоре. */
+
+var TIME=[ [1.00,0.60,0.24],   /* охра        — самое раннее */
+           [1.00,0.74,0.34],   /* золото                     */
+           [1.00,0.86,0.60],   /* тёплый крем                */
+           [1.00,0.62,0.56],   /* роза                       */
+           [0.96,0.46,0.66],   /* пурпур                     */
+           [0.78,0.46,0.96],   /* фиалка                     */
+           [0.52,0.62,1.00],   /* холодная синь              */
+           [0.62,0.88,1.00] ]; /* лёд         — самое позднее */
+function ramp(t){
+  t=Math.max(0,Math.min(0.9999,t))*(TIME.length-1);
+  var i=Math.floor(t), f=t-i, a=TIME[i], b=TIME[i+1]||a;
+  return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f];
+}
+var UNKNOWN=[0.56,0.60,0.70];  /* «эпоха не определена» — намеренно тусклый сланец */
+
+/* Повседневная половина: восемь семей вместо двадцати двух случайных оттенков.
+   Внутри семьи жанры различаются светимостью и размером, не цветом. */
+var FAMILY={
+  'Рок':[1.00,0.42,0.30], 'Британский рок':[1.00,0.42,0.30], 'Блюз':[0.98,0.52,0.36],
+  'Поп':[1.00,0.50,0.70], 'Ретро-поп / рок':[1.00,0.50,0.70], 'Диско':[1.00,0.50,0.70],
+  'Сезонная музыка':[1.00,0.50,0.70], 'Корейская инди-музыка':[1.00,0.50,0.70],
+  'Электронная музыка':[0.30,0.84,0.98], 'Регги':[0.30,0.84,0.98],
+  'Рэп / хип-хоп':[0.76,0.88,0.34],
+  'R&B / соул / фанк':[1.00,0.70,0.26], 'Вокальная музыка':[1.00,0.70,0.26],
+  'Джаз':[0.24,0.78,0.68],
+  'Фолк':[0.58,0.80,0.52], 'Кантри':[0.58,0.80,0.52],
+  'Латиноамериканская / мировая музыка':[0.58,0.80,0.52],
+  'Саундтреки / мюзиклы':[0.66,0.62,1.00], 'Нью-эйдж':[0.66,0.62,1.00],
+  'Инструментальная музыка':[0.66,0.62,1.00], 'Трибьюты / каверы':[0.66,0.62,1.00],
+  'Жанр не найден':[0.56,0.60,0.70] };
+
+/* Порядковый номер академической эпохи во времени — им и красим. */
+var TORDER={}, TCOUNT=0;
+(function(){
+  var cl=[];
+  GAL.forEach(function(g,gi){ if(g[1]===0&&g[2]>0) cl.push(gi); });
+  cl.sort(function(a,b){ return GAL[a][2]-GAL[b][2]; });
+  TCOUNT=cl.length;
+  cl.forEach(function(gi,k){ TORDER[gi]=k; });
+})();
+function galCol(g,gi){
+  if(g[1]===0){
+    var k=TORDER[gi];
+    return k===undefined ? UNKNOWN : ramp(TCOUNT<2?0.5:k/(TCOUNT-1));
+  }
+  return FAMILY[g[0]]||[0.56,0.60,0.70];
+}
+/* Ребёнок берёт цвет территории и чуть отклоняется по теплу — не по тону.
+   Территория остаётся узнаваемой, а внутри неё появляется жизнь. */
+function shade(c,t,lift){
+  var w=[1.00,0.92,0.82];
+  return [ c[0]+(w[0]-c[0])*lift + t*0.06,
+           c[1]+(w[1]-c[1])*lift,
+           c[2]+(w[2]-c[2])*lift - t*0.06 ];
 }
 function galKind(g){ var k=KIND[g[0]]; return k===undefined?9:k; }
 
@@ -154,6 +209,7 @@ function spiral(items, arms, turns, flat){
     }
   }
 }
+function jit(i,k){ var x=Math.sin((i+1)*12.9898+k*78.233)*43758.5453; return x-Math.floor(x); }
 function orbits(items){
   var n=items.length;
   if(n===1){ items[0].x=0; items[0].y=0; items[0].ring=0; return [0.55]; }
@@ -166,10 +222,13 @@ function orbits(items){
     var rad=0.20+0.74*((r+1)/rings), ph=r*1.03;
     radii.push(rad);
     for(var i=0;i<cnt;i++){
-      var a=ph+i*6.2832/cnt, it=items[idx++];
-      it.x=Math.cos(a)*rad; it.y=Math.sin(a)*rad*0.90; it.ring=r;
+      var it=items[idx];
+      var a=ph+(i+0.44*(jit(idx,1)-0.5))*6.2832/cnt;
+      var rj=rad*(1.0+0.048*(jit(idx,2)-0.5));
+      it.x=Math.cos(a)*rj; it.y=Math.sin(a)*rj*0.90; it.ring=r;
       var arc=6.2832*rad/Math.max(cnt,2)*0.42, gap=0.74/rings*0.42;
-      it.r=Math.min(it.r, arc, gap);
+      it.r=Math.min(it.r, arc, gap)*(0.84+0.40*jit(idx,3));
+      idx++;
     }
     if(idx>=n) break;
   }
@@ -188,7 +247,7 @@ var supPos=[[-0.505,0.035],[0.545,-0.045]];
 for(var i=0;i<2;i++){
   var rr=0.455*Math.pow(SUP[i][1]/maxSup,0.30);
   supN.push(node({name:SUP[i][0],level:1,x:supPos[i][0],y:supPos[i][1],rad:rr,
-    col:i===0?hsl(0.66,0.46,0.72):hsl(0.03,0.50,0.70),kind:1,n:SUP[i][1],
+    col:i===0?[0.34,0.40,0.78]:[0.62,0.34,0.56],kind:1,n:SUP[i][1],
     children:[],parent:root}));
 }
 root.children=supN;
@@ -220,9 +279,9 @@ for(var s=0;s<2;s++){
   }
   relax(items,0.95,120,0.05); fit(items,0.93);
   items.forEach(function(a){
-    var g=GAL[a.gi], hue=galHue(g);
+    var g=GAL[a.gi], base=galCol(g,a.gi);
     galN[a.gi]=node({name:g[0],level:2,x:P.x+a.x*P.rad,y:P.y+a.y*P.rad,rad:P.rad*a.r*0.86,
-      hue:hue,col:hsl(hue,g[1]===0?0.60:0.66,0.64),kind:galKind(g),n:g[3],
+      base:base,col:base,kind:galKind(g),n:g[3],
       year:g[2],children:[],parent:P,sup:s});
   });
   P.children=list.map(function(gi){ return galN[gi]; });
@@ -242,9 +301,10 @@ Object.keys(byGal).forEach(function(gk){
   if(arms===1) orbits(items); else spiral(items,arms,0.80,0.88);
   relax(items,0.94,list.length>240?24:70,0.10); fit(items,0.93);
   items.forEach(function(a){
-    var y=SYS[a.si], hue=(P.hue+(hash(y[0])-0.5)*0.05+1)%1;
+    var y=SYS[a.si], hh=hash(y[0]);
     sysN[a.si]=node({name:y[0],level:3,x:P.x+a.x*P.rad,y:P.y+a.y*P.rad,rad:P.rad*a.r*0.70,
-      hue:hue,col:hsl(hue,0.58,0.68),kind:(P.kind+(hash(y[0])<0.26?1:0))%10,
+      base:P.base,col:shade(P.base,(hh-0.5)*2,0.10+hh*0.10),
+      kind:(P.kind+(hh<0.26?1:0))%10,
       n:y[3],sub:SUB[y[2]],children:[],parent:P});
   });
   P.children=list.map(function(si){ return sysN[si]; });
@@ -263,10 +323,11 @@ Object.keys(bySys).forEach(function(sk){
   fit(items,0.93);
   P.rings=radii.map(function(r){ return r*0.93; });
   P.children=items.map(function(a){
-    var t=TRK[a.ti], hue=P.hue;
+    var t=TRK[a.ti], th=hash(t[0]);
     return trkN[a.ti]=node({name:t[0],level:4,
       x:P.x+a.x*P.rad, y:P.y+a.y*P.rad, rad:P.rad*a.r*0.80,
-      hue:hue,col:hsl(hue,a.top?0.42:0.20,a.top?0.86:0.74),kind:1,n:1,
+      base:P.base,col:shade(P.base,a.top?0.9:(th-0.5)*1.4,a.top?0.52:0.24+th*0.16),
+      kind:1,n:1,
       year:t[2],rank:t[3],children:[],parent:P});
   });
 });
@@ -305,24 +366,33 @@ var H1='#version 300 es\nprecision highp float;\n';
 var FS3='out vec2 vP; const vec2 q[3]=vec2[3](vec2(-1,-1),vec2(3,-1),vec2(-1,3));\
 void main(){ vP=q[gl_VertexID]; gl_Position=vec4(q[gl_VertexID],0,1);} ';
 
+/* Фон — не астрофото, а подложка: мягкая туманность и редкие звёзды в двух
+   планах. Глубина берётся параллаксом и светом, ничто ничего не перекрывает:
+   поглощающий слой пыли здесь уже пробовали, и он съедал картинку. */
 var pWeb=pr(H1+FS3,
 H1+'in vec2 vP; out vec4 o; uniform vec2 uRes; uniform vec2 uView; uniform float uZ;\
-vec2 h2(vec2 p){p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));return fract(sin(p)*43758.545);}\
 float h1(vec2 p){return fract(sin(dot(p,vec2(41.7,289.3)))*43758.545);}\
-float fil(vec2 p){ vec2 i=floor(p),f=fract(p); float d1=8.,d2=8.;\
- for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){ vec2 g=vec2(float(x),float(y));\
-   float d=length(g+h2(i+g)-f); if(d<d1){d2=d1;d1=d;} else if(d<d2)d2=d; }\
- return smoothstep(0.15,0.0,d2-d1); }\
+float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);\
+ float a=h1(i),b=h1(i+vec2(1,0)),c=h1(i+vec2(0,1)),d=h1(i+vec2(1,1));\
+ return mix(mix(a,b,f.x),mix(c,d,f.x),f.y); }\
+float fbm(vec2 p){ float v=0.0,a=0.5; for(int i=0;i<3;i++){ v+=a*vn(p); p*=2.03; a*=0.5; } return v; }\
+float stars(vec2 p,float thr){ vec2 i=floor(p); float r=h1(i);\
+ if(r<thr) return 0.0; vec2 c=i+vec2(h1(i+7.1),h1(i+3.3))*0.7+0.15;\
+ float d=length(p-c); return exp(-d*d*36.0)*(0.35+0.65*fract(r*17.0)); }\
 void main(){ vec2 sp=(vP*0.5+0.5)*uRes; vec2 w=uView+(sp-uRes*0.5)/uZ;\
- float lz=log2(max(uZ,1.0)/300.0); float base=6.0*pow(2.0,floor(max(lz,0.0)));\
- float fr=fract(max(lz,0.0)); float v=0.0;\
- v+=fil(w*base)*(1.0-fr*0.55);\
- v+=fil(w*base*2.31+13.7)*0.55;\
- v+=fil(w*base*5.13+71.3)*0.30*fr;\
- float gr=0.40+0.60*step(0.46,h1(floor(sp*0.85)+floor(w*base*40.0)));\
- v*=gr; v=pow(clamp(v,0.0,1.4),1.9)*0.085;\
- vec3 c=mix(vec3(0.26,0.30,0.66),vec3(0.56,0.44,0.88),clamp(v*4.0,0.,1.));\
- o=vec4(c*v,1.0); }');
+ float lz=max(log2(max(uZ,1.0)/300.0),0.0);\
+ float base=1.4*pow(2.0,floor(lz)); float fr=fract(lz);\
+ vec2 q=vec2(fbm(w*base),fbm(w*base+vec2(4.7,1.9)));\
+ float n=fbm(w*base*1.7+2.3*q);\
+ float v=smoothstep(0.30,0.92,n);\
+ v=pow(v,1.7)*0.075*(1.0-0.28*fr);\
+ vec3 c=mix(vec3(0.14,0.16,0.40),vec3(0.42,0.26,0.62),smoothstep(0.0,0.05,v));\
+ c=mix(c,vec3(0.60,0.38,0.48),smoothstep(0.035,0.075,v)*0.55);\
+ vec3 col=c*v;\
+ float sf=base*9.0;\
+ col+=vec3(0.72,0.78,1.00)*stars(w*sf,0.985)*0.055;\
+ col+=vec3(1.00,0.88,0.76)*stars(w*sf*0.43+19.3,0.978)*0.030;\
+ o=vec4(col,1.0); }');
 
 var pDot=pr(H1+'layout(location=0) in vec2 aQ; layout(location=1) in vec2 aPos;\
 layout(location=2) in float aR; layout(location=3) in vec3 aC; layout(location=4) in float aA;\
@@ -331,11 +401,15 @@ void main(){ vQ=aQ; vC=aC; vA=aA; vK=aK; vec2 p=aPos+aQ*aR*2.05;\
  gl_Position=vec4(p/uRes*2.0-1.0,0,1); gl_Position.y=-gl_Position.y; }',
 H1+'in vec2 vQ; in vec3 vC; in float vA; in float vK; out vec4 o;\
 void main(){ float r2=dot(vQ,vQ)*4.2; if(r2>4.2) discard;\
- float halo=exp(-r2*(1.25+vK*1.4))*0.085;\
- float body=smoothstep(1.06,0.86,r2);\
- float core=exp(-r2*(5.5+vK*9.0));\
- float v=halo+body*0.13+core*(0.80+vK*0.35);\
- o=vec4(vC*v*vA,1.0); }');
+ if(vK<0.0){ o=vec4(vC*exp(-r2*0.55)*0.130*vA,1.0); return; }\
+ float halo=exp(-r2*(1.10+vK*1.5))*0.095;\
+ float body=exp(-r2*(2.60+vK*2.0))*0.150;\
+ float core=exp(-r2*(6.00+vK*10.0))*(0.72+vK*0.45);\
+ float v=halo+body+core;\
+ if(vK>0.95){ float sx=exp(-abs(vQ.x)*13.0-vQ.y*vQ.y*120.0);\
+   float sy=exp(-abs(vQ.y)*13.0-vQ.x*vQ.x*120.0); v+=(sx+sy)*0.16; }\
+ vec3 c=mix(vC,vec3(1.00,0.95,0.88),clamp(core*0.85,0.0,0.72));\
+ o=vec4(c*v*vA,1.0); }');
 
 var pLnk=pr(H1+'layout(location=0) in vec2 aP; layout(location=1) in float aE;\
 layout(location=2) in vec3 aC; layout(location=3) in float aA; uniform vec2 uRes;\
@@ -414,15 +488,23 @@ out vec2 vUv; void main(){ vUv=aQ; vec2 p=uC+aQ*uR*1.35;\
  gl_Position=vec4(p/uRes*2.0-1.0,0,1); gl_Position.y=-gl_Position.y; }', FORM);
 
 /* тон-маппинг: свет копится в HDR-буфере и сжимается по яркости,
-   поэтому наложение сотен свечений даёт цвет, а не белое пятно */
+   поэтому наложение сотен свечений даёт цвет, а не белое пятно.
+   Здесь же немного оптики — виньетка, зерно и аберрация в доли пикселя:
+   ровно столько, чтобы кадр читался снятым, а не вычисленным. */
 var pTone=pr(H1+FS3,
 H1+'in vec2 vP; out vec4 o; uniform sampler2D uTex; uniform float uExp;\
-void main(){ vec3 c=texture(uTex,vP*0.5+0.5).rgb*uExp;\
+void main(){ vec2 uv=vP*0.5+0.5; vec2 d=uv-0.5; float r2=dot(d,d);\
+ float ab=0.0030*r2;\
+ vec3 c=vec3(texture(uTex,uv+d*ab).r,texture(uTex,uv).g,texture(uTex,uv-d*ab).b);\
+ c*=uExp;\
  float L=dot(c,vec3(0.2126,0.7152,0.0722));\
  if(L>1e-5){ float Ln=L/(1.0+L); c*=Ln/L;\
    c=mix(c,vec3(Ln),clamp(L*0.045-0.30,0.0,0.50)); }\
  c=pow(clamp(c,0.0,1.0),vec3(0.92));\
- o=vec4(c,1.0); }');
+ c*=1.0-0.46*smoothstep(0.045,0.50,r2);\
+ float g=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.545);\
+ c+=(g-0.5)*0.020;\
+ o=vec4(clamp(c,0.0,1.0),1.0); }');
 
 /* ================================================================== буферы */
 var quad=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,quad);
@@ -497,7 +579,12 @@ function alphaFor(n,R){
   if(n.level<4) a*=1.0-0.985*smooth(150.0,700.0,R);
   return a;
 }
-function formA(R){ return smooth(46,110,R)*(1.0-smooth(190,470,R)); }
+function formA(R){ return smooth(52,120,R)*(1.0-smooth(150,340,R)); }
+/* Немного по-настоящему ярких тел вместо ровного свечения: иначе глазу не за
+   что зацепиться. Вес пока берётся из объёма поддерева — тем же, чем задан
+   размер. Это временная замена importance_score, и она стоит в плане работ. */
+function weight(n){ return (n.level<2||n.level>3) ? 1.0
+  : 0.62+0.78*Math.min(1,Math.log(1+n.n)/6.0); }
 
 var TT=0, stat={n:0,f:0};
 function traverse(n,depth,cnt){
@@ -513,17 +600,24 @@ function traverse(n,depth,cnt){
         var hi=(hover===n||sel===n)?1.7:1.0;
         var bx0=Math.max(0,sx-R), bx1=Math.min(W,sx+R),
             by0=Math.max(0,sy-R), by1=Math.min(H,sy+R);
-        cnt.light+=a*hi*Math.min(R*R*3.1416,
+        var wt=weight(n);
+        cnt.light+=a*hi*wt*Math.min(R*R*3.1416,
           Math.max(0,bx1-bx0)*Math.max(0,by1-by0))*0.55;
+        /* Газ территории. Он не считается объектом и не участвует в замере
+           света: это подложка, которая держит принадлежность, когда тела
+           уже разъехались по кадру. */
+        if(n.level===1) pushDot(sx,sy,R*2.10,n.col,a*0.95,-1.0);
+        else if(n.level===2) pushDot(sx,sy,R*1.55,n.col,a*0.42,-1.0);
         var fa=(n.level>=2&&n.level<=3)?formA(R):0;
-        pushDot(sx,sy,Math.max(1.0,R*0.95),n.col,a*hi*(1.0-0.72*fa),n.level>=4?0.9:0.2);
+        pushDot(sx,sy,Math.max(1.0,R*0.95),n.col,a*hi*wt*(1.0-0.72*fa),
+          n.level>=4?(n.rank>0?1.0:0.9):0.2);
         var lim=n.level<=2?30:(n.level===3?46:54);
         if(R>lim) labels.push([sx,sy,R,n.name,a,n.level]);
         if(R>6) pick.push([sx,sy,R,n]);
         if(fa>0.02){ var q=R*1.4;
           if(sx+q>0&&sx-q<W&&sy+q>0&&sy-q<H) forms.push([sx,sy,R,n,fa*a*hi]); }
         if(n.level===3&&n.rings&&R>70){
-          var oa=smooth(70,160,R)*(1.0-smooth(900,2200,R))*0.14*a;
+          var oa=smooth(70,160,R)*(1.0-smooth(900,2200,R))*0.065*a;
           if(oa>0.004) for(var k=0;k<n.rings.length;k++)
             pushCircle(sx,sy,n.rings[k]*R,64,1.0,n.col,oa,0.90);
         }
