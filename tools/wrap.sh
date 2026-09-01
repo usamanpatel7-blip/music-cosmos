@@ -5,6 +5,9 @@
 set -e
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 for f in "$root"/src/*.html; do
+  case "$(basename "$f")" in
+    lab-*) continue ;;   # стенды — рабочий инструмент, в docs/ им делать нечего
+  esac
   out="$root/docs/$(basename "$f")"
   { printf '<!doctype html>\n<html lang="ru">\n<head>\n'
     printf '<meta charset="utf-8">\n'
