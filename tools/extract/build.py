@@ -303,6 +303,20 @@ def main():
         for c in node['children']:
             split(c, depth + 1)
 
+    # Уровень из единственной группы ничего не сообщает и стоит лишнего клика:
+    # у Барокко все композиторы без направления, и получался один узел «—».
+    collapsed = [0]
+    def collapse(node):
+        for c in list(node['children']):
+            collapse(c)
+        ch = node['children']
+        if len(ch) == 1 and ch[0]['kind'] in ('sub', 'split') and ch[0]['children']:
+            for g in ch[0]['children']:
+                g['parent'] = node
+            node['children'] = ch[0]['children']
+            collapsed[0] += 1
+    collapse(root)
+
     split(root)
 
     # --------------------------------------------------------------- подсчёты
@@ -386,6 +400,7 @@ def main():
         if kinds.get(k):
             print('  %-12s %5d' % (k, kinds[k]))
     print('  всего узлов %d' % len(nodes))
+    print('схлопнуто пустых уровней: %d' % collapsed[0])
     print('деление крупных уровней: ' +
           ', '.join('%s %d' % (k, v) for k, v in split_stats.items()))
     print('максимум детей у узла: %d (порог %d)%s' %
