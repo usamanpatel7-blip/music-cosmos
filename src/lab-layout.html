@@ -188,14 +188,52 @@ function phyllo(it,R){                     /* спираль Фибоначчи,
     it[i].x=Math.cos(a)*rr; it[i].y=Math.sin(a)*rr; }
 }
 function arms(it,R){                       /* спиральный диск, рукав = группа */
-  var g=groups(it), keys=Object.keys(g), A=Math.min(4,Math.max(2,keys.length));
-  var buckets=[]; for(var k=0;k<A;k++) buckets.push([]);
-  keys.forEach(function(k,i){ var b=buckets[i%A];
-    g[k].forEach(function(o){ b.push(o); }); });
-  for(var a=0;a<A;a++){ var L=buckets[a], m=L.length;
-    for(var i=0;i<m;i++){ var t=(i+0.6)/(m+0.3);
-      var th=t*0.85*TAU + a*TAU/A, rr=R*(0.13+0.84*Math.pow(t,0.58));
-      L[i].x=Math.cos(th)*rr; L[i].y=Math.sin(th)*rr*0.88; } }
+  var g=groups(it), keys=Object.keys(g)
+      .sort(function(a,b){ return g[b].length-g[a].length; });
+  var A=Math.max(2,Math.min(4,Math.min(keys.length,Math.round(Math.sqrt(it.length/26))||2)));
+  var buckets=[], load=[];
+  for(var k=0;k<A;k++){ buckets.push([]); load.push(0); }
+  keys.forEach(function(key){                 /* группы раскидываются поровну */
+    var j=0; for(var q=1;q<A;q++) if(load[q]<load[j]) j=q;
+    g[key].forEach(function(o){ buckets[j].push(o); });
+    load[j]+=g[key].length;
+  });
+  /* Положение считается прямо по длине дуги: у архимедовой спирали
+     r(s)=√(r0²+2bs), θ(s)=(r−r0)/b. Коэффициент b подбирается так, чтобы
+     рукав кончился ровно на краю поля. Пошаговый обход с делителем
+     √(r²+b²) давал недоворот, и тела сваливались в кучу у центра. */
+  /* Старт спирали держится на 0.26R: глубже к центру виток закручивается
+     сильнее, но тела сходятся и подписи начинают вылетать — замер на Барокко
+     давал 22 из 28 вместо 28. Читаемость дороже лишнего витка. */
+  var maxR=0; it.forEach(function(o){ if(o.r>maxR) maxR=o.r; });
+  var r0=Math.max(R*0.26, maxR*1.45), MARGIN=1.22, LAT=0.16;
+  for(var a=0;a<A;a++){
+    var L=buckets[a], m=L.length;
+    if(!m) continue;
+    L.sort(function(x,y){ return y.r-x.r; });
+    var s=[0], i;
+    for(i=1;i<m;i++){
+      var sep=(L[i-1].r+L[i].r)*MARGIN, lat=LAT*(L[i-1].r+L[i].r);
+      /* вдоль рукава нужно ровно столько, сколько остаётся после
+         поперечного разноса — иначе соседи налезают */
+      s[i]=s[i-1]+Math.max(0.35*sep, Math.sqrt(Math.max(0,sep*sep-lat*lat)));
+    }
+    var pad=L[0].r*1.2;
+    var S=s[m-1]+pad+L[m-1].r*1.2;
+    var b=(R*R-r0*r0)/(2*Math.max(S,1e-6)), th0=a*TAU/A;
+    for(i=0;i<m;i++){
+      var o=L[i];
+      var rr=Math.sqrt(r0*r0+2*b*(s[i]+pad)), th=th0+(rr-r0)/b;
+      var off=o.r*LAT*((i%2)?1:-1);           /* лёгкая толщина рукава */
+      var nx=Math.cos(th), ny=Math.sin(th);
+      o.x=nx*rr-ny*off;
+      o.y=(ny*rr+nx*off)*0.97;
+      o.lx=nx; o.ly=ny;                       /* подпись — наружу от витка */
+    }
+    var turns=((Math.sqrt(r0*r0+2*b*S)-r0)/b)/TAU;
+    if(!a||turns>arms.turns) arms.turns=turns;
+  }
+  arms.count=A;
 }
 function islands(it,R){                    /* острова: группа = отдельное скопление */
   var g=groups(it), keys=Object.keys(g)
@@ -301,11 +339,61 @@ function fitAll(it,R){
   var k=Math.min(2*R/Math.max(x1-x0,1e-6), 2*R/Math.max(y1-y0,1e-6), 1.35);
   it.forEach(function(o){ o.x=(o.x-cx)*k; o.y=(o.y-cy)*k; o.r*=Math.min(k,1.12); });
 }
+/* Настоящие данные перекошены: у одного автора 274 трека, у другого один,
+   и на таких наборах любая правильная раскладка даёт одиночные наложения.
+   Этот проход расталкивает только те пары, что действительно налезли,
+   и не трогает всё остальное — геометрия сохраняется. */
+function deoverlap(it,R,iters){
+  var n=it.length, moved;
+  for(var t=0;t<(iters||14);t++){
+    moved=0;
+    for(var i=0;i<n;i++){ var a=it[i];
+      for(var j=i+1;j<n;j++){ var b=it[j];
+        var dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1e-6;
+        var need=(a.r+b.r)*1.02;
+        if(d<need){ var f=(need-d)/d*0.5; 
+          a.x-=dx*f; a.y-=dy*f; b.x+=dx*f; b.y+=dy*f; moved++; } } }
+    if(!moved) break;
+  }
+  return moved;
+}
 function groups(it){
   var g={}; it.forEach(function(o){ (g[o.sub]=g[o.sub]||[]).push(o); }); return g;
 }
 
+/* Пороги взяты не на глаз, а из замера на этом же стенде:
+   орбиты подписывают всё и не пересекаются до 40, но кольца при 55 уже
+   начинают слипаться; рукава чисты до 140 и подписывают всё до 55;
+   Фибоначчи держит 0 перекрытий до 190 и даёт лучший результат дальше. */
+var AUTO_SMALL=24, AUTO_BIG=140;
+/* Число тел задаёт кандидатов, но выбор делается замером: каждая раскладка
+   прогоняется, у неё считается число поставленных подписей, побеждает та,
+   что подписала больше. При равенстве побеждают рукава — это выбранный вид.
+   Раскладка считается один раз при входе на уровень, не в кадре. */
+function auto(it,R){
+  var n=it.length, cands;
+  if(n<=AUTO_SMALL)      cands=[['орбиты',orbits],['рукава',arms]];
+  else if(n<=AUTO_BIG)   cands=[['рукава',arms],['орбиты',orbits],['спираль Фибоначчи',phyllo]];
+  else                   cands=[['спираль Фибоначчи',phyllo],['рукава',arms]];
+  var best=null, bestK=-1, saved=null;
+  for(var c=0;c<cands.length;c++){
+    it.forEach(function(o){ delete o.lx; delete o.ly; });
+    cands[c][1](it,R);
+    deoverlap(it,R);
+    var k=drawLabels(true);
+    var win = (k>bestK+ (c===0?0:1));   /* смена лидера — только с явным перевесом */
+    if(win){ bestK=k; best=cands[c][0];
+      saved=it.map(function(o){ return [o.x,o.y,o.lx,o.ly]; }); }
+  }
+  it.forEach(function(o,i){ o.x=saved[i][0]; o.y=saved[i][1];
+    if(saved[i][2]===undefined){ delete o.lx; delete o.ly; }
+    else { o.lx=saved[i][2]; o.ly=saved[i][3]; } });
+  auto.pick=best+' ('+bestK+' подписей)';
+}
+
 var LAYOUTS=[
+ {id:'auto', name:'Адаптивная', fn:auto,
+  why:'То, что будет в карте. Число тел задаёт кандидатов — до 24 орбиты, 25–140 рукава, дальше спираль Фибоначчи, — но окончательный выбор делается замером: каждая раскладка прогоняется, и побеждает та, что поставила больше подписей. При равенстве побеждают рукава. Плюс общий предохранитель: пары, которые всё же налезли, расталкиваются, не трогая остальное.'},
  {id:'phyllo',  name:'Спираль Фибоначчи', fn:phyllo,
   why:'Золотой угол 137,5°. Плотность одинакова в центре и по краю, соседи никогда не выстраиваются в ряды. Единственная раскладка, которая не разваливается ни на 5 телах, ни на 400.'},
  {id:'arms',    name:'Рукава', fn:arms,
@@ -331,7 +419,7 @@ var setEl=document.getElementById('set'), cntEl=document.getElementById('cnt'),
     cnEl=document.getElementById('cn'), accEl=document.getElementById('acc'),
     tabsEl=document.getElementById('tabs'), noteEl=document.getElementById('note'),
     legEl=document.getElementById('legend');
-var SETS=Object.keys(LAB), curSet=SETS[SETS.length-3]||SETS[0], curLay='phyllo';
+var SETS=Object.keys(LAB), curSet=SETS[SETS.length-3]||SETS[0], curLay='auto';
 var items=[], metrics={};
 
 SETS.forEach(function(k){ var o=document.createElement('option');
@@ -362,7 +450,9 @@ function build(){
   var k=Math.sqrt(0.10*R*R/Math.max(area,1e-9));
   items.forEach(function(o,i){ o.r=Math.max(1.7*DPR,Math.min(R*0.17,pw[i]*k)); });
   var L=LAYOUTS.filter(function(x){return x.id===curLay;})[0];
+  items.forEach(function(o){ delete o.lx; delete o.ly; });
   L.fn(items,R);
+  if(curLay!=='auto') deoverlap(items,R);
   fitAll(items,R);
   measure(R);
   legend(L);
@@ -384,6 +474,8 @@ function legend(L){
   if(curLay==='timeline'&&timeline.range) extra='годы <b>'+timeline.range[0]+'–'+timeline.range[1]+
     '</b>'+(timeline.range[2]?' · без года <b>'+timeline.range[2]+'</b>':'')+' · ';
   if(curLay==='orbits'&&orbits.rings) extra='колец <b>'+orbits.rings+'</b> · ';
+  if(curLay==='arms'&&arms.count) extra='рукавов <b>'+arms.count+'</b> · витков <b>'+arms.turns.toFixed(1)+'</b> · ';
+  if(curLay==='auto') extra='выбрано: <b>'+auto.pick+'</b> · ';
   legEl.innerHTML='<div class="t">'+L.name+'</div>'+L.why+
     '<div style="margin-top:7px">'+extra+'тел <b>'+items.length+'</b></div>';
 }
@@ -396,13 +488,17 @@ function report(){
 }
 
 /* ============================================================== подписи */
-function drawLabels(){
-  ux.setTransform(1,0,0,1,0,0); ux.clearRect(0,0,W,H); ux.scale(DPR,DPR);
+function drawLabels(dry){
+  ux.setTransform(1,0,0,1,0,0);
+  if(!dry) ux.clearRect(0,0,W,H);
+  ux.scale(DPR,DPR);
   ux.textAlign='center'; ux.textBaseline='top';
   var VW=W/DPR, VH=H/DPR, cx=VW*0.5, cy=VH*0.5;
   /* Подпись пробуется в восьми положениях вокруг тела и ставится в первое
      свободное. Один якорь «снизу» терял имена даже там, где место было. */
   var ANCH=[[0,1],[0,-1],[1,0],[-1,0],[0.72,0.72],[-0.72,0.72],[0.72,-0.72],[-0.72,-0.72]];
+  /* Раскладка может подсказать сторону: у спирали подпись логично ставить
+     наружу от витка, иначе она бьётся о соседей на хребте. */
   var order=items.slice().sort(function(a,b){ return b.r-a.r; });
   var placed=[], k=0;
   for(var i=0;i<order.length;i++){
@@ -413,8 +509,9 @@ function drawLabels(){
     var txt=o.name.length>30?o.name.slice(0,29)+'…':o.name;
     var w=ux.measureText(txt).width, h=fs+3, rr=o.r/DPR+4;
     var px=cx+o.x/DPR, py=cy+o.y/DPR, box=null;
-    for(var c=0;c<ANCH.length&&!box;c++){
-      var ax=ANCH[c][0], ay=ANCH[c][1];
+    var anch=(o.lx!==undefined)?[[o.lx,o.ly],[-o.lx,-o.ly]].concat(ANCH):ANCH;
+    for(var c=0;c<anch.length&&!box;c++){
+      var ax=anch[c][0], ay=anch[c][1];
       var x=px+ax*(rr+w*0.5), y=py+ay*rr+(ay<0?-h-2:2);
       x=Math.max(w/2+3,Math.min(VW-w/2-3,x));
       var b=[x-w/2-4,y-1,x+w/2+4,y+h];
@@ -426,12 +523,14 @@ function drawLabels(){
     }
     if(!box) continue;
     placed.push(box[0]); k++;
+    if(dry) continue;
     ux.fillStyle='rgba(6,9,18,0.55)';
     ux.fillRect(box[0][0],box[0][1],box[0][2]-box[0][0],box[0][3]-box[0][1]);
     ux.fillStyle=(o.rep&&accEl.checked)?'rgba(255,214,140,0.97)':'rgba(233,238,250,0.86)';
     ux.fillText(txt,box[1],box[2]);
   }
-  drawLabels.placed=k;
+  if(!dry) drawLabels.placed=k;
+  return k;
 }
 
 /* ============================================================== рендер */
@@ -498,7 +597,7 @@ resize();
 if(window.ResizeObserver) new ResizeObserver(function(){ dirty=true; resize(); }).observe(stage);
 else window.addEventListener('resize',function(){ dirty=true; resize(); });
 RAF=requestAnimationFrame(frame);
-window.lab=function(){ return {set:curSet,layout:curLay,n:items.length,
+window.lab=function(){ return {set:curSet,layout:curLay,pick:auto.pick,n:items.length,
   labels:drawLabels.placed,gap:+metrics.gap.toFixed(2),over:metrics.over,
   fill:+(metrics.fill*100).toFixed(1),hdr:HDR,reduce:REDUCE}; };
 })();
