@@ -1,0 +1,976 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%23070b16%22/%3E%3Ccircle cx=%2211%22 cy=%2215%22 r=%225%22 fill=%22%23f0b45c%22/%3E%3Ccircle cx=%2222%22 cy=%2219%22 r=%223.4%22 fill=%22%23ff7a6b%22/%3E%3Ccircle cx=%2224%22 cy=%229%22 r=%221.7%22 fill=%22%238fd0ff%22/%3E%3C/svg%3E">
+<title>Десять концепций каталога</title>
+<meta name="description" content="Десять живых миниатюр: способы ходить по музыкальному каталогу. Общий цикл отрисовки, бюджет на кадр, замеренный FPS.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Десять концепций каталога">
+<meta property="og:description" content="Десять анимированных концепций каталога музыки — выбрать одну.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --bg:#07080E; --panel:#0D1019; --panel-2:#12161F;
+  --ink:#E9ECF5; --ink-2:#AEB5C6; --muted:#767E92;
+  --line:rgba(150,166,210,.14); --line-2:rgba(150,166,210,.26);
+  --accent:#F2A65A; --accent-2:#7B6BE8;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --disp:Archivo,"IBM Plex Sans",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:44px 22px 96px}
+h1,h2,h3{font-family:var(--disp);margin:0;text-wrap:balance}
+h1{font-weight:800;font-size:clamp(2rem,5vw,3.2rem);letter-spacing:-.03em;line-height:1.05}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--ink-2);font-size:1.05rem;max-width:66ch;margin-top:16px}
+.lede strong{color:var(--ink);font-weight:600}
+
+/* ------------------------------------------------------------------ шапка */
+.hero{position:relative;margin-top:30px;border-radius:16px;overflow:hidden;
+  border:1px solid var(--line);background:#05060B;
+  aspect-ratio:1240/300;min-height:190px}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hero .cap{position:absolute;left:18px;bottom:14px;right:18px;display:flex;
+  align-items:flex-end;justify-content:space-between;gap:16px;pointer-events:none}
+.hero .cap b{font-family:var(--disp);font-weight:800;font-size:1.1rem;letter-spacing:-.01em;
+  display:block;margin-top:2px;text-shadow:0 2px 12px rgba(4,5,10,.95)}
+.hero .cap span{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-2);text-shadow:0 2px 12px rgba(4,5,10,.95)}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:38%;pointer-events:none;
+  background:linear-gradient(180deg,rgba(5,6,11,0),rgba(5,6,11,.82))}
+.hero .dots{display:flex;gap:5px;pointer-events:auto}
+.hero .dots button{width:8px;height:8px;padding:0;border-radius:50%;border:0;cursor:pointer;
+  background:rgba(150,166,210,.28);transition:background .2s,transform .2s}
+.hero .dots button[aria-current]{background:var(--accent);transform:scale(1.3)}
+
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-top:16px;
+  padding:11px 15px;border:1px dashed var(--line);border-radius:11px;
+  font-family:var(--mono);font-size:.75rem;color:var(--muted)}
+.bar b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+.bar .sep{flex:1}
+.bar button{font:inherit;color:var(--ink-2);background:var(--panel-2);
+  border:1px solid var(--line-2);border-radius:20px;padding:4px 12px;cursor:pointer;
+  transition:border-color .18s,color .18s}
+.bar button:hover{color:var(--ink);border-color:var(--accent)}
+.bar button[aria-pressed=true]{color:#0A0B10;background:var(--accent);border-color:var(--accent)}
+
+/* -------------------------------------------------------------- сетка карт */
+.grid{display:grid;gap:20px;margin-top:38px;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  overflow:hidden;display:flex;flex-direction:column;cursor:pointer;
+  transition:border-color .2s,transform .2s;text-align:left;padding:0;
+  font:inherit;color:inherit}
+.card:hover,.card:focus-visible{border-color:var(--line-2);transform:translateY(-2px)}
+.card .shot{position:relative;aspect-ratio:16/10;background:#05060B;
+  border-bottom:1px solid var(--line)}
+.card .shot canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.card .no{position:absolute;left:11px;top:9px;font-family:var(--mono);font-size:.68rem;
+  letter-spacing:.12em;color:rgba(233,236,245,.5);
+  text-shadow:0 1px 6px rgba(0,0,0,.9)}
+.card .zoom{position:absolute;right:10px;bottom:10px;font-family:var(--mono);
+  font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink);background:rgba(7,8,14,.72);border:1px solid var(--line-2);
+  border-radius:20px;padding:3px 9px;opacity:0;transition:opacity .2s}
+.card:hover .zoom,.card:focus-visible .zoom{opacity:1}
+.card .meta{padding:15px 17px 17px;display:flex;flex-direction:column;gap:7px;flex:1}
+.card h3{font-size:1.06rem;font-weight:600;letter-spacing:-.012em}
+.card .tag{color:var(--ink-2);font-size:.9rem}
+.card .use{color:var(--muted);font-size:.82rem;line-height:1.5}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:9px}
+.chip{font-family:var(--mono);font-size:.63rem;letter-spacing:.06em;padding:2px 8px;
+  border-radius:20px;border:1px solid currentColor;white-space:nowrap;color:var(--muted)}
+.chip.lo{color:#6FC79A} .chip.mid{color:#D9BC63}
+
+/* ----------------------------------------------------------------- модалка */
+#modal{position:fixed;inset:0;z-index:40;background:rgba(4,5,10,.9);
+  backdrop-filter:blur(10px);display:none;padding:26px;overflow-y:auto}
+#modal.on{display:block}
+#modal .box{max-width:1120px;margin:0 auto;background:var(--panel);
+  border:1px solid var(--line-2);border-radius:16px;overflow:hidden}
+#modal .big{position:relative;aspect-ratio:16/9;background:#05060B}
+#modal .big canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#modal .txt{padding:22px 26px 26px;display:grid;gap:14px;
+  grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+#modal h2{font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:7px}
+#modal .num{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;
+  color:var(--accent);text-transform:uppercase;margin-bottom:6px}
+#modal p{color:var(--ink-2);font-size:.95rem}
+#modal .side{font-size:.87rem;color:var(--muted);border-left:1px solid var(--line);
+  padding-left:20px;display:flex;flex-direction:column;gap:10px}
+#modal .side b{color:var(--ink-2);font-weight:600;display:block;font-size:.8rem;
+  font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+#modal .close{position:absolute;right:12px;top:12px;z-index:2;font-family:var(--mono);
+  font-size:.7rem;letter-spacing:.08em;color:var(--ink);background:rgba(7,8,14,.78);
+  border:1px solid var(--line-2);border-radius:20px;padding:6px 13px;cursor:pointer}
+#modal .nav{position:absolute;left:12px;bottom:12px;z-index:2;display:flex;gap:6px}
+#modal .nav button{font-family:var(--mono);font-size:.7rem;color:var(--ink);
+  background:rgba(7,8,14,.78);border:1px solid var(--line-2);border-radius:20px;
+  padding:6px 13px;cursor:pointer}
+@media (max-width:760px){
+  #modal{padding:12px}
+  #modal .txt{grid-template-columns:1fr}
+  #modal .side{border-left:0;border-top:1px solid var(--line);padding:14px 0 0}
+}
+footer{margin-top:60px;padding-top:22px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:.85rem;max-width:72ch}
+footer code{font-family:var(--mono);font-size:.85em;color:var(--ink-2)}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">10 · концепции каталога</p>
+    <h1>Десять способов ходить по музыке</h1>
+    <p class="lede">Живые миниатюры, а не картинки: каждая плитка рисуется по-настоящему,
+    в общем цикле и с общим бюджетом кадра. Данные пока <strong>синтетические</strong> —
+    решается форма, не содержание. Кликните плитку, чтобы развернуть её во весь экран;
+    счётчик в шапке показывает реальную нагрузку прямо сейчас.</p>
+
+    <div class="hero">
+      <canvas id="hero"></canvas>
+      <div class="cap">
+        <div><span id="heroNo">01</span><b id="heroName">—</b></div>
+        <div class="dots" id="heroDots"></div>
+      </div>
+    </div>
+
+    <div class="bar">
+      <span>кадр <b id="ms">—</b> мс</span>
+      <span>частота <b id="fps">—</b> к/с</span>
+      <span>рисуется <b id="live">—</b> из 10</span>
+      <span class="sep"></span>
+      <button id="qual" type="button" aria-pressed="false">экономный режим</button>
+      <button id="stop" type="button" aria-pressed="false">пауза</button>
+    </div>
+  </header>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    Все десять плиток живут в одном <code>requestAnimationFrame</code>: невидимые не
+    рисуются вовсе, видимые обновляются через кадр, развёрнутая — каждый кадр.
+    Свечение берётся из восьми заранее натёртых спрайтов и кладётся
+    <code>drawImage</code>-ом в режиме <code>lighter</code> — ни одного
+    <code>shadowBlur</code>, ни одного пофрагментного цикла, ни одного WebGL-контекста.
+    При <code>prefers-reduced-motion</code> рисуется один кадр и цикл не запускается.
+  </footer>
+</div>
+
+<div id="modal" role="dialog" aria-modal="true" aria-label="Концепция крупно"></div>
+
+<script>
+(function(){
+"use strict";
+var TAU=6.283185307;
+var DPR=Math.min(window.devicePixelRatio||1,1.75);   /* меняется ступенью нагрузки */
+var mqR=window.matchMedia?window.matchMedia('(prefers-reduced-motion: reduce)'):null;
+var REDUCE=!!(mqR&&mqR.matches);
+
+var BG='#07080E';
+var PAL=['#F2A65A','#F2745A','#E4587E','#B75FD1','#7B6BE8','#4E8FE0','#3FBFB0','#9BD46B'];
+var RGB=PAL.map(function(h){
+  return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+});
+function rgba(i,a){ var c=RGB[i]; return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')'; }
+
+/* Свечение — восемь спрайтов, натёртых один раз. Тысяча drawImage дешевле
+   одного shadowBlur, и в отличие от него не зависит от размера кисти. */
+var SPR=PAL.map(function(hex,i){
+  var s=document.createElement('canvas'); s.width=s.height=64;
+  var x=s.getContext('2d'), g=x.createRadialGradient(32,32,0,32,32,32);
+  g.addColorStop(0,'rgba(255,255,255,.95)');
+  g.addColorStop(0.18,rgba(i,.85));
+  g.addColorStop(0.45,rgba(i,.26));
+  g.addColorStop(1,rgba(i,0));
+  x.fillStyle=g; x.fillRect(0,0,64,64); return s;
+});
+function glow(g,c,x,y,r,a){
+  g.globalAlpha=a; g.drawImage(SPR[c&7],x-r,y-r,r*2,r*2); g.globalAlpha=1;
+}
+function mul(a){ return function(){ a|=0; a=a+0x6D2B79F5|0;
+  var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t;
+  return ((t^t>>>14)>>>0)/4294967296; }; }
+function smooth(g,p){
+  g.moveTo(p[0][0],p[0][1]);
+  for(var i=1;i<p.length-1;i++){
+    g.quadraticCurveTo(p[i][0],p[i][1],(p[i][0]+p[i+1][0])/2,(p[i][1]+p[i+1][1])/2);
+  }
+  g.lineTo(p[p.length-1][0],p[p.length-1][1]);
+}
+function rr(g,x,y,w,h,r){
+  r=Math.min(r,w/2,h/2); g.beginPath();
+  g.moveTo(x+r,y); g.lineTo(x+w-r,y); g.quadraticCurveTo(x+w,y,x+w,y+r);
+  g.lineTo(x+w,y+h-r); g.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  g.lineTo(x+r,y+h); g.quadraticCurveTo(x,y+h,x,y+h-r);
+  g.lineTo(x,y+r); g.quadraticCurveTo(x,y,x+r,y); g.closePath();
+}
+function lab(g,txt,x,y,size,col,align){
+  g.font='500 '+size+'px "IBM Plex Mono",ui-monospace,monospace';
+  g.textAlign=align||'left'; g.textBaseline='middle';
+  g.fillStyle=col||'rgba(233,236,245,.55)'; g.fillText(txt,x,y);
+}
+var YEARS=['2012','2014','2016','2018','2020','2022','2024','2026'];
+
+/* ==================================================================== 01 */
+var C1={
+  init:function(){
+    var r=mul(7), s=[], i, j;
+    for(i=0;i<150;i++) s.push({x:r(),y:r(),z:.35+r()*.9,
+      m:.35+r()*2.5,c:(r()*8)|0,ph:r()*TAU});
+    var e=[];
+    for(i=0;i<s.length&&e.length<74;i++) for(j=i+1;j<s.length;j++){
+      var dx=s[i].x-s[j].x, dy=(s[i].y-s[j].y)*.62, d=dx*dx+dy*dy;
+      if(d<.0125&&Math.abs(s[i].z-s[j].z)<.3){ e.push([i,j,r()*TAU]); break; }
+    }
+    return {s:s,e:e};
+  },
+  draw:function(g,w,h,t,S,big){
+    g.fillStyle=BG; g.fillRect(0,0,w,h);
+    var ox=Math.sin(t*.07)*.030, oy=Math.cos(t*.052)*.020, s=S.s, i;
+    function px(o){ return (o.x+ox*o.z)*w; }
+    function py(o){ return (o.y+oy*o.z)*h; }
+    g.lineWidth=Math.max(.5,w*.0011);
+    for(i=0;i<S.e.length;i++){
+      var a=s[S.e[i][0]], b=s[S.e[i][1]];
+      var k=.05+.075*(1+Math.sin(t*.55+S.e[i][2]))/2;
+      g.strokeStyle='rgba(170,190,255,'+k.toFixed(3)+')';
+      g.beginPath(); g.moveTo(px(a),py(a)); g.lineTo(px(b),py(b)); g.stroke();
+    }
+    g.globalCompositeOperation='lighter';
+    var u=Math.min(w,h)/300;
+    for(i=0;i<s.length;i++){
+      var o=s[i], tw=.78+.22*Math.sin(t*1.15+o.ph);
+      glow(g,o.c,px(o),py(o),o.m*u*7*tw*o.z,(.30+.42*o.z)*tw);
+    }
+    g.globalCompositeOperation='source-over';
+    if(big){ lab(g,'связь — общий исполнитель',w*.04,h*.93,12); }
+  }
+};
+
+/* ==================================================================== 02 */
+var C2={
+  init:function(){
+    var r=mul(19), R=[], i, k;
+    for(i=0;i<11;i++){
+      var n=12+((r()*22)|0), nn=[];
+      for(k=0;k<n;k++) nn.push({a:r()*TAU,l:.35+r()*1.0,c:(r()*8)|0,w:.55+r()*.9});
+      R.push({rad:.245+i*.0705,c:i%8,n:nn,sp:1-i*.012});
+    }
+    return {R:R};
+  },
+  draw:function(g,w,h,t,S,big){
+    g.fillStyle=BG; g.fillRect(0,0,w,h);
+    var cx=w*.5, cy=h*.5, u=Math.min(w*.505,h*.59), rot=t*.05;
+    var needle=(t*.55)%TAU, i, k;
+    g.globalCompositeOperation='lighter';
+    glow(g,4,cx,cy,u*.62,.12);
+    g.globalCompositeOperation='source-over';
+    for(i=0;i<S.R.length;i++){
+      g.strokeStyle='rgba(150,166,210,.13)'; g.lineWidth=Math.max(.5,u*.0025);
+      g.beginPath(); g.arc(cx,cy,S.R[i].rad*u,0,TAU); g.stroke();
+    }
+    g.globalCompositeOperation='lighter';
+    for(i=0;i<S.R.length;i++){
+      var R2=S.R[i], rd=R2.rad*u, rr2=rot*R2.sp;
+      for(k=0;k<R2.n.length;k++){
+        var n=R2.n[k], a=n.a+rr2;
+        var d=Math.abs(((a-needle+Math.PI*3)%TAU)-Math.PI);
+        var hot=Math.max(0,1-d/.40); hot*=hot;
+        var L=rd+n.l*u*.062*(1+hot*.9);
+        g.strokeStyle=rgba(n.c,.42+hot*.55);
+        g.lineWidth=Math.max(1,u*.0075*n.w*(1+hot*.6));
+        g.beginPath();
+        g.moveTo(cx+Math.cos(a)*rd,cy+Math.sin(a)*rd);
+        g.lineTo(cx+Math.cos(a)*L,cy+Math.sin(a)*L);
+        g.stroke();
+        if(hot>.35) glow(g,n.c,cx+Math.cos(a)*L,cy+Math.sin(a)*L,u*.05*hot,hot*.75);
+      }
+    }
+    glow(g,0,cx,cy,u*.20,.75);
+    g.globalCompositeOperation='source-over';
+    var ng=g.createLinearGradient(cx,cy,cx+Math.cos(needle)*u,cy+Math.sin(needle)*u);
+    ng.addColorStop(0,'rgba(242,166,90,0)'); ng.addColorStop(1,'rgba(242,166,90,.55)');
+    g.strokeStyle=ng; g.lineWidth=Math.max(.8,u*.005);
+    g.beginPath(); g.moveTo(cx,cy);
+    g.lineTo(cx+Math.cos(needle)*u,cy+Math.sin(needle)*u); g.stroke();
+    if(big) for(i=0;i<S.R.length;i+=2)
+      lab(g,String(2015+i),cx+S.R[i].rad*u+u*.018,cy-u*.028,11,'rgba(233,236,245,.45)');
+  }
+};
+
+/* ==================================================================== 03 */
+var C3={
+  init:function(){
+    var r=mul(31), b=[], i, k;
+    for(i=0;i<8;i++){
+      var wv=[];
+      for(k=0;k<3;k++) wv.push({f:.6+r()*2.4,p:r()*TAU,a:.18+r()*.5});
+      b.push({c:i,base:.5+r()*1.4,wv:wv});
+    }
+    return {b:b};
+  },
+  draw:function(g,w,h,t,S,big){
+    g.fillStyle=BG; g.fillRect(0,0,w,h);
+    var N=44, i, j, k, val=[], tot=[];
+    for(j=0;j<=N;j++) tot[j]=0;
+    for(i=0;i<S.b.length;i++){
+      var B=S.b[i]; val[i]=[];
+      for(j=0;j<=N;j++){
+        var x=j/N, v=B.base;
+        for(k=0;k<B.wv.length;k++)
+          v+=B.wv[k].a*Math.sin(x*B.wv[k].f*4.2+t*.34*(k+1)*.6+B.wv[k].p);
+        v=Math.max(.08,v); val[i][j]=v; tot[j]+=v;
+      }
+    }
+    var pad=h*.115;
+    for(j=0;j<=N;j++) tot[j]=(h-pad*2)/tot[j];
+    var acc=[]; for(j=0;j<=N;j++) acc[j]=pad+(h-pad*2)*.5;
+    for(i=0;i<S.b.length;i++) for(j=0;j<=N;j++) acc[j]-=val[i][j]*tot[j]*.5;
+    for(i=0;i<S.b.length;i++){
+      var top=[], bot=[], acc0=1e9, accEnd=-1e9;
+      for(j=0;j<=N;j++){
+        var x2=j/N*w, y0=acc[j], y1=acc[j]+val[i][j]*tot[j];
+        if(y0<acc0) acc0=y0; if(y1>accEnd) accEnd=y1;
+        top.push([x2,y0]); bot.push([x2,y1]); acc[j]=y1;
+      }
+      g.beginPath(); smooth(g,top);
+      for(j=bot.length-1;j>=0;j--) g.lineTo(bot[j][0],bot[j][1]);
+      g.closePath();
+      var gy=g.createLinearGradient(0,acc0,0,accEnd);
+      gy.addColorStop(0,rgba(i,.80)); gy.addColorStop(1,rgba(i,.42));
+      g.fillStyle=gy; g.fill();
+      g.strokeStyle=rgba(i,.9); g.lineWidth=Math.max(.5,w*.0012);
+      g.beginPath(); smooth(g,top); g.stroke();
+    }
+    if(big) for(i=0;i<YEARS.length;i++)
+      lab(g,YEARS[i],(i+.5)/YEARS.length*w,h*.945,11,'rgba(233,236,245,.38)','center');
+  }
+};
+
+/* ==================================================================== 04 */
+var C4={
+  init:function(){
+    var r=mul(53), b=[], i;
+    for(i=0;i<58;i++) b.push({c:(i/58*8)|0,ph:r()*TAU,
+      s:.6+r()*.9,base:.18+Math.pow(Math.sin(i/58*Math.PI),.7)*.62*(.6+r()*.55)});
+    return {b:b};
+  },
+  draw:function(g,w,h,t,S,big){
+    g.fillStyle=BG; g.fillRect(0,0,w,h);
+    var n=S.b.length, gap=w/n, bw=gap*.56, base=h*.72, i;
+    g.globalCompositeOperation='lighter';
+    for(i=0;i<n;i++){
+      var B=S.b[i];
+      var v=B.base*(.62+.38*Math.sin(t*B.s*1.5+B.ph)
+                     +.16*Math.sin(t*.7+i*.32));
+      v=Math.max(.03,Math.min(1,v));
+      var bh=v*base*.92, x=i*gap+(gap-bw)/2;
+      g.fillStyle=rgba(B.c,.85);
+      rr(g,x,base-bh,bw,bh,bw*.42); g.fill();
+      g.fillStyle=rgba(B.c,.16);
+      rr(g,x,base+2,bw,bh*.36,bw*.42); g.fill();
+      glow(g,B.c,x+bw/2,base-bh,bw*1.9,.30);
+    }
+    g.globalCompositeOperation='source-over';
+    g.strokeStyle='rgba(150,166,210,.16)'; g.lineWidth=1;
+    g.beginPath(); g.moveTo(0,base+.5); g.lineTo(w,base+.5); g.stroke();
+    if(big){
+      var D=['1600','1750','1820','1900','1960','2000'];
+      for(i=0;i<D.length;i++)
+        lab(g,D[i],(i+.5)/D.length*w,h*.88,11,'rgba(233,236,245,.4)','center');
+    }
+  }
+};
+
+/* ==================================================================== 05 */
+var C5={
+  init:function(){
+    var r=mul(71), n=[], a=[], i;
+    for(i=0;i<30;i++) n.push({x:.035+(i/29)*.93,c:(r()*8)|0,m:.55+r()*1.0});
+    for(i=0;i<44;i++){
+      var A=(r()*29)|0, sp=1+((r()*8)|0), B=Math.min(29,A+sp);
+      if(A===B) continue;
+      a.push({a:A,b:B,c:n[A].c,ph:r(),sp:.09+r()*.19,k:.55+r()*.55});
+    }
+    return {n:n,a:a};
+  },
+  draw:function(g,w,h,t,S,big){
+    g.fillStyle=BG; g.fillRect(0,0,w,h);
+    var yb=h*.855, i;
+    g.strokeStyle='rgba(150,166,210,.14)'; g.lineWidth=1;
+    g.beginPath(); g.moveTo(0,yb+.5); g.lineTo(w,yb+.5); g.stroke();
+    g.globalCompositeOperation='lighter';
+    for(i=0;i<S.a.length;i++){
+      var A=S.a[i], x1=S.n[A.a].x*w, x2=S.n[A.b].x*w;
+      var mx=(x1+x2)/2, span=Math.abs(x2-x1);
+      var cy=yb-span*1.9*A.k-h*.05;
+      g.strokeStyle=rgba(A.c,.36); g.lineWidth=Math.max(.8,w*.0021);
+      g.beginPath(); g.moveTo(x1,yb); g.quadraticCurveTo(mx,cy,x2,yb); g.stroke();
+      var p=(t*A.sp+A.ph)%1, q=1-p;
+      var bx=q*q*x1+2*q*p*mx+p*p*x2, by=q*q*yb+2*q*p*cy+p*p*yb;
+      glow(g,A.c,bx,by,Math.max(3,w*.016),.85);
+    }
+    for(i=0;i<S.n.length;i++){
+      var N=S.n[i];
+      glow(g,N.c,N.x*w,yb,Math.max(3,w*.014*N.m),.62);
+    }
+    g.globalCompositeOperation='source-over';
+    if(big) lab(g,'узлы — авторы · дуги — общие записи · искры — переходы',
+      w*.035,h*.945,12);
+  }
+};
+
+/* ==================================================================== 06 */
+var C6={
+  init:function(){
+    var r=mul(97), c=[], i;
+    for(i=0;i<24;i++) c.push({c:(r()*8)|0,p:(r()*4)|0,ph:r()*TAU,
+      sp:.35+r()*.5,k:r()});
+    return {c:c};
+  },
+  draw:function(g,w,h,t,S,big){
+    g.fillStyle=BG; g.fillRect(0,0,w,h);
+    var COL=6, ROW=4, pad=w*.030, cw=(w-pad*(COL+1))/COL, ch=(h-pad*(ROW+1))/ROW;
+    var flip=Math.floor(t/1.9)%24, fp=(t/1.9)%1;
+    var i,k;
+    for(i=0;i<24;i++){
+      var C=S.c[i], col=i%COL, row=(i/COL)|0;
+      var x=pad+col*(cw+pad), y=pad+row*(ch+pad)+Math.sin(t*C.sp+C.ph)*h*.010;
+      var sx=1;
+      if(i===flip) sx=Math.abs(Math.cos(Math.min(1,fp*2.6)*Math.PI));
+      g.save();
+      g.translate(x+cw/2,y+ch/2); g.scale(Math.max(.02,sx),1); g.translate(-cw/2,-ch/2);
+      rr(g,0,0,cw,ch,cw*.075);
+      g.fillStyle='#0F1320'; g.fill();
+      g.strokeStyle=rgba(C.c,.30); g.lineWidth=1; g.stroke();
+      g.save(); g.clip();
+      g.globalCompositeOperation='lighter';
+      var mx=cw*.5, my=ch*.46;
+      if(C.p===0){
+        for(k=1;k<=6;k++){ g.strokeStyle=rgba(C.c,.10+k*.045);
+          g.lineWidth=Math.max(.6,cw*.008); g.beginPath();
+          g.arc(mx,my,ch*.055*k,0,TAU); g.stroke(); }
+      } else if(C.p===1){
+        for(k=0;k<7;k++){ g.fillStyle=rgba(C.c,.14+.09*((k*7+i)%5));
+          var bh=ch*(.10+.09*((k*3+i)%6));
+          g.fillRect(cw*(.12+k*.11),ch*.72-bh,cw*.072,bh); }
+      } else if(C.p===2){
+        for(k=-4;k<8;k++){ g.strokeStyle=rgba(C.c,.13+.05*(k&3));
+          g.lineWidth=cw*.030; g.beginPath();
+          g.moveTo(cw*k*.14,0); g.lineTo(cw*k*.14+ch*.9,ch); g.stroke(); }
+      } else {
+        for(k=0;k<22;k++){ var a=k*2.399963;
+          var rr2=ch*.40*Math.sqrt((k+.5)/22);
+          glow(g,C.c,mx+Math.cos(a)*rr2,my+Math.sin(a)*rr2*.92,cw*.055,.34); }
+      }
+      g.restore();
+      g.globalCompositeOperation='source-over';
+      g.fillStyle='rgba(233,236,245,.30)';
+      g.fillRect(cw*.10,ch*.845,cw*(.32+C.k*.44),Math.max(1.4,ch*.026));
+      g.fillStyle='rgba(233,236,245,.14)';
+      g.fillRect(cw*.10,ch*.915,cw*(.20+C.k*.28),Math.max(1.2,ch*.020));
+      g.restore();
+    }
+  }
+};
+
+/* ==================================================================== 07 */
+var C7={
+  init:function(){
+    var r=mul(113), L=[], i, k;
+    for(i=0;i<16;i++){
+      var p=[];
+      for(k=0;k<=20;k++) p.push(r());
+      L.push({p:p,c:i%8,th:.030+r()*.052,rough:.5+r()*1.1,dr:r()});
+    }
+    return {L:L};
+  },
+  draw:function(g,w,h,t,S,big){
+    g.fillStyle=BG; g.fillRect(0,0,w,h);
+    var i,k,N=20, span=1.42;
+    for(i=0;i<S.L.length;i++){
+      var L=S.L[i];
+      var yb=(((i*(span/S.L.length))+t*.026)%span)-.21;
+      if(yb<-.20||yb>1.06) continue;
+      var y=yb*h, amp=h*.030*L.rough, th=h*L.th, top=[], bot=[];
+      for(k=0;k<=N;k++){
+        var x=k/N*w;
+        var v=(L.p[k]-.5)*2*amp+Math.sin(k*.85+i*1.7)*amp*.35;
+        top.push([x,y+v]); bot.push([x,y+v+th]);
+      }
+      g.beginPath(); smooth(g,top);
+      for(k=bot.length-1;k>=0;k--) g.lineTo(bot[k][0],bot[k][1]);
+      g.closePath();
+      g.fillStyle=rgba(L.c,.42); g.fill();
+      g.beginPath(); smooth(g,top);
+      g.strokeStyle=rgba(L.c,.95); g.lineWidth=Math.max(1,w*.0022); g.stroke();
+      g.beginPath(); smooth(g,bot);
+      g.strokeStyle='rgba(5,6,11,.85)'; g.lineWidth=Math.max(.8,w*.0016); g.stroke();
+    }
+    var gr=g.createLinearGradient(0,0,0,h);
+    gr.addColorStop(0,'rgba(7,8,14,.96)'); gr.addColorStop(.22,'rgba(7,8,14,0)');
+    gr.addColorStop(.80,'rgba(7,8,14,0)'); gr.addColorStop(1,'rgba(7,8,14,.96)');
+    g.fillStyle=gr; g.fillRect(0,0,w,h);
+    if(big) lab(g,'слой — десятилетие · толщина — сколько записей',w*.035,h*.945,12);
+  }
+};
+
+/* ==================================================================== 08 */
+var C8={
+  init:function(){
+    var r=mul(137), out=[], i, k;
+    var pos=[[.26,.34,1.0],[.71,.26,.72],[.48,.70,.86],[.86,.68,.58],[.10,.74,.62]];
+    for(i=0;i<pos.length;i++){
+      var pl=[], n=4+((r()*5)|0), sc=pos[i][2];
+      for(k=0;k<n;k++) pl.push({a:(.045+k*.024+r()*.008)*sc,e:.55+r()*.34,
+        rot:r()*TAU,sp:(.5+r()*.9)/(1+k*.5),ph:r()*TAU,
+        m:.30+r()*.55,c:(r()*8)|0});
+      out.push({x:pos[i][0],y:pos[i][1],c:(r()*8)|0,m:sc*.7+.25,pl:pl});
+    }
+    return {S:out};
+  },
+  draw:function(g,w,h,t,S,big){
+    g.fillStyle=BG; g.fillRect(0,0,w,h);
+    var u=Math.min(w,h*1.55), i, k;
+    for(i=0;i<S.S.length;i++){
+      var Y=S.S[i], cx=Y.x*w, cy=Y.y*h;
+      g.strokeStyle='rgba(150,166,210,.13)'; g.lineWidth=Math.max(.5,u*.0016);
+      for(k=0;k<Y.pl.length;k++){
+        var P=Y.pl[k];
+        g.beginPath(); g.ellipse(cx,cy,P.a*u,P.a*u*P.e,P.rot,0,TAU); g.stroke();
+      }
+    }
+    g.globalCompositeOperation='lighter';
+    for(i=0;i<S.S.length;i++){
+      var Y2=S.S[i], cx2=Y2.x*w, cy2=Y2.y*h;
+      glow(g,Y2.c,cx2,cy2,u*.060*Y2.m,.95);
+      for(k=0;k<Y2.pl.length;k++){
+        var P2=Y2.pl[k], a=P2.ph+t*P2.sp;
+        var cs=Math.cos(P2.rot), sn=Math.sin(P2.rot), q;
+        for(q=1;q<=3;q++){
+          var aa=a-q*.13, ex2=Math.cos(aa)*P2.a*u, ey2=Math.sin(aa)*P2.a*u*P2.e;
+          glow(g,P2.c,cx2+ex2*cs-ey2*sn,cy2+ex2*sn+ey2*cs,u*.014*P2.m,.13/q);
+        }
+        var ex=Math.cos(a)*P2.a*u, ey=Math.sin(a)*P2.a*u*P2.e;
+        glow(g,P2.c,cx2+ex*cs-ey*sn,cy2+ex*sn+ey*cs,u*.026*P2.m,.85);
+      }
+    }
+    g.globalCompositeOperation='source-over';
+    if(big) lab(g,'звезда — композитор · планета — произведение',w*.035,h*.945,12);
+  }
+};
+
+/* ==================================================================== 09 */
+var C9={
+  init:function(){
+    /* Октилинейная укладка: шаг либо строго вдоль, либо ровно под 45°.
+       Линии стартуют и кончаются в разных местах — иначе схема читается
+       не метро, а графиком из пяти кривых. */
+    var r=mul(211), R=[], i, k;
+    var seed=[[0.02,.26,.98],[0.05,.72,.95],[0.14,.14,.88],[0.02,.55,.72],[0.30,.88,1.00]];
+    for(i=0;i<5;i++){
+      var x=seed[i][0], y=seed[i][1], xe=seed[i][2], p=[[x,y]], dir=0, guard=0;
+      while(x<xe-.02&&guard++<11){
+        var dx=.09+r()*.085; if(x+dx>xe) dx=xe-x;
+        var m=r(), dy=0;
+        if(dir!==0){ dy=0; dir=0; }
+        else if(m<.34) dy=0;
+        else { dy=(m<.67?1:-1)*dx; dir=1; }
+        if(y+dy<.10||y+dy>.90) dy=-dy;
+        x+=dx; y=Math.max(.10,Math.min(.90,y+dy));
+        p.push([x,y]);
+      }
+      var st=[];
+      for(k=1;k<p.length-1;k++) if(k%2===1||r()<.30) st.push(k);
+      R.push({p:p,st:st,c:[0,2,4,6,7][i],tr:[r(),r()*.45+.5],sp:.05+r()*.04});
+    }
+    return {R:R};
+  },
+  draw:function(g,w,h,t,S,big){
+    g.fillStyle=BG; g.fillRect(0,0,w,h);
+    var lw=Math.max(2.4,Math.min(w,h)*.024), i, k;
+    g.lineCap='round'; g.lineJoin='round';
+    for(i=0;i<S.R.length;i++){
+      var R=S.R[i], p=R.p;
+      g.strokeStyle='rgba(5,6,11,.9)'; g.lineWidth=lw*1.55;
+      g.beginPath(); g.moveTo(p[0][0]*w,p[0][1]*h);
+      for(k=1;k<p.length;k++) g.lineTo(p[k][0]*w,p[k][1]*h);
+      g.stroke();
+      g.strokeStyle=rgba(R.c,.92); g.lineWidth=lw;
+      g.beginPath(); g.moveTo(p[0][0]*w,p[0][1]*h);
+      for(k=1;k<p.length;k++) g.lineTo(p[k][0]*w,p[k][1]*h);
+      g.stroke();
+    }
+    for(i=0;i<S.R.length;i++){
+      var R2=S.R[i], p2=R2.p, seg=[], tot=0;
+      for(k=1;k<p2.length;k++){
+        var dx=(p2[k][0]-p2[k-1][0])*w, dy=(p2[k][1]-p2[k-1][1])*h;
+        var L=Math.sqrt(dx*dx+dy*dy); seg.push(L); tot+=L;
+      }
+      for(k=0;k<R2.st.length;k++){
+        var v=p2[R2.st[k]], sx=v[0]*w, sy=v[1]*h;
+        g.beginPath(); g.arc(sx,sy,lw*.56,0,TAU);
+        g.fillStyle='#080A11'; g.fill();
+        g.strokeStyle='rgba(233,236,245,.92)'; g.lineWidth=Math.max(1.1,lw*.24); g.stroke();
+      }
+      g.globalCompositeOperation='lighter';
+      for(var q=0;q<R2.tr.length;q++){
+        var d=((t*R2.sp*tot*3.4+R2.tr[q]*tot)%tot), acc=0, j=0;
+        while(j<seg.length&&acc+seg[j]<d){ acc+=seg[j]; j++; }
+        if(j>=seg.length) j=seg.length-1;
+        var f=seg[j]?(d-acc)/seg[j]:0;
+        var tx=(p2[j][0]+(p2[j+1][0]-p2[j][0])*f)*w;
+        var ty=(p2[j][1]+(p2[j+1][1]-p2[j][1])*f)*h;
+        glow(g,R2.c,tx,ty,lw*2.4,.95);
+      }
+      g.globalCompositeOperation='source-over';
+    }
+    if(big){
+      var NM=['барокко','романтизм','модерн','рок','электроника'];
+      for(i=0;i<S.R.length;i++){
+        var s0=S.R[i].p[0];
+        lab(g,NM[i],s0[0]*w+lw*1.1,s0[1]*h-lw*1.5,12,rgba(S.R[i].c,.92));
+      }
+    }
+  }
+};
+
+/* ==================================================================== 10 */
+var C10={
+  init:function(){
+    var r=mul(179), L=[], i, k;
+    for(i=0;i<24;i++){
+      var wv=[];
+      for(k=0;k<4;k++) wv.push({f:1.4+r()*7.5,p:r()*TAU,a:(1-k*.20)*(.45+r()*.85)});
+      L.push({wv:wv,c:(i/24*8)|0,pk:.16+r()*.68,br:.30+r()*.62,sp:.16+r()*.20});
+    }
+    return {L:L};
+  },
+  draw:function(g,w,h,t,S,big){
+    g.fillStyle=BG; g.fillRect(0,0,w,h);
+    var N=52, n=S.L.length, top=h*.16, span=h*.70, step=span/(n-1);
+    var amp=step*4.6, i, k, j;
+    /* Порядок обязателен: дальний гребень рисуется первым, ближний закрывает
+       его непрозрачной заливкой. Наоборот — и на экране остаётся одна линия. */
+    for(i=0;i<n;i++){
+      var L=S.L[i], y0=top+i*step, pts=[];
+      for(j=0;j<=N;j++){
+        var x=j/N, v=0;
+        for(k=0;k<L.wv.length;k++)
+          v+=L.wv[k].a*Math.sin(x*L.wv[k].f*3.4+t*L.sp*(1+k*.35)+L.wv[k].p);
+        var env=Math.exp(-Math.pow((x-L.pk)/.30,2)*1.6)
+               +Math.exp(-Math.pow((x-L.pk*.4-.5)/.22,2)*2.4)*.45;
+        pts.push([x*w,y0-Math.abs(v)*amp*.22*env-env*amp*.20]);
+      }
+      g.beginPath(); smooth(g,pts);
+      g.lineTo(w,h+2); g.lineTo(0,h+2); g.closePath();
+      g.fillStyle=BG; g.fill();
+      g.beginPath(); smooth(g,pts);
+      g.strokeStyle=rgba(L.c,L.br);
+      g.lineWidth=Math.max(.9,w*.0021); g.stroke();
+    }
+    if(big) for(i=0;i<n;i+=4)
+      lab(g,String(2002+i),w*.012,top+i*step-step*.4,11,'rgba(233,236,245,.4)');
+  }
+};
+
+/* =================================================================== опись */
+var CONCEPTS=[
+  {r:C1,name:'Созвездия',tag:'Тёмное небо, дрейф, связи вспыхивают',
+   use:'Общий вид всей библиотеки: скопления читаются как жанры, линии — общие исполнители. Стартовый экран, с которого ныряют внутрь.',
+   det:'Классический космос, но собранный: параллакс в три плана, связи дышат не в такт, звёзды мерцают каждая со своей фазой. Единственная форма, которая честно показывает «всего много» и при этом не превращается в кашу.',
+   load:'низкая',cost:'150 спрайтов + 74 линии'},
+  {r:C2,name:'Годовые кольца',tag:'Срез ствола, он же винил под иглой',
+   use:'Кольцо — год, зарубка — трек, цвет — эпоха. Игла обходит круг и подсвечивает то, что под ней: время читается сразу и целиком.',
+   det:'Две метафоры в одной фигуре: спил дерева и пластинка. Радиус — время, поэтому «сколько я слушал в 2019-м» видно без подписей. Игла даёт вечное движение, за которое цепляется глаз, и ей же можно управлять — она естественный слайдер года.',
+   load:'низкая',cost:'11 колец + ~250 зарубок'},
+  {r:C3,name:'Река жанров',tag:'Потоки набухают и опадают',
+   use:'Горизонталь — годы, толщина полосы — сколько слушали этот жанр. Одна картинка рассказывает всю историю вкуса.',
+   det:'Самая «объяснимая» форма списка: показать её — и рассказывать почти нечего, всё видно. Читается на превью и на телефоне. Слабость — не даёт нырнуть: это диаграмма, к ней нужен второй экран.',
+   load:'низкая',cost:'8 заливок по 44 точки'},
+  {r:C4,name:'Спектр',tag:'Эквалайзер, но столбик — это эпоха',
+   use:'Мгновенно читается как «музыка» и не требует ни одного слова объяснения. Столбик — эпоха или десятилетие, высота — объём, цвет — семья.',
+   det:'Самый дешёвый способ выглядеть дорого: 58 скруглённых столбиков с отражением и подсветкой вершин. Хорош как заставка и как постоянная «шапка» сайта, которая живёт, пока человек листает каталог под ней.',
+   load:'низкая',cost:'58 прямоугольников'},
+  {r:C5,name:'Нити',tag:'Дуги между авторами, по ним бегут искры',
+   use:'Показывает не объём, а связь: кто с кем записан, что откуда выросло. Искры делают граф живым, не заставляя его шевелиться.',
+   det:'Дуговая диаграмма вместо клубка: узлы стоят в ряд, связи идут поверху, ничего не наслаивается. Единственная форма в списке, которая честно отвечает на вопрос «а что рядом» — то, чего сейчас на карте нет.',
+   load:'низкая',cost:'44 дуги + 74 искры'},
+  {r:C6,name:'Витрина',tag:'Сетка обложек, одна переворачивается',
+   use:'Самая рабочая форма каталога: то, что человек ожидает увидеть. Карточки чуть дышат, раз в две секунды одна переворачивается другой стороной.',
+   det:'Не зрелищно — зато здесь остаются. Обложки процедурные, так что даже без картинок сетка выглядит наполненной. Лучший кандидат на «второй экран» под любой из зрелищных форм.',
+   load:'низкая',cost:'24 карточки'},
+  {r:C7,name:'Слои',tag:'Геологический разрез, камера опускается',
+   use:'Каждый слой — десятилетие, толщина — сколько под ним записей. Спуск читается как погружение в прошлое.',
+   det:'Вертикаль как время — редкий и очень кинематографичный ход: прокрутка мыши буквально становится машиной времени. Хорошо ложится на телефон, где вертикальный скролл и так основной жест.',
+   load:'низкая',cost:'16 пластов по 20 точек'},
+  {r:C8,name:'Орбиты',tag:'Композитор — солнце, произведение — планета',
+   use:'Иерархия, показанная движением: что вокруг чего вращается, видно без стрелок и подписей. Периоды разные, поэтому картинка никогда не повторяется.',
+   det:'Единственная форма, где вложенность выражена физически, а не отступом. Даёт естественный зум: подлетели к системе — она стала главной. Прямое развитие нынешней карты, но с добавленным временем.',
+   load:'низкая',cost:'5 систем, ~33 планеты'},
+  {r:C9,name:'Схема линий',tag:'Метро: линия — жанр, станция — автор',
+   use:'Самая читаемая схема из придуманных человечеством. Пересадка — автор на стыке двух жанров; поезда идут и показывают, где сейчас «горячо».',
+   det:'Радикально уходит от космоса и именно поэтому запоминается: музыкальную библиотеку так не рисуют. Ограничение честное — схема требует ручной укладки линий, автоматически красиво не выйдет.',
+   load:'низкая',cost:'5 линий + 8 поездов'},
+  {r:C10,name:'Хребты',tag:'Ряд гребней, каждый — год',
+   use:'Гребень — год, пики — на что пришёлся всплеск. Двадцать четыре строки, и ни одной подписи не нужно, чтобы понять форму жизни.',
+   det:'Иконография, которую все узнают, и при этом настоящая диаграмма плотности. Занимает целый экран и работает как афиша: такое ставят на обложку и на футболку. Плохо масштабируется вглубь — это витрина, не навигатор.',
+   load:'средняя',cost:'24 гребня по 52 точки'}
+];
+CONCEPTS.forEach(function(c){ c.S=c.r.init(); });
+
+/* ================================================================== движок */
+var tiles=[], frame=0, hero=null, modalT=null;
+var running=true, T0=performance.now();
+/* Три ступени нагрузки. Ступень поднимается сама, если частота просела:
+   на слабой машине страница не тормозит, а рисует реже. Ручной тумблер
+   выключает автоматику — человек всегда главнее. */
+var STEP=[{tile:2,big:1,dpr:1.75},{tile:3,big:2,dpr:1.4},{tile:4,big:3,dpr:1.0}];
+var lvl=0, autoLvl=true, lowFor=0, hiFor=0, modalOpen=false;
+var elMs=document.getElementById('ms'), elFps=document.getElementById('fps'),
+    elLive=document.getElementById('live');
+
+function mkTile(canvas,concept,always){
+  var t={cv:canvas,g:canvas.getContext('2d',{alpha:false}),c:concept,
+         w:0,h:0,vis:!!always,always:!!always,big:!!always,labels:false};
+  function size(){
+    var r=canvas.getBoundingClientRect();
+    if(r.width<2||r.height<2) return;
+    var d=t.big?Math.min(DPR,1.3):DPR;
+    var W=Math.round(r.width*d), H=Math.round(r.height*d);
+    if(W===t.cv.width&&H===t.cv.height) return;
+    t.cv.width=W; t.cv.height=H; t.w=r.width; t.h=r.height;
+    t.g.setTransform(d,0,0,d,0,0); t.dpr=d;
+    t.dirty=true;
+  }
+  t.size=size; size();
+  if(window.ResizeObserver) new ResizeObserver(size).observe(canvas);
+  tiles.push(t);
+  return t;
+}
+function paint(t,time){
+  if(!t.w) { t.size(); if(!t.w) return; }
+  t.g.save();
+  t.c.r.draw(t.g,t.w,t.h,time,t.c.S,t.labels);
+  t.g.restore();
+  t.dirty=false;
+}
+
+var acc=0, cnt=0, fpsAcc=0, fpsN=0, last=performance.now();
+function note(){
+  var b=document.getElementById('qual');
+  b.textContent=lvl===0?'экономный режим':(autoLvl?'экономный · авто '+lvl:'экономный · '+lvl);
+  b.setAttribute('aria-pressed',String(lvl>0));
+  var d=STEP[lvl].dpr, want=Math.min(window.devicePixelRatio||1,d);
+  if(want!==DPR){ DPR=want; tiles.forEach(function(t){ t.cv.width=0; t.size(); }); }
+}
+function loop(now){
+  raf=requestAnimationFrame(loop);
+  var dt=now-last; last=now;
+  var time=(now-T0)/1000;
+  frame++;
+  var t0=performance.now(), live=0, i;
+  for(i=0;i<tiles.length;i++){
+    var t=tiles[i];
+    if(!t.vis) continue;
+    if(modalOpen&&t!==modalT) continue;   /* за модалкой ничего не видно */
+    var every = t.always ? STEP[lvl].big : STEP[lvl].tile;
+    if(!t.dirty && (frame+i)%every) continue;
+    paint(t,time); live++;
+  }
+  if(hero) hero.step(time);
+  acc+=performance.now()-t0; cnt++;
+  fpsAcc+=dt; fpsN++;
+  if(fpsN>=24){
+    var f=1000/(fpsAcc/fpsN);
+    elMs.textContent=(acc/Math.max(cnt,1)).toFixed(1);
+    elFps.textContent=Math.round(f);
+    elLive.textContent=modalOpen?1:tiles.filter(function(x){return x.vis;}).length;
+    if(autoLvl){
+      if(f<44){ lowFor++; hiFor=0; } else if(f>55){ hiFor++; lowFor=0; }
+      else { lowFor=hiFor=0; }
+      if(lowFor>=2&&lvl<2){ lvl++; lowFor=0; note(); }
+      else if(hiFor>=6&&lvl>0){ lvl--; hiFor=0; note(); }
+    }
+    acc=0; cnt=0; fpsAcc=0; fpsN=0;
+  }
+}
+var raf=0;
+function start(){ if(!raf&&running&&!REDUCE){ last=performance.now(); raf=requestAnimationFrame(loop); } }
+function stop(){ if(raf){ cancelAnimationFrame(raf); raf=0; } }
+
+/* ================================================================== плитки */
+var grid=document.getElementById('grid');
+CONCEPTS.forEach(function(c,i){
+  var el=document.createElement('button');
+  el.type='button'; el.className='card';
+  el.innerHTML='<div class="shot"><canvas></canvas>'+
+    '<span class="no">'+('0'+(i+1)).slice(-2)+'</span>'+
+    '<span class="zoom">развернуть</span></div>'+
+    '<div class="meta"><h3></h3><p class="tag"></p><p class="use"></p>'+
+    '<div class="chips"><span class="chip '+(c.load==='низкая'?'lo':'mid')+'">нагрузка '+c.load+
+    '</span><span class="chip">'+c.cost+'</span></div></div>';
+  el.querySelector('h3').textContent=c.name;
+  el.querySelector('.tag').textContent=c.tag;
+  el.querySelector('.use').textContent=c.use;
+  grid.appendChild(el);
+  var t=mkTile(el.querySelector('canvas'),c,false);
+  c.tile=t;
+  el.addEventListener('click',function(){ openModal(i); });
+});
+
+var ioRef=null;
+if(window.IntersectionObserver){
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      var t=tiles.filter(function(x){ return x.cv===e.target; })[0];
+      if(t){ t.vis=e.isIntersecting; if(e.isIntersecting) t.dirty=true; }
+    });
+  },{rootMargin:'120px'});
+  tiles.forEach(function(t){ io.observe(t.cv); });
+  ioRef=io;
+} else tiles.forEach(function(t){ t.vis=true; });
+
+/* ==================================================================== шапка */
+(function(){
+  var cv=document.getElementById('hero');
+  var t=mkTile(cv,CONCEPTS[0],true);
+  t.big=true; t.labels=false;
+  if(ioRef) ioRef.observe(cv);          /* уехала за край — не рисуем */
+  var idx=0, nxt=1, mix=0, HOLD=5.4, FADE=1.1, last=0;
+  var elNo=document.getElementById('heroNo'), elNm=document.getElementById('heroName');
+  var dots=document.getElementById('heroDots');
+  CONCEPTS.forEach(function(c,i){
+    var b=document.createElement('button'); b.type='button';
+    b.setAttribute('aria-label',c.name);
+    b.addEventListener('click',function(){ jump(i); });
+    dots.appendChild(b);
+  });
+  function badge(i){
+    elNo.textContent='концепция '+('0'+(i+1)).slice(-2);
+    elNm.textContent=CONCEPTS[i].name;
+    var bs=dots.children;
+    for(var k=0;k<bs.length;k++){
+      if(k===i) bs[k].setAttribute('aria-current','true');
+      else bs[k].removeAttribute('aria-current');
+    }
+  }
+  function jump(i){ idx=i; nxt=(i+1)%CONCEPTS.length; mix=0; last=-1; badge(i); }
+  badge(0);
+  var off=null;
+  t.step=function(time){
+    if(last<0) last=time;
+    var d=time-last;
+    if(d>HOLD){
+      mix=Math.min(1,(d-HOLD)/FADE);
+      if(mix>=1){ idx=nxt; nxt=(nxt+1)%CONCEPTS.length; mix=0; last=time; badge(idx); }
+    }
+  };
+  /* Перекрёстное растворение: второй кадр рисуется в офф-скрин и кладётся сверху
+     с прозрачностью. Два прохода живут только 1,1 секунды из 6,5. */
+  var oldPaint=paint;
+  paint=function(tt,time){
+    if(tt!==t) return oldPaint(tt,time);
+    if(!tt.w){ tt.size(); if(!tt.w) return; }
+    tt.g.save(); CONCEPTS[idx].r.draw(tt.g,tt.w,tt.h,time,CONCEPTS[idx].S,false); tt.g.restore();
+    if(mix>0){
+      if(!off){ off=document.createElement('canvas'); off.g=off.getContext('2d'); }
+      if(off.width!==tt.cv.width||off.height!==tt.cv.height){
+        off.width=tt.cv.width; off.height=tt.cv.height;
+      }
+      var og=off.getContext('2d');
+      og.setTransform(tt.dpr||DPR,0,0,tt.dpr||DPR,0,0);
+      og.save(); CONCEPTS[nxt].r.draw(og,tt.w,tt.h,time,CONCEPTS[nxt].S,false); og.restore();
+      tt.g.save(); tt.g.setTransform(1,0,0,1,0,0);
+      tt.g.globalAlpha=mix<.5?mix*mix*2:1-Math.pow(1-mix,2)*2;
+      tt.g.drawImage(off,0,0); tt.g.restore();
+    }
+  };
+  hero=t;
+})();
+
+/* =================================================================== модалка */
+var modal=document.getElementById('modal'), lastFocus=null;
+function openModal(i){
+  var c=CONCEPTS[i];
+  lastFocus=document.activeElement;
+  modal.innerHTML='<div class="box"><div class="big">'+
+    '<canvas></canvas>'+
+    '<button class="close" type="button">закрыть · esc</button>'+
+    '<div class="nav"><button type="button" data-d="-1">←</button>'+
+    '<button type="button" data-d="1">→</button></div></div>'+
+    '<div class="txt"><div><div class="num">концепция '+('0'+(i+1)).slice(-2)+'</div>'+
+    '<h2></h2><p class="det"></p></div>'+
+    '<div class="side"><div><b>Как читается</b><span class="use"></span></div>'+
+    '<div><b>Нагрузка</b><span class="cost"></span></div></div></div></div>';
+  modal.querySelector('h2').textContent=c.name;
+  modal.querySelector('.det').textContent=c.det;
+  modal.querySelector('.side .use').textContent=c.use;
+  modal.querySelector('.side .cost').textContent=c.load+' · '+c.cost+' за кадр';
+  modal.classList.add('on');
+  document.body.style.overflow='hidden'; modalOpen=true;
+  modalT=mkTile(modal.querySelector('canvas'),c,true);
+  modalT.big=true; modalT.labels=true; modalT.vis=true;
+  modal.querySelector('.close').addEventListener('click',closeModal);
+  modal.querySelectorAll('.nav button').forEach(function(b){
+    b.addEventListener('click',function(e){
+      e.stopPropagation();
+      closeModal(true); openModal((i+ +b.dataset.d+CONCEPTS.length)%CONCEPTS.length);
+    });
+  });
+  modal.querySelector('.close').focus();
+  if(REDUCE) paint(modalT,(performance.now()-T0)/1000);
+}
+function closeModal(keep){
+  if(modalT){ tiles=tiles.filter(function(x){ return x!==modalT; }); modalT=null; }
+  if(keep) return;
+  modalOpen=false;
+  modal.classList.remove('on'); modal.innerHTML='';
+  tiles.forEach(function(t){ t.dirty=true; });
+  document.body.style.overflow='';
+  if(lastFocus&&lastFocus.focus) lastFocus.focus();
+}
+modal.addEventListener('click',function(e){ if(e.target===modal) closeModal(); });
+window.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&modal.classList.contains('on')) closeModal();
+});
+
+/* =================================================================== пульт */
+document.getElementById('qual').addEventListener('click',function(){
+  autoLvl=false; lvl=(lvl+1)%3; note();
+  if(lvl===0){ autoLvl=true; this.textContent='экономный режим'; }
+});
+document.getElementById('stop').addEventListener('click',function(){
+  running=!running; this.setAttribute('aria-pressed',String(!running));
+  this.textContent=running?'пауза':'продолжить';
+  if(running) start(); else stop();
+});
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden) stop(); else start();
+});
+
+if(REDUCE){
+  var one=(performance.now()-T0)/1000;
+  tiles.forEach(function(t){ t.vis=true; paint(t,one); });
+  elMs.textContent='0'; elFps.textContent='—'; elLive.textContent='0';
+} else {
+  requestAnimationFrame(function(){ tiles.forEach(function(t){ t.size(); }); start(); });
+}
+window.gallery=function(){ return {tiles:tiles.length,lvl:lvl,auto:autoLvl,dpr:DPR,
+  live:tiles.filter(function(t){return t.vis;}).length}; };
+})();
+</script>
+
+</html>
