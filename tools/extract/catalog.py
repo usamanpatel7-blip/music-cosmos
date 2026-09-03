@@ -85,6 +85,28 @@ def tsv(name):
     return m
 NAMES_RU, SUBCANON = tsv('names-ru.tsv'), tsv('subgenres.tsv')
 
+def load_epoch_fixes():
+    """Ручные поправки к ярлыкам эпох: имя и границы.
+
+    Ни по первой, ни по второй половине составного ярлыка правильное имя
+    автоматически не получается — см. epochs.tsv.
+    """
+    path = os.path.join(HERE, 'epochs.tsv')
+    m = {}
+    if not os.path.exists(path):
+        return m
+    for line in io.open(path, encoding='utf-8'):
+        line = line.rstrip('\n')
+        if not line.strip() or line.startswith('#'):
+            continue
+        a = line.split('\t')
+        if len(a) >= 2 and a[0].strip() and a[1].strip():
+            lo = int(a[2]) if len(a) > 2 and a[2].strip().isdigit() else 0
+            hi = int(a[3]) if len(a) > 3 and a[3].strip().isdigit() else 0
+            m[a[0].strip()] = (a[1].strip(), (lo, hi))
+    return m
+EPOCH_FIX = load_epoch_fixes()
+
 def ru(name):
     v = NAMES_RU.get(name)
     if v and v != '=':
@@ -139,11 +161,19 @@ def main():
         h, _, span = split_label(r.get('A'))
         heads[h].add(span)
     epoch_name = {}
+    fixed = []
     for r in cls:
         raw = r.get('A')
         h, tail, span = split_label(raw)
-        if len(heads[h]) > 1 and tail:
-            epoch_name[raw] = (cap(tail), span)     # ярлык расходится по времени
+        if raw in EPOCH_FIX:
+            epoch_name[raw] = EPOCH_FIX[raw]        # ручная поправка сильнее всего
+            if raw not in fixed:
+                fixed.append(raw)
+        elif len(heads[h]) > 1 and tail:
+            # Ярлыки с одной головой, но разными диапазонами — разные эпохи.
+            # Имя берётся из второй половины: голова у них общая и потому
+            # ничего не различает. Где так выходит неверно — epochs.tsv.
+            epoch_name[raw] = (cap(tail), span)
         else:
             epoch_name[raw] = (h, span)
     split_fixed = sum(1 for h, v in heads.items() if len(v) > 1)
@@ -262,6 +292,9 @@ def main():
     print('  академических %d · повседневных %d · в чартах Replay %d'
           % (sum(T['R']), n - sum(T['R']), sum(1 for x in T['r'] if x)))
     print('  ярлыков эпох, расклеенных по диапазону: %d' % split_fixed)
+    for raw in fixed:
+        print('    поправка: «%s» → «%s» %d–%d'
+              % (raw, EPOCH_FIX[raw][0], EPOCH_FIX[raw][1][0], EPOCH_FIX[raw][1][1]))
     for h, v in sorted(heads.items()):
         if len(v) > 1:
             print('    «%s» → %s' % (h, ', '.join(
