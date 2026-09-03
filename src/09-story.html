@@ -1,0 +1,636 @@
+<title>Сюжет и формы Music Cosmos</title>
+<meta name="description" content="Что говорят данные библиотеки, какие формы визуализации доступны внутри метафоры космоса и вне её, и что снимать в видео.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Сюжет и формы Music Cosmos">
+<meta property="og:description" content="Восемнадцать форм визуализации личной музыкальной библиотеки, оценённых по съёмке и по удержанию, и раскадровка ролика.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --bg:#EDEFF4; --surface:#FFFFFF; --surface-2:#F5F7FA;
+  --ink:#14161E; --ink-2:#444B5F; --muted:#6B7285;
+  --line:#D6DAE5; --line-soft:#E4E8F0;
+  --accent:#B4530C; --accent-soft:#FBEEE1;
+  --crit:#A8453A; --warn:#96751F; --ok:#2E7D5B;
+  --cosmos:#5B4FB8; --outside:#1F7A72;
+  --shadow:0 1px 2px rgba(20,22,30,.06), 0 8px 24px -12px rgba(20,22,30,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1017; --surface:#161A24; --surface-2:#1C2130;
+    --ink:#E8EAF0; --ink-2:#B4BACB; --muted:#868EA4;
+    --line:#2A3040; --line-soft:#222836;
+    --accent:#EFA35A; --accent-soft:#2A2016;
+    --crit:#E08A7E; --warn:#D9BC63; --ok:#6FC79A;
+    --cosmos:#A79BF0; --outside:#5FC3B8;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1017; --surface:#161A24; --surface-2:#1C2130;
+  --ink:#E8EAF0; --ink-2:#B4BACB; --muted:#868EA4;
+  --line:#2A3040; --line-soft:#222836;
+  --accent:#EFA35A; --accent-soft:#2A2016;
+  --crit:#E08A7E; --warn:#D9BC63; --ok:#6FC79A;
+  --cosmos:#A79BF0; --outside:#5FC3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;}
+.wrap{max-width:1000px; margin:0 auto; padding:56px 24px 96px}
+h1,h2,h3{font-family:Archivo,"IBM Plex Sans",sans-serif; text-wrap:balance; margin:0}
+h1{font-weight:800; font-size:clamp(2rem,5.2vw,3.1rem); letter-spacing:-.028em; line-height:1.08}
+h2{font-weight:700; font-size:1.5rem; letter-spacing:-.018em}
+h3{font-weight:600; font-size:1.02rem; letter-spacing:-.008em}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:3px}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted);}
+.lede{color:var(--ink-2); font-size:1.06rem; max-width:66ch; margin-top:18px}
+.lede strong{color:var(--ink); font-weight:600}
+header.top{display:flex; flex-direction:column; gap:14px; padding-bottom:36px; border-bottom:1px solid var(--line)}
+section{margin-top:56px}
+.shead{display:flex; flex-direction:column; gap:8px; margin-bottom:22px}
+.shead p{color:var(--ink-2); max-width:68ch; font-size:.96rem}
+
+.figures{display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr));
+  gap:1px; background:var(--line-soft); border:1px solid var(--line-soft);
+  border-radius:10px; overflow:hidden; margin:30px 0 0;}
+.fig{background:var(--surface); padding:16px 18px; display:flex; flex-direction:column; gap:3px}
+.fig b{font-family:Archivo,sans-serif; font-weight:800; font-size:1.7rem;
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1.1;}
+.fig span{font-size:.79rem; color:var(--muted); line-height:1.35}
+.fig.alarm b{color:var(--crit)}
+
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px;
+  background:var(--surface); box-shadow:var(--shadow); margin-top:20px}
+table{border-collapse:collapse; width:100%; min-width:620px; font-size:.9rem}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+thead th{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); font-weight:500;
+  background:var(--surface-2); border-bottom:1px solid var(--line);}
+tbody tr:last-child td{border-bottom:none}
+td.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; white-space:nowrap}
+td.note{color:var(--ink-2)}
+
+/* столбик долей */
+.bar{display:block; height:7px; border-radius:4px; background:var(--line-soft); position:relative; min-width:60px}
+.bar i{position:absolute; inset:0 auto 0 0; border-radius:4px; background:var(--accent)}
+
+.callout{margin-top:24px; padding:20px 22px; border-radius:12px;
+  background:var(--accent-soft); border:1px solid var(--line);
+  color:var(--ink-2); font-size:.98rem}
+.callout b{color:var(--ink); font-weight:600}
+.callout p+p{margin-top:12px}
+
+.forms{display:grid; gap:1px; background:var(--line-soft);
+  border:1px solid var(--line-soft); border-radius:11px; overflow:hidden; margin-top:22px}
+.form{background:var(--surface); padding:18px 20px; display:grid; gap:9px;
+  grid-template-columns:minmax(0,1fr) auto; align-items:start}
+.form .body{grid-column:1; display:flex; flex-direction:column; gap:7px}
+.form .code{font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.08em;
+  color:var(--muted)}
+.form h3 .code{margin-right:8px}
+.form p{font-size:.92rem; color:var(--ink-2); max-width:62ch}
+.form .why{font-size:.86rem; color:var(--muted)}
+.form .why b{color:var(--ink-2); font-weight:600}
+.scores{grid-column:2; grid-row:1/99; display:flex; flex-direction:column; gap:7px;
+  align-items:flex-end; padding-left:18px; min-width:132px}
+.score{display:flex; align-items:center; gap:7px; font-family:"IBM Plex Mono",monospace;
+  font-size:.68rem; letter-spacing:.05em; color:var(--muted); white-space:nowrap}
+.dots{display:inline-flex; gap:2px}
+.dots i{width:6px; height:6px; border-radius:50%; background:var(--line); display:block}
+.dots i.on{background:var(--accent)}
+.cost{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.05em;
+  padding:2px 8px; border-radius:20px; border:1px solid currentColor}
+.cost.s{color:var(--ok)} .cost.m{color:var(--warn)} .cost.l{color:var(--crit)}
+.rule{display:flex; align-items:center; gap:12px; margin:44px 0 0}
+.rule span{font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted); white-space:nowrap}
+.rule::after{content:""; flex:1; height:1px; background:var(--line)}
+.rule i{width:10px; height:10px; border-radius:50%; display:block}
+
+.acts{display:grid; gap:14px; margin-top:22px}
+.act{background:var(--surface); border:1px solid var(--line); border-radius:11px;
+  padding:18px 20px; display:grid; grid-template-columns:auto minmax(0,1fr); gap:0 18px;
+  box-shadow:var(--shadow)}
+.act .n{font-family:Archivo,sans-serif; font-weight:800; font-size:2rem; line-height:1;
+  color:var(--accent); grid-row:1/99}
+.act h3{margin-bottom:5px}
+.act p{font-size:.93rem; color:var(--ink-2); max-width:62ch}
+.act .uses{margin-top:9px; font-family:"IBM Plex Mono",monospace; font-size:.72rem;
+  letter-spacing:.05em; color:var(--muted)}
+
+ol.fixes{margin:20px 0 0; padding:0; list-style:none; display:grid; gap:1px;
+  background:var(--line-soft); border:1px solid var(--line-soft); border-radius:11px; overflow:hidden}
+ol.fixes li{background:var(--surface); padding:15px 18px; display:grid;
+  grid-template-columns:auto minmax(0,1fr); gap:0 14px}
+ol.fixes .k{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--accent);
+  padding-top:3px; grid-row:1/99}
+ol.fixes b{font-weight:600; display:block; margin-bottom:3px}
+ol.fixes p{font-size:.9rem; color:var(--ink-2); max-width:64ch}
+code{font-family:"IBM Plex Mono",monospace; font-size:.85em; color:var(--ink);
+  background:var(--surface-2); padding:1px 5px; border-radius:4px}
+
+footer{margin-top:64px; padding-top:22px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:.85rem}
+@media (max-width:640px){
+  .wrap{padding:38px 16px 72px}
+  .form{grid-template-columns:minmax(0,1fr)}
+  .scores{grid-column:1; grid-row:auto; flex-direction:row; align-items:center;
+    padding-left:0; flex-wrap:wrap; gap:10px}
+  .act{grid-template-columns:minmax(0,1fr)}
+  .act .n{grid-row:auto; margin-bottom:4px}
+}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <p class="eyebrow">09 · сюжет и формы</p>
+  <h1>Что здесь можно показать</h1>
+  <p class="lede">Восемнадцать форм визуализации библиотеки — семь внутри метафоры космоса,
+  одиннадцать вне её, — оценённых по двум разным задачам: <strong>снять ролик</strong> и
+  <strong>удержать человека, пришедшего по ссылке</strong>. Это разные требования, и почти
+  ни одна форма не решает обе. Перед списком — то, что данные говорят сами, и что стоит
+  сделать тезисом ролика.</p>
+</header>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Находка</p>
+    <h2>Библиотека не накапливается — она сменяется целиком</h2>
+    <p>Три числа из таблицы, которых нет ни на карте, ни в README. Все проверены по
+    листам «Уникальные треки» и «Статистика прослушиваний».</p>
+  </div>
+
+  <div class="figures">
+    <div class="fig"><b>4280</b><span>из 4334 треков живут ровно в одном плейлисте — не в двух</span></div>
+    <div class="fig alarm"><b>0</b><span>треков из «22–24» перешло в актуальный плейлист</span></div>
+    <div class="fig alarm"><b>572</b><span>из 580 треков попали в годовой топ-100 ровно одного года</span></div>
+    <div class="fig"><b>8</b><span>треков продержались в топе два года. Пять лет — ни один</span></div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Возраст</th><th>Треков</th><th>Классики</th><th>Доля</th><th>Что слушали</th></tr></thead>
+      <tbody>
+        <tr><td>11–15</td><td class="num">104</td><td class="num">0</td><td><span class="bar"><i style="width:1%"></i></span></td><td class="note">97 из 104 — рок</td></tr>
+        <tr><td>16–18</td><td class="num">469</td><td class="num">7</td><td><span class="bar"><i style="width:1.5%"></i></span></td><td class="note">рок 321, поп 66</td></tr>
+        <tr><td>19</td><td class="num">369</td><td class="num">1</td><td><span class="bar"><i style="width:1%"></i></span></td><td class="note">рок 230, блюз 30</td></tr>
+        <tr><td>20–21</td><td class="num">181</td><td class="num">21</td><td><span class="bar"><i style="width:12%"></i></span></td><td class="note">поворот начинается</td></tr>
+        <tr><td>22–24</td><td class="num">1471</td><td class="num">842</td><td><span class="bar"><i style="width:57%"></i></span></td><td class="note">барокко 171, рок 236</td></tr>
+        <tr><td>Концерты</td><td class="num">1218</td><td class="num">1210</td><td><span class="bar"><i style="width:99%"></i></span></td><td class="note">романтизм 241, классицизм 156</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Replay</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>2026</th></tr></thead>
+      <tbody>
+        <tr><td class="note">доля классики в топ-100</td>
+          <td class="num">58 %</td><td class="num">77 %</td><td class="num">65 %</td>
+          <td class="num">86 %</td><td class="num">78 %</td><td class="num">56 %</td></tr>
+        <tr><td class="note">кто вёл год</td>
+          <td class="note">Бах, Битлы</td><td class="note">Рахманинов</td><td class="note">Моцарт</td>
+          <td class="note">Мендельсон</td><td class="note">Пярт, Бах</td><td class="note">Хурвиц, Элфман</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <p><b>Метафора спорит с данными.</b> Космос — это про вечность и одновременность:
+    звёзды стоят, всё сосуществует, ничего не пропадает. Данные говорят обратное. Каждые
+    два-три года библиотека меняется целиком, из одного возраста в следующий переходят
+    единицы треков, и разворот 2026-го наружу — в киномузыку — такой же резкий, как заход
+    в классику в двадцать.</p>
+    <p>Это не повод бросать космос. Это тезис ролика, которого сейчас нет.
+    Не «смотрите, красивая карта моей музыки», а <b>«я думал, что собираю коллекцию,
+    а оказалось — прохожу насквозь и оставляю»</b>. И карта нужна, чтобы это показать.</p>
+    <p>Уцелевшие тоже говорящие. Восемь треков, продержавшихся два года подряд, —
+    все фортепианные и все академические: Рихтер играет Баха, Ашкенази — Рахманинова,
+    Юдина — Паганини-вариации, Гульда — двадцатый концерт Моцарта. Всё, что осталось от
+    шести лет, помещается на один экран. Это ваш самый сильный кадр, и он стоит одного
+    запроса к данным.</p>
+  </div>
+</section>
+
+<section>
+  <div class="rule"><i style="background:var(--cosmos)"></i><span>A · внутри аналогии космоса</span></div>
+  <div class="shead" style="margin-top:22px">
+    <p>Метафора уже стоит и работает. Ниже — что она ещё не отдала. Оценки:
+    <b>кадр</b> — насколько форма снимается и держит внимание в ролике;
+    <b>ссылка</b> — насколько удерживает пришедшего.</p>
+  </div>
+
+  <div class="forms">
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">A1</span>Шесть небес</h3>
+        <p>Одна ручка 2021 → 2026, и созвездия перестраиваются: 580 треков годовых
+        топов уже размечены по годам. На слове «двадцать четвёртый» кадр сжимается
+        в классику, на «двадцать шестом» разъезжается наружу.</p>
+        <p class="why"><b>Почему дёшево:</b> это фильтр над готовой раскладкой,
+        новой геометрии не нужно.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+        <span class="cost s">1–2 дня</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">A2</span>Расширяющаяся вселенная</h3>
+        <p>Радиус = возраст. «11–15» в ядре, каждый следующий возраст — оболочка снаружи.
+        Непересечение видно буквально: оболочки не соприкасаются. Отъезд камеры читается
+        как взросление, и это диаграмма находки, а не украшение.</p>
+        <p class="why"><b>Риск:</b> нужно решить, что делать с «Концертами» — это не
+        возраст, а способ слушать.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+        <span class="cost m">3–5 дней</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">A3</span>Реликтовое излучение</h3>
+        <p>Обратный кадр ко всему остальному: гасим всё, кроме выживших. Восемь треков
+        из шести лет, тридцать пять из всех плейлистов. Пустой чёрный экран и горстка
+        точек.</p>
+        <p class="why"><b>Почти бесплатно:</b> один фильтр, ноль новой геометрии.
+        Самый сильный кадр проекта на цену получаса.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></span>
+        <span class="cost s">часы</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">A4</span>Планетарий</h3>
+        <p>Купол вместо плоскости: горизонт, взгляд вверх, медленное вращение.
+        Иерархия теряется, атмосфера выигрывает. Годится как заставка и первые
+        пять секунд ролика, но не как рабочий режим.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></span>
+        <span class="cost m">3–4 дня</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">A5</span>Созвездия с именами и фигурами</h3>
+        <p>Сейчас скопления безымянны и одинаковы по форме. Дать пятнадцати крупным
+        узлам нарисованные фигуры и названия — «Бах», «Рукав Битлов», «Пояс концертов» —
+        значит дать карте иконографию: то, что узнают и пересылают скриншотом.</p>
+        <p class="why"><b>Дорого не кодом:</b> фигуры рисует человек, автоматически
+        не получится.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        <span class="cost l">неделя+</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">A6</span>Записанный пролёт <code>?tour=</code></h3>
+        <p>Сценарный маршрут с титрами и без мыши. В <code>08-cosmos</code> для этого
+        уже написана механика: <code>audit(160)</code> летает по кривой Ван Вейка
+        от обзора до трека. Остаётся подставить маршрут и подписи.</p>
+        <p class="why"><b>Это не фича сайта, а инструмент съёмки:</b> вы не водите
+        мышью в кадре и не мажете мимо звезды — вы запускаете дубль. Экономит больше,
+        чем стоит.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+        <span class="cost s">1–2 дня</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">A7</span>Спектр вместо украшения</h3>
+        <p>Сейчас размер тела = число треков и яркость = число треков: одна величина
+        сказана дважды, и картинка ничего не сообщает. Развести: размер — объём,
+        яркость — Replay, цвет — время, лучи — выжившим. Тогда в ролике можно сказать
+        «яркое — то, что я правда слушал», а не «то, где больше файлов».</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+        <span class="cost s">1 день</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <p><b>Чего метафора стоит.</b> WebGL2 отсекает часть зрителей — запасной путь
+    сейчас бедный список. На телефоне глубина и масштаб читаются плохо, а с телефона
+    придёт больше половины. «Космос» обещает физику, которой нет, — README это честно
+    признаёт («красиво, а не достоверно»), но зритель README не читал. И главное:
+    космос статичен, а сюжет здесь про смену. Одной метафорой ролик не закрыть — нужен
+    хотя бы один кадр вне её.</p>
+  </div>
+</section>
+
+<section>
+  <div class="rule"><i style="background:var(--outside)"></i><span>B · вне аналогии</span></div>
+  <div class="shead" style="margin-top:22px">
+    <p>Формы, которые отвечают на вопросы, недоступные карте звёзд. Порядок —
+    по убыванию того, насколько форма нужна именно вашей задаче.</p>
+  </div>
+
+  <div class="forms">
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">B1</span>Лента жизни</h3>
+        <p>Шесть горизонтальных полос сверху вниз: 11–15, 16–18, 19, 20–21, 22–24,
+        сейчас. Внутри полосы — её треки. Между полосами — нити переходов: пять,
+        две, семь, одна, ноль. Содержание здесь — пустота между полосами.</p>
+        <p class="why"><b>Главный кандидат на ядро ролика.</b> Самая объяснимая и самая
+        человеческая форма из всех: скролл читается как взросление, снимается одним
+        движением, работает на телефоне и не требует WebGL.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        <span class="cost m">3–5 дней</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">B2</span>Река жанров</h3>
+        <p>Streamgraph по шести годам Replay: полосы жанров текут слева направо,
+        классика вздувается к 2024-му и опадает к 2026-му. Одна картинка — весь сюжет.</p>
+        <p class="why"><b>Заодно превью ролика:</b> читается на маленькой картинке,
+        чего про космос сказать нельзя.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+        <span class="cost s">1 день</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">B5</span>Картотека</h3>
+        <p>Честная быстрая таблица с фасетами: эпоха, композитор, годы, плейлист,
+        страна, Replay — и ссылка в Apple Music у каждой строки. Не зрелищно.</p>
+        <p class="why"><b>Именно здесь люди останутся.</b> 4334 трека со ссылками —
+        полезный объект сам по себе, космос к нему афиша. Без картотеки ссылка
+        сработает ровно один раз. Она же чинит запасной путь без WebGL: он перестаёт
+        быть наказанием.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        <span class="cost m">3–4 дня</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">B7</span>«Мой Replay, но честный»</h3>
+        <p>Страница-отчёт в форме, которую все узнают с первого взгляда, — но с
+        находкой внутри: вот шесть лет, вот что вы слушали, вот сколько из этого
+        выжило. Ноль.</p>
+        <p class="why"><b>Пересылают именно такое.</b> Формат не требует объяснений,
+        а вывод противоречит ожиданию — это и есть условие репоста.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        <span class="cost m">2–3 дня</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">B4</span>Атлас</h3>
+        <p>ISRC дают <b>45 стран</b>: США 1351, Британия 864, Германия 541, Франция 434,
+        Россия 182, Нидерланды 151, Гонконг 74, Япония 27. Настоящая карта, а не метафора,
+        и другой вопрос — «откуда музыка».</p>
+        <p class="why"><b>Данные уже в реестре</b>, размечать нечего. Мгновенно читается
+        и работает на телефоне.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+        <span class="cost s">1–2 дня</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">B3</span>Партитура</h3>
+        <p>Библиотека как нотный стан: горизонталь — время, вертикаль — эпоха вместо
+        регистра, трек — нота. Формально это тепловая карта, но метафора попадает
+        в предмет так, как космос не попадает: музыку рисуют нотами.</p>
+        <p class="why"><b>Так никто не делает</b> — уже поэтому запоминается.
+        Но требует ручной разметки вертикальной оси.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+        <span class="cost l">неделя</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">B6</span>Тексты</h3>
+        <p>Каталог <code>notes/</code> уже устроен и подхватывается сборкой — в нём
+        два файла, Бах и Барокко. Двадцать страниц по эпохам и десяти композиторам
+        превращают аттракцион в место, куда возвращаются.</p>
+        <p class="why"><b>В ролике это ваша реплика</b> «и по каждой точке можно
+        почитать». Кода — ноль, работа вся писательская.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        <span class="cost l">вечера</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">B9</span>Плитка на 4334 клетки</h3>
+        <p>Вся библиотека на одном экране: клетка — трек, цвет — эпоха, яркость — Replay.
+        Кадр «вот это всё», он же готовая картинка для карточки ссылки в мессенджерах.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+        <span class="cost s">часы</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">B10</span>Звук</h3>
+        <p>Apple отдаёт тридцатисекундные превью. Сайт, который звучит при наведении,
+        удерживает несравнимо лучше молчащего, и в ролике решает вопрос звуковой дорожки:
+        подкладывать нечего, музыка своя.</p>
+        <p class="why"><b>Единственный пункт с внешней зависимостью:</b> условия
+        использования превью нужно проверить до, а не после.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+        <span class="cost m">2–3 дня</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">B8</span>Сунбёрст</h3>
+        <p>Скучно, но за три секунды объясняет устройство данных. Один кадр в ролике
+        на словах «под этим лежит дерево».</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i class="on"></i><i></i><i></i><i></i><i></i></span></span>
+        <span class="cost s">часы</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="body">
+        <h3><span class="code">B11</span>Печать</h3>
+        <p>Плакат-карта на стену. В кадре её можно взять в руки — приём, который
+        неожиданно сильно работает в ролике про цифровое.</p>
+      </div>
+      <div class="scores">
+        <span class="score">кадр <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span>
+        <span class="score">ссылка <span class="dots"><i></i><i></i><i></i><i></i><i></i></span></span>
+        <span class="cost m">2 дня + печать</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Раскадровка</p>
+    <h2>Три акта</h2>
+    <p>Космос не выбрасывается — он становится обёрткой, а не аргументом.
+    Аргумент лежит в середине, вне метафоры.</p>
+  </div>
+
+  <div class="acts">
+    <div class="act">
+      <div class="n">1</div>
+      <div>
+        <h3>Обещание · 20 секунд, ничего не объясняем</h3>
+        <p>Медленный пролёт по записанному маршруту. «Это 4334 трека, которые я слушал
+        с одиннадцати лет. Я думал, что собираю коллекцию».</p>
+        <p class="uses">A6 пролёт · A4 планетарий · A7 спектр</p>
+      </div>
+    </div>
+    <div class="act">
+      <div class="n">2</div>
+      <div>
+        <h3>Поворот · середина ролика и весь его смысл</h3>
+        <p>Уходим из космоса в ленту жизни. Показываем шесть полос. Потом включаем
+        нити переходов между ними — их почти нет. Пауза. Возврат в космос уже с
+        переключателем лет: небо перестраивается шесть раз, и на 2024-м видно, как
+        всё сжалось в классику. Финал акта — «реликтовое излучение»: гаснет всё,
+        кроме восьми выживших треков.</p>
+        <p class="uses">B1 лента жизни · A1 шесть небес · A3 выжившие · B2 река</p>
+      </div>
+    </div>
+    <div class="act">
+      <div class="n">3</div>
+      <div>
+        <h3>Приглашение · последние 30 секунд</h3>
+        <p>Поиск: набираем «Бах», летим внутрь, открываем заметку. Потом показываем
+        адрес на экране и произносим его. «Ссылка под роликом — там ваша собственная
+        прогулка, и там же вся таблица со ссылками на Apple Music».</p>
+        <p class="uses">B6 тексты · B5 картотека · глубокие ссылки</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Блокеры</p>
+    <h2>Что сломает ссылку, если не починить до съёмки</h2>
+    <p>Это не про формы, но без этого ролик приведёт людей в тупик.</p>
+  </div>
+
+  <ol class="fixes">
+    <li><span class="k">1</span><div>
+      <b>Глубоких ссылок нет вообще</b>
+      <p>В <code>app.html</code> из адреса читается ровно одно: <code>?debug</code>.
+      Нельзя дать ссылку на Баха, не работает кнопка «назад» в браузере, нельзя
+      произнести адрес в кадре. Починка — <code>history.pushState</code> в
+      <code>enter</code>/<code>up</code>/<code>goTo</code> плюс разбор пути при загрузке.
+      Полдня. Без этого весь замысел со ссылкой не работает.</p></div></li>
+    <li><span class="k">2</span><div>
+      <b>Карточки для мессенджеров нет</b>
+      <p><code>og:image</code> не задан: ссылка приходит серым прямоугольником.
+      Нужен один PNG — его снимет тот же <code>shot()</code>, что уже считает
+      гистограммы кадра.</p></div></li>
+    <li><span class="k">3</span><div>
+      <b>Первые восемь секунд пустые</b>
+      <p>Человек попадает на общий вид без задачи и уходит. Нужны четыре-пять готовых
+      входов прямо на экране: «Бах», «мои шестнадцать», «2024 год», «случайная точка».</p></div></li>
+    <li><span class="k">4</span><div>
+      <b>Телефон не проверен</b>
+      <p>С телефона придёт больше половины перешедших. Зум-космос там читается хуже
+      всего, а B1, B4 и A2 — лучше. Это довод строить хотя бы одну форму вне метафоры
+      до ролика, а не после.</p></div></li>
+    <li><span class="k">5</span><div>
+      <b>Подписи не кликаются</b>
+      <p>Единственный читаемый элемент кадра мёртв: <code>hitAt</code> проверяет только
+      тела, подписи лежат на канве с <code>pointer-events:none</code>. В кадре это
+      выглядит как промахи ведущего.</p></div></li>
+  </ol>
+</section>
+
+<section>
+  <div class="shead">
+    <p class="eyebrow">Минимум</p>
+    <h2>Что успеть к съёмке</h2>
+    <p>Одна неделя на полный ролик и работающую ссылку — если не браться за всё.</p>
+  </div>
+  <div class="callout">
+    <p><b>B1 лента жизни</b> — ядро и весь смысл ·
+    <b>A1 шесть небес</b> и <b>A3 выжившие</b> — фильтры над готовой раскладкой ·
+    <b>A6 пролёт</b> — чтобы снимать дублями, а не мышью ·
+    <b>глубокие ссылки</b> и <b>og:image</b> — чтобы ссылка работала ·
+    <b>B5 картотека</b> — чтобы пришедшие остались.</p>
+    <p>Всё остальное из списка — после ролика, по его отклику. A5 созвездия,
+    B3 партитура и B6 тексты дороги ровно тем, что делают их ценными: там нужен
+    человек, а не скрипт.</p>
+  </div>
+</section>
+
+<footer>
+  Числа проверены по <code>data/musical-cosmos-sheet.xlsx</code> (листы «Уникальные треки»,
+  «Статистика прослушиваний», «Плейлисты») и <code>data/cosmos.json</code>.
+  Разбор текущей реализации и план правок — <a href="00-plan.html">00 · разбор и план работ</a>.
+  Живая карта — <a href="app.html">Music Cosmos</a>.
+</footer>
+</div>
