@@ -58,7 +58,7 @@ button,input,select{font:inherit;color:inherit}
 #burger{display:none}
 
 /* ------------------------------------------------------------------ фасеты */
-#rail{grid-column:1;overflow-y:auto;padding:4px 0 10px}
+#rail{grid-column:1;overflow-y:auto;padding:4px 0 10px;min-width:0}
 #rail::-webkit-scrollbar,#list::-webkit-scrollbar,.opts::-webkit-scrollbar{width:9px}
 #rail::-webkit-scrollbar-thumb,#list::-webkit-scrollbar-thumb,
 .opts::-webkit-scrollbar-thumb{background:rgba(150,166,210,.20);border-radius:6px}
@@ -169,7 +169,7 @@ button,input,select{font:inherit;color:inherit}
 .rowsw[aria-pressed=true] .sw2::after{transform:translateX(13px);background:#0A0B10}
 
 /* ------------------------------------------------------------------- лист */
-#list{grid-column:3;overflow-y:auto;position:relative;transition:opacity .3s}
+#list{grid-column:3;overflow-y:auto;position:relative;transition:opacity .3s;min-width:0}
 #rail{transition:opacity .3s}
 #spacer{position:relative;width:100%}
 #rows{position:absolute;left:0;right:0;top:0}
@@ -462,6 +462,7 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
     </div>
     <div class="ways" id="ways"></div>
     <p class="hint">Клик по карте ведёт внутрь: солнце — автор, планета — запись.
+       Пилюля слева перебирает три фигуры: кольца, орбиты и ленту лет.
        Колесо приближает, тяга двигает. Точка слева от названия включает звук,
        клавиша <b>F</b> отдаёт фигуре весь экран.
        <br>Или прочитайте <a href="12-portrait.html">музыкальный портрет</a>:
@@ -764,7 +765,7 @@ function swapKb(t){ var o='', p;
 
 /* ================================================================= фильтры */
 function blank(){ return {q:'',realm:null,ep:{},sub:{},dir:{},art:{},cty:{},age:{},
-                          mo:{},y0:YMIN,y1:YMAX,rep:false}; }
+                          mo:{},y0:YMIN,y1:YMAX,rep:false,tl:0}; }
 var F=blank(), SORT='rel', sel=-1, MODE=0, CALM=false;
 function empty(o){ for(var x in o) if(o[x]) return false; return true; }
 
@@ -791,6 +792,7 @@ function pass(n,skip){
     var y=T.y[n]; if(!y||y<F.y0||y>F.y1) return false;
   }
   if(skip!=='rep'&&F.rep&&!T.r[n]) return false;
+  if(skip!=='tl'&&F.tl&&TLYR[n]!==F.tl) return false;
   return true;
 }
 var Q=[], RES=[], ON=new Uint8Array(N);
@@ -1027,6 +1029,7 @@ function drawChips(){
   if(F.realm!==null) chip('realm','',F.realm?'Академическая':'Повседневная');
   if(F.rep) chip('rep','','в Replay');
   if(F.y0>YMIN||F.y1<YMAX) chip('year','',F.y0+'–'+F.y1);
+  if(F.tl) chip('tl','','на ленте: '+F.tl);
   FAC.forEach(function(f){
     Object.keys(F[f.key]).forEach(function(x){
       if(F[f.key][x]) chip(f.key,x,f.name(x));
@@ -1265,6 +1268,7 @@ document.addEventListener('click',function(e){
     else if(t==='realm') F.realm=null;
     else if(t==='rep') F.rep=false;
     else if(t==='year'){ F.y0=YMIN; F.y1=YMAX; }
+    else if(t==='tl') F.tl=0;
     else delete F[t][b.dataset.k];
     apply(); return;
   }
@@ -1397,7 +1401,8 @@ function saveHash(){
     if(a.length) p.push(f.key+'='+a.join('.'));
   });
   if(SORT!=='rel') p.push('s='+SORT);
-  if(MODE) p.push('m=1');
+  if(MODE) p.push('m='+MODE);
+  if(F.tl) p.push('tl='+F.tl);
   if(TINT) p.push('t=1');
   var h='#'+p.join('&');
   selfHash=h;
@@ -1415,7 +1420,8 @@ function loadHash(){
     else if(key==='replay') F.rep=true;
     else if(key==='y'){ var a=v.split('-'); F.y0=+a[0]||YMIN; F.y1=+a[1]||YMAX; }
     else if(key==='s') SORT=v;
-    else if(key==='m') MODE=1;
+    else if(key==='m') MODE=Math.max(0,Math.min(2,+v||1));
+    else if(key==='tl') F.tl=+v||0;
     else if(key==='t') TINT=1;
     else if(F[key]&&typeof F[key]==='object')
       v.split('.').forEach(function(x){ F[key][x]=1; });
@@ -1428,7 +1434,7 @@ function loadHash(){
 addEventListener('hashchange',function(){
   if(location.hash===selfHash) return;
   F=blank(); elQ.value=''; SORT='rel'; MODE=0; sel=-1;
-  loadHash(); modeLabel(); showCard(-1); apply();
+  loadHash(); modeLabel(); tlPane(); showCard(-1); apply();
 });
 
 /* =================================================================== задник
@@ -1505,6 +1511,71 @@ var ESPR=ECOL.map(function(c){
     R0[n]=0.155+0.815*Math.pow(t,1.8);
   }
 })();
+/* =================================================================== лента
+   Третья фигура — время. Ось одна, но год у двух половин библиотеки значит
+   разное. У повседневной это точная дата издания. У академической даты
+   сочинения в данных нет, зато в имени автора стоят годы жизни: записи
+   автора растягиваются по его рабочим годам ровно. Это приближение, и
+   подпись под осью так и говорит.
+
+   Дальше каждый год — столбик из тел: академические растут вверх, всё
+   остальное вниз. Силуэт и есть гистограмма, только сложенная из самих
+   записей, а не нарисованная поверх них.
+
+   Высота у половин своя, и по-другому нельзя: вверху годы сочинения,
+   внизу годы издания — разные величины, и общая шкала уравняла бы их не
+   честнее, а как раз наоборот. Чтобы это не читалось обманом, у края
+   написано, сколько записей в самом высоком столбике каждой половины. */
+var TLX=new Float32Array(N), TLY=new Float32Array(N), TLYR=new Int16Array(N);
+var TLY0=1600, TLY1=YMAX, TLBAR=[], TLTOP=0, TLBOT=0, TLPRE=0,
+    TLMAXA=1, TLMAXP=1, TLHALF=0.40;
+(function timelineTargets(){
+  var LIFE=/\((?:ок\.\s*)?(\d{3,4})\s*[–—-]\s*(?:(\d{3,4})|н\.?\s*в\.?)/;
+  var n, k, q, est=new Float64Array(N), byArt={}, a;
+  for(n=0;n<N;n++){
+    if(T.R[n]) (byArt[T.a[n]]=byArt[T.a[n]]||[]).push(n);
+    else est[n]=T.y[n]||0;
+  }
+  for(a in byArt){
+    var lst=byArt[a], m=LIFE.exec(ARTIST[a]), lo=0, hi=0;
+    if(m){
+      var b=+m[1], d=m[2]?+m[2]:TLY1;
+      lo=b+20; hi=Math.min(d,b+78); if(hi<=lo) hi=lo+2;
+    } else {
+      var e=EPOCH[T.e[lst[0]]];
+      if(e.lo&&e.hi&&e.hi>e.lo){ lo=e.lo; hi=e.hi; }
+    }
+    for(k=0;k<lst.length;k++)
+      est[lst[k]]=lo?lo+(hi-lo)*((k+0.5)/lst.length):(T.y[lst[k]]||0);
+  }
+  for(n=0;n<N;n++){
+    var y=Math.round(est[n]||T.y[n]||TLY1);
+    if(y<TLY0){ TLYR[n]=TLY0-1; TLPRE++; }
+    else TLYR[n]=y>TLY1?TLY1:y;
+  }
+  var box={}, key;
+  for(n=0;n<N;n++){
+    key=(T.R[n]?'a':'p')+TLYR[n];
+    q=box[key]=(box[key]||0)+1;
+    if(T.R[n]){ if(q>TLMAXA) TLMAXA=q; } else if(q>TLMAXP) TLMAXP=q;
+  }
+  var dya=TLHALF/TLMAXA, dyp=TLHALF/TLMAXP, seen={};
+  for(n=0;n<N;n++){
+    key=(T.R[n]?'a':'p')+TLYR[n];
+    q=(seen[key]=(seen[key]||0)+1)-1;
+    TLX[n]=tlX(TLYR[n]);
+    TLY[n]=T.R[n]?-(0.026+q*dya):(0.026+q*dyp);
+  }
+  TLTOP=TLBOT=0.026+TLHALF;
+  /* Полосы эпох: только те, у кого в данных есть примерные даты. */
+  EPOCH.forEach(function(e,i){
+    if(e.lo&&e.hi&&e.hi>e.lo) TLBAR.push({e:i,lo:e.lo,hi:e.hi,n:e.n});
+  });
+  TLBAR.sort(function(x,y2){ return x.lo-y2.lo||y2.hi-x.hi; });
+})();
+function tlX(year){ return -0.985+1.97*((year-TLY0)+0.5)/(TLY1-TLY0+1); }
+function tlYear(nx){ return TLY0+Math.round((nx+0.985)/1.97*(TLY1-TLY0+1)-0.5); }
+
 function onlyKey(o){
   var k=null, x, n=0;
   for(x in o) if(o[x]){ k=x; if(++n>1) return null; }
@@ -1512,7 +1583,7 @@ function onlyKey(o){
 }
 function syncSky(){
   SUNS.length=0;
-  if(!MODE){ OK.fill(0); LEVEL=0; return; }
+  if(MODE!==1){ OK.fill(0); LEVEL=0; return; }
   /* Два уровня. Пока автор не выбран — солнца это авторы выборки. Как только
      выбран один — солнцами становятся его произведения, а планетами треки.
      Уровень задаёт не отдельное состояние карты, а тот же фильтр: карта и
@@ -1576,16 +1647,41 @@ function frameSky(){
      центрировать её по окну, на виду остаётся край, а не середина.
      На стартовом экране панелей нет — там фигура занимает всё окно. */
   CYt=VH*0.5;
-  if(START){ CXt=VW*0.5; RUt=Math.min(VW,VH)*0.44; GAPL=6; GAPR=VW-6; return; }
+  if(START){
+    CXt=VW*0.5; GAPL=6; GAPR=VW-6;
+    RUt=MODE===2?VW*0.47:Math.min(VW,VH)*0.44;
+    if(MODE===2) CYt=tlCentre();
+    return;
+  }
   var r=document.getElementById('rail').getBoundingClientRect();
   var l=document.getElementById('list').getBoundingClientRect();
   var gap=l.left-r.right;
   if(gap>200&&VW>900&&!document.body.classList.contains('map')){
-    CXt=(r.right+l.left)/2; RUt=Math.min(VH*0.46,gap*0.62);
-    GAPL=r.right+6; GAPR=l.left-6;
+    CXt=(r.right+l.left)/2; GAPL=r.right+6; GAPR=l.left-6;
+    /* Лента живёт шириной: ей отдаётся весь просвет, а не вписанный круг. */
+    RUt=MODE===2?gap*0.49:Math.min(VH*0.46,gap*0.62);
   } else {
-    CXt=VW*0.5; RUt=Math.min(VW,VH)*0.46; GAPL=6; GAPR=VW-6;
+    CXt=VW*0.5; GAPL=6; GAPR=VW-6;
+    RUt=MODE===2?VW*0.47:Math.min(VW,VH)*0.46;
   }
+  ASP=MODE===2?tlAsp():0.94;
+  if(MODE===2) CYt=tlCentre();
+}
+/* Ширину ленте задаёт срок, высоту — окно. У колец и орбит сжатие по
+   вертикали постоянное, у ленты оно подбирается: на телефоне четыре века
+   влезают в 390 точек, и если не растянуть реки вверх, читать будет нечего. */
+function tlAsp(){
+  var need=TLTOP+0.035+TLBOT+0.10, rib=TLBAR.length*11;
+  return Math.max(0.94,Math.min(2.4,(VH-128-rib)/Math.max(1,RUt*need)));
+}
+/* Лента высокая: полосы эпох сверху, две реки по бокам оси и год под ними.
+   Ось ставится так, чтобы вся эта стопка целиком села между шапкой и низом
+   окна, иначе на невысоком экране у неё срезает то верх, то низ. */
+function tlCentre(){
+  var u=RUt*ASP, rh=Math.max(9,Math.min(14,u*0.052));
+  var up=TLBAR.length*rh+(TLTOP+0.035)*u, dn=(TLBOT+0.10)*u;
+  var lo=116, hi=VH-8, free=(hi-lo)-(up+dn);
+  return Math.max(lo+up,Math.min(hi-dn,lo+up+free*0.5));
 }
 function resize(){
   VW=innerWidth; VH=innerHeight;
@@ -1601,6 +1697,13 @@ var t0=performance.now(), fLast=t0, raf=0, frame=0;
 var STEP=2, fAcc=0, fN=0, low=0, high=0;
 var TXn=0, TYn=0;
 function target(n,t,rot){
+  if(MODE===2){
+    /* Место в ленте посчитано заранее и от фильтра не зависит: столбик года
+       обязан стоять на месте, когда выборка меняется под ним. */
+    TXn=TLX[n];
+    TYn=TLY[n]+(CALM?0:Math.sin(t*0.5+A0[n])*0.0035);
+    return;
+  }
   if(MODE){
     if(OK[n]){
       var an=OPH[n]+(CALM?0:t*OSP[n]);
@@ -1625,6 +1728,16 @@ function step(n,t,rot){
 var HOVER=null, MX=-1, MY=-1;
 function hitAt(mx,my){
   var n,p,dx,dy,d,best=null,bd=1e9;
+  if(MODE===2&&mx>=GAPL&&mx<=GAPR){
+    /* Ось и линейка под рекой — полосы без тел, и щелчок по ним всегда
+       означает год. Иначе выбор года зависел бы от того, попал курсор
+       между записями или нет. */
+    var ay=s2y(0), ly=s2y(TLBOT+0.045);
+    if(Math.abs(my-ay)<=9||(my>=ly-6&&my<=ly+18)){
+      var yy=tlYear((mx-CX-PANX)/(RU*Z));
+      if(yy>=TLY0&&yy<=TLY1) return {kind:'year',y:yy};
+    }
+  }
   for(p=0;p<NDRAWN;p++){
     n=DRAWN[p];
     dx=s2x(NX[n])-mx; dy=s2y(NY[n])-my; d=dx*dx+dy*dy;
@@ -1632,11 +1745,26 @@ function hitAt(mx,my){
   }
   var near=Math.sqrt(bd);
   if(best!==null&&near<=14) return {kind:'track',i:best};
-  if(MODE){
+  if(MODE===1){
     for(p=0;p<SUNS.length;p++){
       var S=SUNS[p], sx=s2x(S.x), sy=s2y(S.y), rr=S.rs*RU*Z;
       dx=sx-mx; dy=sy-my;
       if(dx*dx+dy*dy<=rr*rr) return {kind:'sun',s:S};
+    }
+    return null;
+  }
+  if(MODE===2){
+    /* Полоса эпохи ведёт в эпоху, пустое место у оси — в год. */
+    var u2=RU*Z, y0=s2y(0), rh=tlRow(), top=y0-(TLTOP+0.035)*u2*ASP;
+    var row=Math.floor((top-my)/rh);
+    if(row>=0&&row<TLBAR.length){
+      var B=TLBAR[TLBAR.length-1-row];
+      if(mx>=s2x(tlX(B.lo))&&mx<=s2x(tlX(B.hi)))
+        return {kind:'band',b:TLBAR.length-1-row,e:B.e};
+    }
+    if(my>s2y(-TLTOP-0.05)&&my<s2y(TLBOT+0.09)){
+      var yr=tlYear((mx-CX-PANX)/u2);
+      if(yr>=TLY0&&yr<=TLY1) return {kind:'year',y:yr};
     }
     return null;
   }
@@ -1647,7 +1775,7 @@ function hitAt(mx,my){
 }
 var elTip=document.getElementById('tip');
 function showTip(h){
-  if(!h){ elTip.classList.remove('on'); return; }
+  if(!h){ elTip.classList.remove('on'); elTip.innerHTML=''; return; }
   var t='';
   if(h.kind==='track')
     t='<b>'+esc(T.n[h.i])+'</b><s>'+esc(ARTIST[T.a[h.i]])+
@@ -1655,6 +1783,19 @@ function showTip(h){
   else if(h.kind==='sun')
     t='<b>'+esc(sunName(h.s))+'</b><s>'+plural(h.s.n,'запись','записи','записей')+
       ' · <i>'+(LEVEL?'открыть':'войти')+'</i></s>';
+  else if(h.kind==='year'){
+    var ca=0, cp=0, n2;
+    for(n2=0;n2<RES.length;n2++) if(TLYR[RES[n2]]===h.y){ if(T.R[RES[n2]]) ca++; else cp++; }
+    t='<b>'+h.y+'</b><s>'+(ca?ca+' академ.':'')+(ca&&cp?' · ':'')+
+      (cp?cp+' повседн.':'')+(ca||cp?'':'пусто')+
+      (ca||cp?' · <i>оставить только этот год</i>':'')+'</s>';
+  }
+  else if(h.kind==='band'){
+    var B2=TLBAR[h.b], c2=0, n3;
+    for(n3=0;n3<RES.length;n3++) if(T.e[RES[n3]]===B2.e) c2++;
+    t='<b>'+esc(B2.n)+'</b><s>'+B2.lo+'–'+B2.hi+' · '+
+      plural(c2,'запись','записи','записей')+' в выборке · <i>оставить только их</i></s>';
+  }
   else {
     var c=0;
     for(var n=0;n<RES.length;n++) if(T.e[RES[n]]===h.e) c++;
@@ -1689,7 +1830,13 @@ function actOn(h){
     else { F.art={}; F.art[h.s.k]=1; UI.art.open=true; Z=1; PANX=PANY=0; apply(); }
     return;
   }
-  if(h.kind==='epoch'){ F.ep={}; F.ep[h.e]=1; UI.ep.open=true; apply(); }
+  if(h.kind==='epoch'||h.kind==='band'){ F.ep={}; F.ep[h.e]=1; UI.ep.open=true; apply(); }
+  if(h.kind==='year'){
+    /* Год издания и год ленты — не одно и то же у академической музыки,
+       поэтому щелчок по столбику отбирает по самой ленте, а не по фильтру
+       лет: иначе Бах пропал бы из собственного столбика. */
+    F.tl=h.y; apply();
+  }
 }
 
 /* ======================================================= мышь и касания */
@@ -1776,6 +1923,122 @@ elCrumb.addEventListener('click',function(e){
   Z=1; PANX=PANY=0; apply();
 });
 
+/* ------------------------------------------------------------ разметка ленты
+   Засечки сгущаются по мере приближения: пока весь срок в кадре — века,
+   при большом увеличении — годы. Подписи стоят под нижним краем реки,
+   а не на оси: на оси их накрыли бы тела. */
+function tlStep(){
+  var px=(1.97/(TLY1-TLY0+1))*RU*Z;
+  return px>=14?5:px>=6?10:px>=2.4?25:px>=1.1?50:100;
+}
+function tlRow(){ return Math.max(9,Math.min(14,RU*ASP*0.052)); }
+
+function drawTL(u){
+  var y0=s2y(0), yLab=s2y(TLBOT+0.045), i, x, st=tlStep();
+  var rh=tlRow(), top=y0-(TLTOP+0.035)*u*ASP;
+  g.font='500 10px "IBM Plex Mono",ui-monospace,monospace';
+  /* Годовые линии — от полос эпох до подписей, чтобы столбик читался
+     против шкалы, а не на глаз. */
+  g.lineWidth=1;
+  var xPre=TLPRE?s2x(tlX(TLY0-1)):-1e5, every=st>=25?st*2:st*5;
+  for(var yr=Math.ceil(TLY0/st)*st; yr<=TLY1; yr+=st){
+    x=s2x(tlX(yr));
+    if(x<GAPL||x>GAPR) continue;
+    var big=yr%every===0;
+    g.strokeStyle=big?'rgba(150,166,210,.13)':'rgba(150,166,210,.05)';
+    g.beginPath(); g.moveTo(x,top-rh*TLBAR.length); g.lineTo(x,yLab-4); g.stroke();
+    if(big&&Math.abs(x-xPre)>34){
+      g.fillStyle='rgba(233,238,250,.36)'; g.textAlign='center'; g.textBaseline='top';
+      g.fillText(String(yr),x,yLab);
+    }
+  }
+  /* Полосы эпох — примерные даты из данных, по строке на эпоху. */
+  g.textBaseline='middle'; g.textAlign='left';
+  for(i=0;i<TLBAR.length;i++){
+    var B=TLBAR[i], xa=s2x(tlX(B.lo)), xb=s2x(tlX(B.hi));
+    if(xb<GAPL||xa>GAPR) continue;
+    var yy=top-(TLBAR.length-i)*rh+rh*0.5;
+    var on=F.ep[B.e]?1:0, ho=HOVER&&HOVER.kind==='band'&&HOVER.b===i;
+    var la=Math.max(xa,GAPL), lb=Math.min(xb,GAPR);
+    g.fillStyle=on?'rgba(242,166,90,.34)':ho?'rgba(233,238,250,.22)'
+                                           :'rgba(150,166,210,.09)';
+    g.fillRect(la,yy-rh*0.28,lb-la,rh*0.56);
+    if(lb-la>g.measureText(B.n).width+10){
+      g.fillStyle=on?'rgba(242,166,90,.90)':ho?'rgba(233,238,250,.80)'
+                                             :'rgba(233,238,250,.32)';
+      g.fillText(B.n,la+5,yy);
+    }
+  }
+  /* Сама ось и обрубок «раньше»: до 1600 года записей единицы, и отдавать
+     им треть шкалы было бы враньём о том, где лежит библиотека. */
+  g.strokeStyle='rgba(150,166,210,.20)'; g.lineWidth=1;
+  g.beginPath(); g.moveTo(GAPL,y0); g.lineTo(GAPR,y0); g.stroke();
+  if(TLPRE){
+    x=s2x(tlX(TLY0-1));
+    if(x>GAPL-30&&x<GAPR){
+      g.strokeStyle='rgba(150,166,210,.20)';
+      g.setLineDash([2,3]);
+      g.beginPath(); g.moveTo(x+6,y0-rh); g.lineTo(x+6,y0+rh); g.stroke();
+      g.setLineDash([]);
+      g.fillStyle='rgba(233,238,250,.30)'; g.textAlign='left'; g.textBaseline='top';
+      g.fillText('раньше',Math.max(x-2,GAPL),yLab);
+    }
+  }
+  /* Две подписи половин — иначе непонятно, почему вверх и вниз. */
+  g.font='500 10px "IBM Plex Mono",ui-monospace,monospace';
+  /* Подписи стоят слева: справа у обеих половин самая гуща. Обводка нужна
+     и здесь — у оси есть тела и левее 1700 года. */
+  g.textAlign='left'; g.lineJoin='round';
+  g.strokeStyle='rgba(6,7,12,.85)'; g.lineWidth=3;
+  var la1='академическая ↑ столбик до '+TLMAXA+' в год',
+      la2='повседневная ↓ столбик до '+TLMAXP+' в год';
+  g.textBaseline='bottom'; g.strokeText(la1,GAPL+4,y0-6);
+  g.textBaseline='top';    g.strokeText(la2,GAPL+4,y0+6);
+  g.fillStyle='rgba(233,238,250,.32)';
+  g.textBaseline='bottom'; g.fillText(la1,GAPL+4,y0-6);
+  g.textBaseline='top';    g.fillText(la2,GAPL+4,y0+6);
+}
+/* Кто держит ленту: имена самых частых авторов выборки у края их же
+   столбиков — у академических сверху, у повседневных снизу, всегда за
+   пределами собственных тел. Тёмная обводка нужна потому, что под именем
+   может оказаться самая гуща, а имя обязано остаться читаемым. */
+function tlNames(){
+  var by={}, p, n, k;
+  for(p=0;p<NDRAWN;p++){ n=DRAWN[p]; (by[T.a[n]]=by[T.a[n]]||[]).push(n); }
+  var keys=Object.keys(by).sort(function(a,b){ return by[b].length-by[a].length; })
+                          .slice(0,10);
+  g.font='500 11px "IBM Plex Mono",ui-monospace,monospace';
+  g.textAlign='center'; g.lineJoin='round';
+  var used=[];
+  for(k=0;k<keys.length;k++){
+    var lst=by[keys[k]], sx=0, far=0, up=T.R[lst[0]], sy;
+    for(p=0;p<lst.length;p++){
+      sx+=s2x(NX[lst[p]]);
+      sy=up?-NY[lst[p]]:NY[lst[p]];
+      if(sy>far) far=sy;
+    }
+    sx/=lst.length;
+    var nm=ARTIST[keys[k]].replace(/\s*\(.*$/,'');
+    if(nm.length>26) nm=nm.slice(0,25)+'…';
+    var w=g.measureText(nm).width;
+    if(sx-w/2<GAPL||sx+w/2>GAPR) continue;
+    var yy=up?s2y(-far)-6:s2y(far)+15, dir=up?-14:14, tries=0, clash=1;
+    while(clash&&tries<4){
+      clash=0;
+      for(p=0;p<used.length;p++)
+        if(Math.abs(used[p][0]-sx)<(used[p][1]+w)/2+10&&
+           Math.abs(used[p][2]-yy)<13){ clash=1; yy+=dir; break; }
+      tries++;
+    }
+    if(clash||yy<106||yy>VH-6) continue;
+    used.push([sx,w,yy]);
+    g.textBaseline=up?'bottom':'top';
+    g.strokeStyle='rgba(6,7,12,.85)'; g.lineWidth=3; g.strokeText(nm,sx,yy);
+    g.fillStyle='rgba(233,238,250,'+(0.34+0.30*(1-k/keys.length)).toFixed(3)+')';
+    g.fillText(nm,sx,yy);
+  }
+}
+
 /* ==================================================================== рендер */
 function sky(now){
   raf=requestAnimationFrame(sky);
@@ -1792,8 +2055,13 @@ function sky(now){
   var t=(now-t0)/1000, u=RU*Z, n, p;
   var rot=CALM?t*0.004:t*0.016, needle=(t*0.40)%TAU;
   g.fillStyle='#06070C'; g.fillRect(0,0,VW,VH);
+  /* Лента идёт во всю ширину просвета, поэтому её край надо срезать по
+     панелям: те непрозрачны, и вылезшие столбики просто пропали бы. */
+  if(MODE===2){ g.save(); g.beginPath(); g.rect(GAPL-2,0,GAPR-GAPL+4,VH); g.clip(); }
   g.strokeStyle='rgba(150,166,210,.055)'; g.lineWidth=1;
-  if(!MODE){
+  if(MODE===2){
+    drawTL(u);
+  } else if(!MODE){
     for(p=1;p<=6;p++){
       var rr2=(0.155+0.815*Math.pow(p/6,1.8))*u;
       g.beginPath(); g.ellipse(s2x(0),s2y(0),rr2,rr2*ASP,0,0,TAU); g.stroke();
@@ -1830,7 +2098,7 @@ function sky(now){
     step(n,t,rot);
     DRAWN[NDRAWN++]=n;
     var hot=1;
-    if(!MODE){
+    if(MODE===0){
       var dd=Math.abs(((A0[n]+rot-needle+Math.PI*3)%TAU)-Math.PI);
       hot=1+Math.max(0,1-dd/0.42)*1.8;
     }
@@ -1841,7 +2109,7 @@ function sky(now){
     r*=sizeOf(n);
     g.drawImage(sprOf(n),s2x(NX[n])-r*3,s2y(NY[n])-r*3,r*6,r*6);
   }
-  if(MODE) for(p=0;p<SUNS.length;p++){
+  if(MODE===1) for(p=0;p<SUNS.length;p++){
     var S2=SUNS[p], big=HOVER&&HOVER.kind==='sun'&&HOVER.s===S2?1.5:1;
     var r2=u*(0.020+0.028*Math.sqrt(S2.n/Math.max(SUNS[0].n,1)))*big;
     g.globalAlpha=0.95;
@@ -1862,7 +2130,8 @@ function sky(now){
     g.strokeStyle='rgba(242,166,90,'+(0.62-0.34*pu).toFixed(3)+')'; g.lineWidth=1.6;
     g.beginPath(); g.arc(s2x(NX[PL]),s2y(NY[PL]),pr,0,TAU); g.stroke();
   }
-  if(MODE){
+  if(MODE===2) tlNames();
+  if(MODE===1){
     /* Имена солнц — единственный текст на заднике, и он приглушён: задник
        подсказывает, кто держит выборку, но не спорит со списком. */
     g.font='500 11px "IBM Plex Mono",ui-monospace,monospace';
@@ -1879,7 +2148,7 @@ function sky(now){
       g.fillText(nm,lx,s2y(S3.y)+S3.rs*u*ASP+7);
     }
   }
-  if(!MODE&&!CALM){
+  if(MODE===0&&!CALM){
     var ng=g.createLinearGradient(s2x(0),s2y(0),
       s2x(0)+Math.cos(needle+rot)*u,s2y(0)+Math.sin(needle+rot)*u);
     ng.addColorStop(0,'rgba(242,166,90,0)'); ng.addColorStop(1,'rgba(242,166,90,.22)');
@@ -1887,6 +2156,7 @@ function sky(now){
     g.beginPath(); g.moveTo(s2x(0),s2y(0));
     g.lineTo(s2x(0)+Math.cos(needle+rot)*u,s2y(0)+Math.sin(needle+rot)*u); g.stroke();
   }
+  if(MODE===2) g.restore();
   /* Наведение считается по свежим местам, один раз за нарисованный кадр. */
   if(!START&&MX>=0&&!drag){
     var h=hitAt(MX,MY);
@@ -1899,13 +2169,33 @@ function sky(now){
   }
 }
 var elMode=document.getElementById('mode'), elCalm=document.getElementById('calm');
+var MODEN=['кольца','орбиты','лента'];
 function modeLabel(){
-  elMode.textContent=MODE?'орбиты':'кольца';
+  elMode.textContent=MODEN[MODE];
   elMode.setAttribute('aria-pressed',String(!!MODE));
 }
 elMode.addEventListener('click',function(){
-  MODE=MODE?0:1; modeLabel(); Z=1; PANX=PANY=0; syncSky(); saveHash();
+  MODE=(MODE+1)%3; modeLabel(); Z=1; PANX=PANY=0;
+  tlPane(); syncSky(); frameSky(); resize(); saveHash();
 });
+/* Ленте нужна ширина: четыре века в просвет между панелями не помещаются,
+   там весь XX век сжимается в палец. Поэтому на входе в неё список
+   убирается сам, а на выходе возвращается — и только тот, что убрали мы.
+   Пилюля «список» при этом меняет вид, так что подмены не происходит. */
+var listHid=0;
+function tlPane(){
+  var b=document.body, lb=document.getElementById('listb');
+  if(MODE===2){
+    if(innerWidth>900&&!b.classList.contains('map')&&!b.classList.contains('nolist')){
+      listHid=1; b.classList.add('nolist'); lb.setAttribute('aria-pressed','false');
+    }
+  } else if(listHid){
+    listHid=0;
+    if(!b.classList.contains('map')){
+      b.classList.remove('nolist'); lb.setAttribute('aria-pressed','true');
+    }
+  }
+}
 elCalm.addEventListener('click',function(){
   CALM=!CALM; this.setAttribute('aria-pressed',String(CALM));
   this.textContent=CALM?'оживить':'спокойно';
@@ -1914,6 +2204,7 @@ elCalm.addEventListener('click',function(){
    страницы, и ей должно быть можно отдать весь экран. */
 function pane(cls,btn){
   document.getElementById(btn).addEventListener('click',function(){
+    if(cls==='nolist'||cls==='map') listHid=0;   /* дальше панель ваша */
     var on=document.body.classList.toggle(cls);
     this.setAttribute('aria-pressed',String(cls==='map'?on:!on));
     if(cls==='map'){
@@ -2110,17 +2401,29 @@ document.getElementById('tot').textContent=N;
 loadHash();
 if(location.hash.replace(/^#/,'')){ START=false; elStart.style.display='none'; }
 else { document.body.classList.add('start'); setTimeout(function(){ elSq.focus(); },120); }
-modeLabel(); tintLabel();
+modeLabel(); tintLabel(); tlPane();
 resize();
 apply();
 if(REDUCE){ CALM=true; frame=1; sky(performance.now()); }
 else raf=requestAnimationFrame(sky);
+/* Шов для проверок: экранная геометрия ленты наружу, чтобы тест целился
+   в полосу эпохи и в столбик года, а не в записанные пиксели. */
+window.libTL=function(){
+  var u=RU*Z, y0=s2y(0), rh=tlRow(), top=y0-(TLTOP+0.035)*u*ASP;
+  return {ось:y0, полосы:TLBAR.map(function(B,i){
+      return {имя:B.n, эпоха:B.e, lo:B.lo, hi:B.hi,
+              x:(s2x(tlX(B.lo))+s2x(tlX(B.hi)))/2,
+              y:top-(TLBAR.length-i)*rh+rh*0.5};
+    }),
+    год:function(y){ return {x:s2x(tlX(y)), y:y0+8}; },
+    макс:[TLMAXA,TLMAXP], раньше:TLPRE};
+};
 window.lib=function(){
   var f={}, x;
   for(x in F) f[x]=(typeof F[x]==='object'&&F[x])?Object.keys(F[x]).join(','):F[x];
   return {всего:N,найдено:RES.length,строк:VIEW.length,очередь:TRK.length,
           произведений:VIEW.filter(function(v){return !!v.w;}).length,
-          режим:MODE?'орбиты':'кольца',уровень:LEVEL,
+          режим:MODEN[MODE],уровень:LEVEL,
           старт:START,масштаб:+Z.toFixed(2),солнц:SUNS.length,
           сортировка:SORT,выбран:sel,фильтр:f};
 };
