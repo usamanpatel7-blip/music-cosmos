@@ -227,6 +227,13 @@ button,input,select{font:inherit;color:inherit}
 #card{transition:opacity .2s,transform .2s}
 #card.on{opacity:1;transform:none;pointer-events:auto}
 body.start #card.on{opacity:0}
+/* Карточку надо чем-то закрывать: на телефоне клавиши Esc нет, а пока
+   карточка открыта, крошки под ней не достать. */
+#card .x{position:absolute;top:8px;right:8px;width:30px;height:30px;line-height:1;
+  background:transparent;border:1px solid var(--line);border-radius:50%;
+  color:var(--muted);cursor:pointer;font:inherit;font-size:1.05rem;padding:0}
+#card .x:hover{color:var(--ink);border-color:var(--line-2)}
+#card h3{padding-right:30px}
 #card .k{font-family:var(--mono);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;
   color:var(--accent);margin-bottom:5px}
 #card .k em{font-style:normal;color:var(--muted)}
@@ -279,6 +286,38 @@ body.sound #card.on{bottom:96px}
   padding:6px 13px;cursor:pointer;color:var(--muted)}
 #hud .pill:hover{color:var(--ink-2)}
 #hud .pill[aria-pressed=true]{color:var(--accent);border-color:rgba(242,166,90,.4)}
+
+/* ------------------------------------------------------------------ легенда
+   Цвет на карте что-то значит, и до сих пор это приходилось угадывать.
+   Легенда не только объясняет, но и работает фильтром: щелчок по семье
+   оставляет её жанры. */
+#leg{position:fixed;z-index:2;top:118px;left:calc(var(--rail) + 28px);
+  right:calc(var(--listw) + 28px);display:flex;flex-wrap:wrap;gap:5px;
+  transition:opacity .45s}
+body.map #leg,body.norail #leg{left:20px}
+body.map #leg,body.nolist #leg{right:20px}
+body.start #leg{opacity:0;pointer-events:none}
+#leg button{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:inherit;
+  font-size:.73rem;color:var(--muted);background:var(--glass);
+  border:1px solid var(--line);border-radius:20px;padding:4px 11px 4px 8px}
+#leg button:hover{color:var(--ink-2);border-color:var(--line-2)}
+#leg button[aria-pressed=true]{color:var(--ink);border-color:var(--line-2);
+  background:var(--glass-2)}
+#leg i{width:9px;height:9px;border-radius:50%;display:block;flex:none}
+#leg em{font-style:normal;font-family:var(--mono);font-size:.66rem;opacity:.55}
+
+/* -------------------------------------------------------------------- зум
+   Колесо и щипок были, кнопок не было: с трекпада и на телефоне
+   приблизиться получалось не с первого раза. */
+#zoom{position:fixed;z-index:3;bottom:20px;right:calc(var(--listw) + 28px);
+  display:flex;flex-direction:column;gap:6px;transition:opacity .45s}
+body.map #zoom,body.nolist #zoom{right:20px}
+body.start #zoom{opacity:0;pointer-events:none}
+#zoom button{width:36px;height:36px;padding:0;line-height:1;cursor:pointer;
+  font:inherit;font-size:1rem;color:var(--muted);
+  background:var(--glass);border:1px solid var(--line);border-radius:11px}
+#zoom button:hover{color:var(--ink-2);border-color:var(--line-2)}
+#zoom .z3{font-size:.62rem;font-family:var(--mono);letter-spacing:.02em}
 
 /* ---------------------------------------------------------------- подсказка */
 #tip{position:fixed;z-index:4;pointer-events:none;opacity:0;transition:opacity .12s;
@@ -379,6 +418,15 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
   #play{left:10px;right:10px;width:auto;bottom:10px}
   body.sound #card.on{bottom:82px}
   #hud{left:10px;right:10px;top:auto;bottom:10px;flex-wrap:wrap}
+  #zoom{right:10px;bottom:auto;top:60px;flex-direction:row}
+  body.card #zoom{opacity:0;pointer-events:none;transition:opacity .2s}
+  /* На телефоне карта видна только во весь экран — там легенде и место. */
+  #leg{display:none;top:104px;left:10px;right:10px;flex-wrap:nowrap;
+    overflow-x:auto;scrollbar-width:none}
+  #leg::-webkit-scrollbar{display:none}
+  #leg button{flex:none}
+  body.map #leg{display:flex}
+  body.map.card #leg{opacity:0;pointer-events:none}
   #crumb{max-width:100%}
   #railb,#listb{display:none}
   body.card #hud .pill,body.card #crumb{opacity:0;pointer-events:none;transition:opacity .2s}
@@ -437,6 +485,13 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
     <button type="button" id="pcls" aria-label="Выключить звук" title="Выключить">&times;</button>
   </div>
   <div class="bar"><i id="pbar"></i></div>
+</div>
+<div id="leg" role="group" aria-label="Что значит цвет"></div>
+<div id="zoom" role="group" aria-label="Масштаб">
+  <button type="button" id="zin"  aria-label="Приблизить" title="Приблизить (+)">+</button>
+  <button type="button" id="zout" aria-label="Отдалить" title="Отдалить (−)">&minus;</button>
+  <button type="button" id="zrst" class="z3" aria-label="Сбросить масштаб"
+          title="Весь вид (0)">100%</button>
 </div>
 <div id="tip" aria-hidden="true"></div>
 <div id="hud">
@@ -724,25 +779,59 @@ var REDUCE=!!(mqR&&mqR.matches);
 var i, j, k;
 
 /* ================================================================== палитра
-   Академическая половина — градиент по времени: у неё время есть.
-   Повседневная — семьи цветов: у неё времени нет, есть родство. */
-var RAMP=[[242,166,90],[242,116,90],[228,88,126],[183,95,209],[123,107,232],
-          [78,143,224],[63,191,176],[155,212,107]];
-var FAM=[[242,116,90],[228,88,126],[123,107,232],[63,191,176],
-         [155,212,107],[242,166,90],[78,143,224],[183,95,209]];
+   Раньше академические эпохи красились непрерывным градиентом по времени,
+   а повседневные жанры брали цвета из того же набора. Выходило два зла
+   сразу: соседние эпохи различались на оттенок, а зелёный мог означать и
+   рок, и минимализм. Теперь цветов девять, они разведены по кругу и
+   закреплены за семьями; внутри семьи меняется только светлота. Значение
+   цвета больше не приходится угадывать — оно написано в легенде. */
+var FAMC=[[235,191,89],   /* старинная            */
+          [235,89,186],   /* классика и романтизм */
+          [162,89,235],   /* модернизм            */
+          [89,126,235],   /* новая музыка         */
+          [235,89,94],    /* рок                  */
+          [89,235,162],   /* джаз и блюз          */
+          [186,235,89],   /* поп и электроника    */
+          [89,210,235],   /* ритм и голос         */
+          [154,166,182]]; /* кино и прочее        */
+/* Список ведётся по именам жанров: когда разбор жанров их поменяет,
+   правится эта таблица, а не рисование. */
+var FAMS=[
+  {n:'Старинная',            c:0, r:1, g:['Ранняя музыка','Барокко']},
+  {n:'Классика и романтизм', c:1, r:1, g:['Классицизм','Классицизм → романтизм',
+                                          'Романтизм','Поздний романтизм']},
+  {n:'Модернизм',            c:2, r:1, g:['Импрессионизм','Модернизм','Авангард']},
+  {n:'Новая музыка',         c:3, r:1, g:['Минимализм','Современная академическая музыка',
+                                          'Классический кроссовер','Танго-нуэво',
+                                          'Академическая музыка вне разметки']},
+  {n:'Рок',                  c:4, r:0, g:['Рок']},
+  {n:'Джаз и блюз',          c:5, r:0, g:['Джаз','Блюз']},
+  {n:'Поп и электроника',    c:6, r:0, g:['Поп','Электронная музыка']},
+  {n:'Ритм и голос',         c:7, r:0, g:['Рэп / хип-хоп','R&B / соул / фанк']},
+  {n:'Кино и прочее',        c:8, r:0, g:['Саундтреки / мюзиклы','Фолк / кантри',
+                                          'Мировая музыка','Инструментальная музыка']}
+];
 function lerpC(a,b,t){ return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]; }
 function css(c,a){ return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+a+')'; }
-var ECOL=[];
+var ECOL=[], EFAM=[];
 (function(){
-  var cl=[], n;
-  for(n=0;n<EPOCH.length;n++) if(EPOCH[n].lo>0) cl.push(n);
-  cl.sort(function(a,b){ return EPOCH[a].lo-EPOCH[b].lo||EPOCH[a].hi-EPOCH[b].hi; });
-  for(n=0;n<cl.length;n++){
-    var t=cl.length<2?0.5:n/(cl.length-1), p=t*(RAMP.length-1), f=Math.floor(p);
-    ECOL[cl[n]]=lerpC(RAMP[f],RAMP[Math.min(f+1,RAMP.length-1)],p-f);
-  }
-  var q=0;
-  for(n=0;n<EPOCH.length;n++) if(!ECOL[n]) ECOL[n]=FAM[(q++)%FAM.length];
+  var byName={}, n, k;
+  for(n=0;n<EPOCH.length;n++) byName[EPOCH[n].n]=n;
+  FAMS.forEach(function(F2,fi){
+    F2.idx=[];
+    F2.g.forEach(function(nm){
+      var i=byName[nm];
+      if(i===undefined) return;
+      F2.idx.push(i); EFAM[i]=fi;
+      /* Внутри семьи только светлота: родство должно читаться, но и
+         Барокко от Ранней музыки надо уметь отличить. */
+      var k2=F2.idx.length-1, t=F2.g.length<2?0:k2/(F2.g.length-1);
+      ECOL[i]=lerpC(FAMC[F2.c],[255,255,255],0.02+0.22*t);
+    });
+  });
+  /* Жанр, не попавший ни в одну семью, уходит в нейтральную: лучше серый,
+     чем случайный цвет, который потом придётся объяснять. */
+  for(n=0;n<EPOCH.length;n++) if(!ECOL[n]){ ECOL[n]=FAMC[8]; EFAM[n]=8; }
 })();
 
 /* ================================================================= индексы */
@@ -1020,6 +1109,7 @@ function drawFacets(){
   drawHist();
 }
 function drawChips(){
+  drawLegend();
   var h='';
   function chip(kind,x,label){
     h+='<button class="c" type="button" data-x="'+kind+'" data-k="'+esc(x)+'">'+
@@ -1038,6 +1128,37 @@ function drawChips(){
   if(h) h+='<button class="c all" type="button" data-x="clear">сбросить всё</button>';
   elChips.innerHTML=h;
 }
+
+/* ------------------------------------------------------------------ легенда */
+var elLeg=document.getElementById('leg');
+function famOn(F2){
+  /* Семья «выбрана», когда в фильтре стоят ровно её жанры и ничего больше. */
+  var k=0, x;
+  for(x in F.ep) if(F.ep[x]) k++;
+  if(!k||k!==F2.idx.length) return false;
+  for(x=0;x<F2.idx.length;x++) if(!F.ep[F2.idx[x]]) return false;
+  return true;
+}
+function drawLegend(){
+  var cnt={}, n, h='';
+  for(n=0;n<RES.length;n++){ var f=EFAM[T.e[RES[n]]]; cnt[f]=(cnt[f]||0)+1; }
+  FAMS.forEach(function(F2,fi){
+    if(!F2.idx.length) return;
+    var c=cnt[fi]||0;
+    h+='<button type="button" data-fam="'+fi+'" aria-pressed="'+famOn(F2)+'"'+
+       (c?'':' style="opacity:.4"')+'>'+
+       '<i style="background:'+css(FAMC[F2.c],1)+'"></i>'+esc(F2.n)+
+       '<em>'+c+'</em></button>';
+  });
+  elLeg.innerHTML=h;
+}
+elLeg.addEventListener('click',function(e){
+  var b=e.target.closest('button[data-fam]'); if(!b) return;
+  var F2=FAMS[+b.dataset.fam];
+  if(famOn(F2)) F.ep={};
+  else { F.ep={}; F2.idx.forEach(function(i){ F.ep[i]=1; }); UI.ep.open=true; }
+  Z=1; PANX=PANY=0; apply();
+});
 
 /* --------------------------------------------------- гистограмма по годам */
 var HSTEP=2, HB=[];
@@ -1191,6 +1312,7 @@ function showCard(n){
   for(x=0;x<AGES.length;x++) if(T.m[n]&(1<<x)) ag.push(AGES[x]);
   var h='<div class="k">'+(T.R[n]?'академическая':'повседневная')+
     ' · '+esc(ep.n)+(ep.lo?' <em>'+ep.lo+'–'+ep.hi+'</em>':'')+'</div>'+
+    '<button class="x" type="button" id="cardx" aria-label="Закрыть">&times;</button>'+
     '<h3>'+esc(T.n[n])+'</h3>';
   function row(a,b){ if(b&&b!=='—') h+='<div class="r"><i>'+a+'</i><u>'+esc(b)+'</u></div>'; }
   function rowRaw(a,b){ h+='<div class="r"><i>'+a+'</i><u>'+b+'</u></div>'; }
@@ -1261,6 +1383,7 @@ document.addEventListener('click',function(e){
     var v=+b.dataset.realm; F.realm=(F.realm===v?null:v); apply(); return;
   }
   if((b=e.target.closest('[data-rep]'))){ F.rep=!F.rep; apply(); return; }
+  if(e.target.closest('#cardx')){ stepOut(); return; }
   if((b=e.target.closest('#chips [data-x]'))){
     var t=b.dataset.x;
     if(t==='clear'){ F=blank(); elQ.value=''; }
@@ -1325,7 +1448,7 @@ document.getElementById('sort').addEventListener('change',function(){
 document.getElementById('burger').addEventListener('click',function(){
   document.body.classList.toggle('rail');
 });
-addEventListener('resize',function(){ setTimeout(frameSky,0); });
+addEventListener('resize',function(){ setTimeout(function(){ frameSky(); syncSky(); },0); });
 
 /* Гистограмму можно протянуть мышью — это и есть выбор промежутка лет. */
 var hd=null;
@@ -1350,11 +1473,7 @@ window.addEventListener('keydown',function(e){
   if(e.key==='/'&&document.activeElement!==elQ){
     e.preventDefault(); elQ.focus(); elQ.select(); return;
   }
-  if(e.key==='Escape'){
-    if(document.activeElement===elQ&&F.q){ F.q=''; elQ.value=''; apply(); }
-    else if(sel>=0){ sel=-1; showCard(-1); paintList(true); }
-    return;
-  }
+  if(e.key==='Escape'){ stepOut(); return; }
   if(e.key==='ArrowDown'||e.key==='ArrowUp'){
     if(!VIEW.length) return;
     e.preventDefault();
@@ -1374,6 +1493,15 @@ window.addEventListener('keydown',function(e){
      document.activeElement!==elQ&&!e.metaKey&&!e.ctrlKey){
     e.preventDefault(); document.getElementById('mapb').click(); return;
   }
+  if((e.key==='+'||e.key==='=')&&!/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)){
+    e.preventDefault(); zoomBy(1.35); return;
+  }
+  if((e.key==='-'||e.key==='_')&&!/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)){
+    e.preventDefault(); zoomBy(1/1.35); return;
+  }
+  if(e.key==='0'&&!/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)){
+    e.preventDefault(); Z=1; PANX=PANY=0; zoomLabel(); return;
+  }
   if(e.key==='['){ e.preventDefault(); document.getElementById('railb').click(); return; }
   if(e.key===']'){ e.preventDefault(); document.getElementById('listb').click(); return; }
   if(e.key===' '&&document.activeElement!==elQ&&
@@ -1385,6 +1513,17 @@ window.addEventListener('keydown',function(e){
     var u=appleUrl(sel); if(u) window.open(u,'_blank','noopener');
   }
 });
+
+/* Выход наружу — одно движение, а не разные для карточки, автора и эпохи.
+   Внутрь ведёт щелчок, наружу — Esc и крошки; на телефоне у карточки есть
+   своё «×», потому что клавиш там нет, а крошки под карточкой не достать. */
+function stepOut(){
+  if(document.activeElement===elQ&&F.q){ F.q=''; elQ.value=''; apply(); return; }
+  if(sel>=0){ sel=-1; showCard(-1); paintList(true); return; }
+  if(onlyKey(F.art)!==null){ F.art={}; Z=1; PANX=PANY=0; apply(); return; }
+  if(onlyKey(F.ep)!==null){ F.ep={}; Z=1; PANX=PANY=0; apply(); return; }
+  if(Z!==1||PANX||PANY){ Z=1; PANX=PANY=0; }
+}
 
 /* =================================================================== адрес
    Ссылка обязана переживать пересылку: любое состояние фильтра лежит в
@@ -1453,21 +1592,20 @@ var NX=new Float32Array(N), NY=new Float32Array(N), SEEN=new Uint8Array(N),
     OSX=new Float32Array(N), OSY=new Float32Array(N), ORD=new Float32Array(N),
     OPH=new Float32Array(N), OSP=new Float32Array(N), OK=new Uint8Array(N);
 var DRAWN=new Int32Array(N), NDRAWN=0;
-var SUNS=[], LEVEL=0, ASP=0.94;
+var SUNS=[], LEVEL=0, ASP=0.94, SPLIT=false, GUT=null;
 var Z=1, PANX=0, PANY=0;
-var SPR=(function(){
-  var a=[], p;
-  for(p=0;p<RAMP.length;p++){
-    var c=document.createElement('canvas'); c.width=c.height=48;
-    var x=c.getContext('2d'), gr=x.createRadialGradient(24,24,0,24,24,24);
-    gr.addColorStop(0,'rgba(255,255,255,.92)');
-    gr.addColorStop(.20,css(RAMP[p],.80));
-    gr.addColorStop(.48,css(RAMP[p],.20));
-    gr.addColorStop(1,css(RAMP[p],0));
-    x.fillStyle=gr; x.fillRect(0,0,48,48); a.push(c);
-  }
-  return a;
-})();
+/* Спрайт на каждый жанр, прямо из его цвета: раньше цвет тела подбирался
+   ближайшим из восьми заготовок и врал на оттенок. */
+var SPR=ECOL.map(function(c){
+  var cv2=document.createElement('canvas'); cv2.width=cv2.height=48;
+  var x=cv2.getContext('2d'), gr=x.createRadialGradient(24,24,0,24,24,24);
+  gr.addColorStop(0,'rgba(255,255,255,.92)');
+  gr.addColorStop(.20,css(c,.80));
+  gr.addColorStop(.48,css(c,.20));
+  gr.addColorStop(1,css(c,0));
+  x.fillStyle=gr; x.fillRect(0,0,48,48);
+  return cv2;
+});
 /* Вторая палитра — по настроению. Цвет берётся от света, яркость от
    энергии: у поля две оси, и обе должны читаться с карты. */
 var LCOL=[[74,92,178],[116,106,206],[142,152,172],[232,152,96],[246,206,110]];
@@ -1484,15 +1622,7 @@ var TINT=0;
 function colOf(n){ return TINT?LCOL[T.L[n]-1]:ECOL[T.e[n]]; }
 function sprOf(n){ return TINT?LSPR[T.L[n]-1]:SPR[ESPR[T.e[n]]]; }
 function sizeOf(n){ return TINT?(0.72+0.14*T.E[n]):1; }
-var ESPR=ECOL.map(function(c){
-  var best=0,bd=1e9,p;
-  for(p=0;p<RAMP.length;p++){
-    var d=(RAMP[p][0]-c[0])*(RAMP[p][0]-c[0])+(RAMP[p][1]-c[1])*(RAMP[p][1]-c[1])+
-          (RAMP[p][2]-c[2])*(RAMP[p][2]-c[2]);
-    if(d<bd){ bd=d; best=p; }
-  }
-  return best;
-});
+var ESPR=ECOL.map(function(c,i){ return i; });
 /* Сектор эпохи пропорционален её доле, радиус — году издания: видно разом
    и вес каждой эпохи, и то, как она распределена по времени. */
 (function ringTargets(){
@@ -1596,75 +1726,154 @@ function syncSky(){
     key=LEVEL?T.g[RES[n]]:T.a[RES[n]];
     (by[key]=by[key]||[]).push(RES[n]);
   }
-  var keys=Object.keys(by).sort(function(x,y){ return by[y].length-by[x].length; })
-             .slice(0,LEVEL?34:26);
+  var CAP=LEVEL?34:26, srt=function(x,y){ return by[y].length-by[x].length; }, keys;
+  if(LEVEL) keys=Object.keys(by).sort(srt).slice(0,CAP);
+  else {
+    /* Места делятся между областями по весу половин, а не отдаются двадцати
+       шести самым плодовитым: иначе двадцать один композитор занимал левую
+       сторону, а справа болталось пять исполнителей. */
+    var ka=[], kp=[], x2, na=0, np=0;
+    for(x2 in by) (T.R[by[x2][0]]?ka:kp).push(x2);
+    ka.sort(srt); kp.sort(srt);
+    for(n=0;n<RES.length;n++){ if(T.R[RES[n]]) na++; else np++; }
+    var qa=(na+np)?Math.round(CAP*na/(na+np)):0;
+    qa=Math.min(ka.length,qa); var qp=Math.min(kp.length,CAP-qa);
+    qa=Math.min(ka.length,CAP-qp);
+    keys=ka.slice(0,qa).concat(kp.slice(0,qp));
+  }
   if(!keys.length) return;
-  /* Солнца расталкиваются, пока не перестанут задевать друг друга: иначе
-     крупный автор накрывает соседей и читается один. */
-  var maxN=by[keys[0]].length, i2, j2, it;
+  /* Две области вместо одной кучи. Композиторы слева, исполнители справа:
+     раньше они стояли вперемешку, и половины библиотеки было не различить.
+     На первом уровне это деление по природе записи, на втором его нет —
+     там уже всё внутри одного автора. */
+  var AR=Math.max(1,Math.min(1.7,FX/FY));
+  var maxN=1, i2, j2, it;
+  keys.forEach(function(k3){ if(by[k3].length>maxN) maxN=by[k3].length; });
+  var side={}, nS={ '-1':0, '1':0 };
+  if(!LEVEL) keys.forEach(function(k2){
+    var sd=T.R[by[k2][0]]?-1:1;
+    side[k2]=sd; nS[sd]++;
+  });
+  var split=!LEVEL&&nS[-1]&&nS[1];
+  var seen2={ '-1':0, '1':0 };
   keys.forEach(function(k2,idx){
-    var an=idx*2.399963229, rr=0.66*Math.sqrt((idx+0.5)/keys.length);
-    SUNS.push({k:k2,n:by[k2].length,x:Math.cos(an)*rr,y:Math.sin(an)*rr,
+    var sd=split?side[k2]:0, an, rr;
+    if(split){
+      var q3=seen2[sd]++, tot=nS[sd];
+      /* Полудиск на каждую область: угол разложен веером вокруг своей
+         стороны, радиус — по корню, чтобы плотность вышла ровной. */
+      an=(sd<0?Math.PI:0)+(((q3*2.399963229)%Math.PI)-Math.PI/2)*0.88;
+      rr=0.90*Math.sqrt((q3+0.5)/tot);
+    } else { an=idx*2.399963229; rr=0.66*Math.sqrt((idx+0.5)/keys.length); }
+    /* Просвет бывает шире, чем выше; круг тогда оставляет пустые поля по
+       бокам. Посев растягивается под форму окна, а расталкивание дальше
+       держит системы круглыми. */
+    SUNS.push({k:k2,n:by[k2].length,x:Math.cos(an)*rr*AR,y:Math.sin(an)*rr,sd:sd,
                rs:(LEVEL?0.040:0.052)+(LEVEL?0.135:0.185)*Math.sqrt(by[k2].length/maxN),
                c:T.e[by[k2][0]],first:by[k2][0]});
   });
-  for(it=0;it<70;it++){
+  /* Расталкивание с запасом: прежние 1.30 оставляли системы впритык, и
+     орбиты соседей сливались в одно пятно. */
+  for(it=0;it<90;it++){
     var moved=0;
     for(i2=0;i2<SUNS.length;i2++){
       var A=SUNS[i2];
       for(j2=i2+1;j2<SUNS.length;j2++){
         var B=SUNS[j2], dx=B.x-A.x, dy=B.y-A.y;
-        var d=Math.sqrt(dx*dx+dy*dy)||1e-5, need=(A.rs+B.rs)*1.30;
+        var d=Math.sqrt(dx*dx+dy*dy)||1e-5, need=(A.rs+B.rs)*1.52;
         if(d<need){ var f=(need-d)/d*0.5;
           A.x-=dx*f; A.y-=dy*f; B.x+=dx*f; B.y+=dy*f; moved++; }
       }
-      A.x*=0.994; A.y*=0.994;
+      if(A.sd){
+        /* Тянет к своей стороне и не пускает через середину: жёлоб между
+           областями обязан остаться пустым, иначе деления не видно. */
+        A.x+=(A.sd*0.46*AR-A.x)*0.020; A.y*=0.992;
+        var edge=A.sd*(A.rs*0.55+0.035);
+        if(A.sd>0){ if(A.x<edge) A.x=edge; } else if(A.x>edge) A.x=edge;
+      } else { A.x*=0.994; A.y*=0.994; }
     }
     if(!moved) break;
   }
-  var far=0;
-  SUNS.forEach(function(S){ var d=Math.sqrt(S.x*S.x+S.y*S.y)+S.rs; if(d>far) far=d; });
-  var kf=far>0.98?0.98/far:1;
+  SPLIT=split;
+  /* Фигура ставится по собственным границам, а не по расстоянию до нуля:
+     при перекосе областей она иначе жмётся к одному краю кадра. */
+  var x0=1e9, x1=-1e9, y0b=1e9, y1b=-1e9;
   SUNS.forEach(function(S){
-    S.x*=kf; S.y*=kf; S.rs*=Math.min(1,kf*1.12);
+    if(S.x-S.rs<x0) x0=S.x-S.rs;
+    if(S.x+S.rs>x1) x1=S.x+S.rs;
+    if(S.y-S.rs<y0b) y0b=S.y-S.rs;
+    if(S.y+S.rs>y1b) y1b=S.y+S.rs;
+  });
+  var mx2=(x0+x1)/2, my2=(y0b+y1b)/2;
+  var kf=Math.max(0.28,Math.min(1.35,
+      Math.min(FX*1.94/Math.max(1e-3,x1-x0),FY*1.94/Math.max(1e-3,y1b-y0b))));
+  GUT=null;
+  SUNS.forEach(function(S){
+    S.x=(S.x-mx2)*kf; S.y=(S.y-my2)*kf; S.rs*=kf;
     var lst=by[S.k], rings=1+Math.floor(Math.sqrt(lst.length)*0.95);
     for(var q=0;q<lst.length;q++){
       var m=lst[q], ring=1+Math.floor(Math.sqrt(q)*0.95);
       OSX[m]=S.x; OSY[m]=S.y;
-      ORD[m]=S.rs*(0.26+0.74*ring/(rings+0.4));
+      /* Внешняя орбита не доходит до края системы: между соседями должен
+         оставаться тёмный ободок, иначе две системы читаются одной. */
+      ORD[m]=S.rs*(0.22+0.60*ring/(rings+0.4));
       OPH[m]=q*2.399963229;
       OSP[m]=0.34/Math.pow(ring,1.05);       /* внутренние обходят быстрее */
       OK[m]=1;
     }
     S.rings=rings;
   });
+  if(SPLIT){
+    /* Жёлоб и середины областей считаются один раз: подписи и разделитель
+       обязаны стоять там же, где встали системы. */
+    var L={a:-1e9,c:0,n:0,t:1e9}, Rg={a:1e9,c:0,n:0,t:1e9};
+    SUNS.forEach(function(S){
+      var G=S.sd<0?L:Rg;
+      G.c+=S.x; G.n++;
+      if(S.y-S.rs<G.t) G.t=S.y-S.rs;
+      if(S.sd<0){ if(S.x+S.rs>G.a) G.a=S.x+S.rs; }
+      else if(S.x-S.rs<G.a) G.a=S.x-S.rs;
+    });
+    if(L.n&&Rg.n) GUT={x:(L.a+Rg.a)/2,
+                       l:{x:L.c/L.n,y:L.t}, r:{x:Rg.c/Rg.n,y:Rg.t}};
+  }
 }
 function sunName(S){ return LEVEL?GROUP[S.k]:ARTIST[S.k]; }
 var CX=0, CY=0, RU=1, GAPL=0, GAPR=1e5;
+/* Сколько единиц фигуры влезает вправо и вверх от середины: просвет редко
+   бывает квадратным, и вписывать в него круг — значит терять поля. */
+var FX=1, FY=1;
 var CXt=0, CYt=0, RUt=1, START=true;
 function frameSky(){
   /* Фигура ставится в просвет между панелями: панели непрозрачны, и если
      центрировать её по окну, на виду остаётся край, а не середина.
      На стартовом экране панелей нет — там фигура занимает всё окно. */
-  CYt=VH*0.5;
+  /* Сверху стоят пилюли и легенда: если считать середину по всему окну,
+     верхняя система уезжает под них. */
+  var top=START?0:(VW>900?150:118), bot=START?0:14;
+  CYt=START?VH*0.5:(top+VH-bot)/2;
   if(START){
     CXt=VW*0.5; GAPL=6; GAPR=VW-6;
     RUt=MODE===2?VW*0.47:Math.min(VW,VH)*0.44;
+    FX=FY=1;
     if(MODE===2) CYt=tlCentre();
     return;
   }
+  var vh=Math.max(120,VH-top-bot);
   var r=document.getElementById('rail').getBoundingClientRect();
   var l=document.getElementById('list').getBoundingClientRect();
   var gap=l.left-r.right;
   if(gap>200&&VW>900&&!document.body.classList.contains('map')){
     CXt=(r.right+l.left)/2; GAPL=r.right+6; GAPR=l.left-6;
     /* Лента живёт шириной: ей отдаётся весь просвет, а не вписанный круг. */
-    RUt=MODE===2?gap*0.49:Math.min(VH*0.46,gap*0.62);
+    RUt=MODE===2?gap*0.49:Math.min(vh*0.48,gap*0.62);
   } else {
     CXt=VW*0.5; GAPL=6; GAPR=VW-6;
-    RUt=MODE===2?VW*0.47:Math.min(VW,VH)*0.46;
+    RUt=MODE===2?VW*0.47:Math.min(vh*0.48,VW*0.46);
   }
   ASP=MODE===2?tlAsp():0.94;
+  FX=Math.max(0.6,Math.min(2.4,(GAPR-GAPL)/2/Math.max(1,RUt)));
+  FY=Math.max(0.6,Math.min(2.4,vh/2/Math.max(1,RUt*ASP)));
   if(MODE===2) CYt=tlCentre();
 }
 /* Ширину ленте задаёт срок, высоту — окно. У колец и орбит сжатие по
@@ -1726,8 +1935,23 @@ function step(n,t,rot){
    Ищется только среди тел, посчитанных в этом кадре: остальные стоят на
    устаревших местах, и клик по ним соврал бы. */
 var HOVER=null, MX=-1, MY=-1;
+/* Насколько велико нарисованное солнце — не то же, что радиус его системы:
+   система занимает всю кучу орбит, а видно только ядро. */
+function sunCore(S){
+  return Math.max(RU*Z*(0.020+0.028*Math.sqrt(S.n/Math.max(SUNS[0].n,1)))*1.7,15);
+}
 function hitAt(mx,my){
   var n,p,dx,dy,d,best=null,bd=1e9;
+  if(MODE===1){
+    /* Ядро проверяется раньше записей: щелчок в самую середину системы —
+       это «войти к автору», а не «выбрать планету, случайно там висящую».
+       Раньше побеждала планета, и в Моцарта было не попасть. */
+    for(p=0;p<SUNS.length;p++){
+      var S0=SUNS[p], rc=sunCore(S0);
+      dx=s2x(S0.x)-mx; dy=s2y(S0.y)-my;
+      if(dx*dx+dy*dy<=rc*rc) return {kind:'sun',s:S0};
+    }
+  }
   if(MODE===2&&mx>=GAPL&&mx<=GAPR){
     /* Ось и линейка под рекой — полосы без тел, и щелчок по ним всегда
        означает год. Иначе выбор года зависел бы от того, попал курсор
@@ -1891,6 +2115,7 @@ function zoomAt(k,x,y){
   var nx=(x-CX-PANX)/(RU*Z), ny=(y-CY-PANY)/(RU*Z*ASP);
   Z=nz;
   PANX=x-CX-nx*RU*Z; PANY=y-CY-ny*RU*Z*ASP;
+  zoomLabel();
 }
 cv.addEventListener('wheel',function(e){
   if(START) return;
@@ -1899,8 +2124,19 @@ cv.addEventListener('wheel',function(e){
 },{passive:false});
 cv.addEventListener('dblclick',function(e){
   if(START) return;
-  if(!hitAt(e.clientX,e.clientY)){ Z=1; PANX=PANY=0; }
+  if(!hitAt(e.clientX,e.clientY)){ Z=1; PANX=PANY=0; zoomLabel(); }
 });
+/* Кнопки тянут к середине просвета, а не к курсору: у кнопки курсора нет. */
+var elZ=document.getElementById('zrst');
+function zoomLabel(){ elZ.textContent=Math.round(Z*100)+'%'; }
+function zoomBy(k){
+  zoomAt(k,(GAPL+GAPR)/2,MODE===2?s2y(0):CY);
+  zoomLabel();
+}
+document.getElementById('zin').addEventListener('click',function(){ zoomBy(1.35); });
+document.getElementById('zout').addEventListener('click',function(){ zoomBy(1/1.35); });
+elZ.addEventListener('click',function(){ Z=1; PANX=PANY=0; zoomLabel(); });
+zoomLabel();
 
 /* ==================================================================== крошки */
 var elCrumb=document.getElementById('crumb');
@@ -2131,20 +2367,47 @@ function sky(now){
     g.beginPath(); g.arc(s2x(NX[PL]),s2y(NY[PL]),pr,0,TAU); g.stroke();
   }
   if(MODE===2) tlNames();
+  if(MODE===1&&GUT){
+    /* Две области надо назвать, иначе деление читается как случайность. */
+    var gx=s2x(GUT.x);
+    if(gx>GAPL+30&&gx<GAPR-30){
+      g.strokeStyle='rgba(150,166,210,.10)'; g.lineWidth=1;
+      g.setLineDash([3,6]);
+      g.beginPath(); g.moveTo(gx,116); g.lineTo(gx,VH-16); g.stroke();
+      g.setLineDash([]);
+    }
+    g.font='500 11px "IBM Plex Mono",ui-monospace,monospace';
+    g.textAlign='center'; g.textBaseline='bottom';
+    g.fillStyle='rgba(233,238,250,.30)';
+    [[GUT.l,'композиторы'],[GUT.r,'исполнители']].forEach(function(p2){
+      var lx=s2x(p2[0].x), ly=Math.max(VW>900?162:130,s2y(p2[0].y)-12);
+      if(lx>GAPL+40&&lx<GAPR-40) g.fillText(p2[1],lx,ly);
+    });
+  }
   if(MODE===1){
     /* Имена солнц — единственный текст на заднике, и он приглушён: задник
        подсказывает, кто держит выборку, но не спорит со списком. */
     g.font='500 11px "IBM Plex Mono",ui-monospace,monospace';
     g.textAlign='center'; g.textBaseline='top';
-    var top=Math.min(SUNS.length,LEVEL?8:10);
+    /* Имена берутся с каждой стороны отдельно: иначе все десять достаются
+       композиторам, у которых записей больше, и правая область немая. */
+    var ord=SUNS.map(function(S,i){ return i; });
+    if(SPLIT){
+      var la=[], ra=[];
+      SUNS.forEach(function(S,i){ (S.sd<0?la:ra).push(i); });
+      var by2=function(a,b){ return SUNS[b].n-SUNS[a].n; };
+      la.sort(by2); ra.sort(by2);
+      ord=la.slice(0,6).concat(ra.slice(0,6));
+    }
+    var top=Math.min(ord.length,LEVEL?8:12);
     for(p=0;p<top;p++){
-      var S3=SUNS[p], nm=sunName(S3).replace(/\s*\(.*$/,'');
+      var S3=SUNS[ord[p]], nm=sunName(S3).replace(/\s*\(.*$/,'');
       if(nm.length>28) nm=nm.slice(0,27)+'…';
       var lx=s2x(S3.x), w2=g.measureText(nm).width*0.5;
       if(lx-w2<GAPL||lx+w2>GAPR) continue;
       var isH=HOVER&&HOVER.kind==='sun'&&HOVER.s===S3;
       g.fillStyle=isH?'rgba(242,166,90,.95)'
-                     :'rgba(233,238,250,'+(0.17+0.23*(1-p/top)).toFixed(3)+')';
+                     :'rgba(233,238,250,'+(0.20+0.26*(1-p/top)).toFixed(3)+')';
       g.fillText(nm,lx,s2y(S3.y)+S3.rs*u*ASP+7);
     }
   }
@@ -2176,7 +2439,7 @@ function modeLabel(){
 }
 elMode.addEventListener('click',function(){
   MODE=(MODE+1)%3; modeLabel(); Z=1; PANX=PANY=0;
-  tlPane(); syncSky(); frameSky(); resize(); saveHash();
+  tlPane(); frameSky(); resize(); syncSky(); saveHash();
 });
 /* Ленте нужна ширина: четыре века в просвет между панелями не помещаются,
    там весь XX век сжимается в палец. Поэтому на входе в неё список
@@ -2212,7 +2475,9 @@ function pane(cls,btn){
       document.getElementById('railb').setAttribute('aria-pressed','false');
       document.getElementById('listb').setAttribute('aria-pressed','false');
     }
-    frameSky(); resize();
+    /* Расстановка солнц зависит от формы просвета, поэтому после смены
+       панелей её надо пересчитать, а не только перерисовать. */
+    frameSky(); resize(); syncSky();
   });
 }
 pane('norail','railb'); pane('nolist','listb'); pane('map','mapb');
@@ -2417,6 +2682,11 @@ window.libTL=function(){
     }),
     год:function(y){ return {x:s2x(tlX(y)), y:y0+8}; },
     макс:[TLMAXA,TLMAXP], раньше:TLPRE};
+};
+window.libSun=function(){
+  return SUNS.map(function(S){
+    return {имя:sunName(S), записей:S.n, x:s2x(S.x), y:s2y(S.y), ядро:sunCore(S)};
+  });
 };
 window.lib=function(){
   var f={}, x;
