@@ -12,6 +12,7 @@ _t_*.html
 !tools/extract/attrib.tsv
 !tools/extract/moods.tsv
 !tools/extract/mood.tsv
+!tools/extract/dirs.tsv
 node_modules/
 .DS_Store
 Thumbs.db

@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 XLSX = os.path.join(ROOT, 'data', 'musical-cosmos-sheet.xlsx')
 OUT  = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'data', 'catalog.json')
-SCHEMA = 3
+SCHEMA = 4
 UNK = '—'
 
 COUNTRY = {
@@ -122,6 +122,9 @@ def collapse(m):
 NAMES_RU = tsv('names-ru.tsv')
 SUBCANON = collapse(tsv('subgenres.tsv'))
 GENRE_FIX = collapse(tsv('genres.tsv'))
+# Направления живут в своём словаре: у академической музыки это школы и
+# течения, и мешать их со списком субжанров нельзя.
+DIRCANON = collapse(tsv('dirs.tsv'))
 
 # «Современный» в ярлыке стареет: Майкл Джексон современной поп-музыкой
 # быть перестал. Возраст задаётся годом издания, и тогда ярлык не может
@@ -140,7 +143,141 @@ LIFE_RE = re.compile(r'\((?:ок\.\s*)?(\d{3,4})\s*[–—-]\s*(?:(\d{3,4})|н\.
 # Гершвина, а список жанров — «Джаз» в академическом столбце. Список
 # закрытый и короткий; новый жанр по умолчанию считается академическим.
 POP_GENRES = {'Рок', 'Поп', 'Джаз', 'Блюз', 'Электронная музыка',
-              'Рэп / хип-хоп', 'R&B / соул / фанк', 'Саундтреки', 'Кантри'}
+              'Рэп / хип-хоп', 'R&B / соул / фанк', 'Саундтреки', 'Кантри',
+              # Неоклассика — Эйнауди, Сакамото, Рихтер — не академическая
+              # музыка, как и переложения поп-песен для рояля. Жанр остаётся,
+              # половина меняется.
+              'Классический кроссовер'}
+
+# ============================================================ чем играется
+# Направлений было сто, и они мешали в кучу эпохи, школы, техники, страны и
+# инструменты. Вместо ещё одного набора субъективных ярлыков — два вопроса,
+# на которые есть ответ в самих данных: чем это играется и как это звучит.
+#
+# Инструмент читается по названию произведения, а где названия не хватает —
+# по исполнителю: у листа Classical есть колонка с ним, и она заполнена
+# целиком. Рихтер, Соколов, Гульд — пианисты, «Emerson String Quartet» —
+# струнные. Если у исполнителя хоть где-то распознан инструмент, он
+# переносится на остальные его записи; последним говорит композитор.
+INSTRUMENTS = [
+    ('голос и хор', r'\bmass\b|missa|requiem|cantata|kantate|passion|orator|\blied|'
+                    r'lieder|\baria\b|arie\b|chorus|choir|\bchor\b|opera\b|vocal|voice|'
+                    r'soprano|tenor|bariton|\bmotet|psalm|magnificat|stabat|ave maria|'
+                    r'vespers|madrigal|anthem|песн|хор\b|singers|vocalise'),
+    ('орган',       r'\borgan\b|organ,|for organ|органн|orgue|orgel'),
+    ('ударные',     r'percussion|marimba|timpani|vibraphon|xylophon|ударн|\bdrums\b'),
+    ('гитара',      r'guitar|\blute\b|гитар|vihuela|mandolin'),
+    ('фортепиано',  r'\bpiano\b|pianoforte|klavier|clavier|harpsichord|cembalo|'
+                    r'fortepiano|keyboard|фортепиан|клавес|two pianos|\bpianist'),
+    ('струнные',    r'violin|cello|violoncell|\bviola\b|\bstring|quartet|quintet\b|'
+                    r'скрип|виолонч|contrabass|double bass|\bharp\b'),
+    ('духовые',     r'flute|oboe|clarinet|bassoon|\bhorn\b|trumpet|trombone|\btuba\b|'
+                    r'saxophon|recorder|shakuhachi|fl[öo]te|brass'),
+    ('электроника', r'electronic|\btape\b|synthes|live electronics'),
+    ('оркестр',     r'orchestr|symphon|sinfoni|philharmon|overture|ouvert|concerto|'
+                    r'konzert|ballet|балет|симфон|capella|\bband\b'),
+]
+INSTRUMENTS = [(nm, re.compile(p)) for nm, p in INSTRUMENTS]
+
+def instrument_of(text):
+    t = text.lower()
+    for nm, rx in INSTRUMENTS:
+        if rx.search(t):
+            return nm
+    return ''
+
+def split_names(p):
+    out = []
+    for x in re.split(r'\s*[&,;/]\s*|\s+и\s+', p or ''):
+        x = x.strip()
+        if len(x) > 2:
+            out.append(x)
+    return out
+
+# ============================================================== как звучит
+# Восемь меток, каждая — отдельная галочка: запись бывает разом камерной и
+# виртуозной. Имена рабочие, их ещё предстоит отшлифовать.
+TAG_NAMES = ['красивое', 'радикальное', 'мощное', 'камерное',
+             'виртуозное', 'танцевальное', 'драматическое', 'экспериментальное']
+TAG_RE = {
+    'красивое': r'adagio|andante|larghetto|\blargo\b|cantabile|nocturne|ноктюрн|'
+                r'berceuse|romance|романс|serenade|barcarolle|r[êe]verie|pastorale|'
+                r'siciliana|arioso|dolce|tranquillo|lullaby|колыбельн|\bair\b|'
+                r'intermezzo|song without words|\bmajor\b|мажор|ave maria|meditation',
+    'мощное':   r'symphon|симфон|requiem|\bmass\b|missa|orator|cantata|passion|'
+                r'\bte deum|dies irae|tuba mirum|for orchestra|philharmon|chorus|'
+                r'choir|opera\b|ballet|балет|apocalyp|\bmarch\b|марш',
+    'камерное': r'\bsolo\b|соло\b|\bduo\b|\bduet|\btrio\b|quartet|quintet|sextet|'
+                r'septet|octet|for two|for 2 |chamber|камерн|\bsonata\b|соната|'
+                r'prelude|прелюд|\betude|étude|\bpiece|пьеса|bagatelle|invention',
+    'виртуозное': r'\betude|étude|caprice|capriccio|toccata|variation|вариац|rhapsod|'
+                r'рапсод|fantas|фантаз|perpetuum|paganini|transcendental|paraphrase|'
+                r'brillante|\bstudy\b|virtuos|moto perpetuo',
+    'танцевальное': r'waltz|valse|вальс|mazurka|мазурк|polonaise|полонез|gavotte|'
+                r'sarabande|сарабанд|menuet|minuet|менуэт|\bgigue|\bjig\b|tango|танго|'
+                r'bourr[ée]e|allemande|courante|polka|полька|galop|habanera|csardas|'
+                r'l[äa]ndler|danse|dance|танец|танц|foxtrot|фокстрот|ragtime|rumba|'
+                r'samba|bolero|болеро|tarantella',
+    'драматическое': r'overture|ouvert|увертюр|symphonic poem|tone poem|po[èe]me|поэма|'
+                r'scherzo|скерцо|funeral|похорон|elegy|элеги|lament|tragic|dramatic|'
+                r'entr.acte|finale',
+    'экспериментальное': r'prepared piano|for tape|\btape\b|live electronics|'
+                r'percussion ensemble|extended techniqu|aleator|алеатор|musique concr|'
+                r'toy piano|microtonal|микротон|for radios|4.33',
+}
+TAG_RE = dict((k, re.compile(v)) for k, v in TAG_RE.items())
+# Школа тоже говорит о звуке: атональность и сериализм слышны без названия.
+DIR_RADICAL = re.compile(
+    r'авангард|сериализм|додекафон|нововенск|сонорист|сонорик|микрополифон|спектрал|'
+    r'новая сложность|алеатор|стохастич|атональн|постсериал|микротональ|'
+    r'расширенные техник|конструктивизм|организованный звук|инструментальный театр|'
+    r'неопримитивизм|электронная|японский модернизм|польский модернизм')
+DIR_EXPERIMENT = re.compile(
+    r'экспериментал|расширенные техник|организованный звук|инструментальный театр|'
+    r'сонорист|сонорик|стохастич|микротональ|спектрал|алеатор|конкретн|электронная|'
+    r'американский экспериментализм|механическая музыка')
+DIR_BEAUTY = re.compile(
+    r'романтизм|импрессион|новая простота|новая искренность|сакральный минимализм|'
+    r'неоклассик|фольклоризм|неоромантизм|органический минимализм')
+# У повседневной музыки названия молчат, зато субжанр говорит прямо.
+SUB_TAGS = {
+    'Диско': ['танцевальное'], 'Танцевальная электроника': ['танцевальное'],
+    'Электроника': ['танцевальное'], 'Регги и ска': ['танцевальное'],
+    'Рэгтайм и ранний джаз': ['танцевальное', 'виртуозное'],
+    'Свинг': ['танцевальное'], 'Босса-нова и латино-джаз': ['танцевальное', 'красивое'],
+    'Фанк': ['танцевальное'], 'Рок-н-ролл': ['танцевальное'],
+    'Синти-поп': ['танцевальное'], 'Поп XXI века': ['танцевальное'],
+    'Хип-хоп': ['танцевальное'],
+    'Метал': ['мощное', 'радикальное'], 'Хард-рок': ['мощное'],
+    'Гранж': ['мощное'], 'Прогрессивный рок': ['мощное', 'виртуозное'],
+    'Панк': ['радикальное'], 'Пост-панк': ['радикальное'],
+    'Джаз-фьюжн': ['виртуозное'], 'Бибоп и хард-боп': ['виртуозное'],
+    'Кул-джаз': ['красивое'], 'Модальный джаз и постбоп': ['виртуозное'],
+    'Блюз-рок': ['виртуозное'],
+    'Соул': ['красивое'], 'Классический поп': ['красивое'],
+    'Автор-исполнитель': ['камерное', 'красивое'], 'Фолк': ['камерное'],
+    'Инди-поп': ['красивое'], 'Саундтрек': ['драматическое'],
+    'Психоделический рок': ['экспериментальное'],
+}
+
+def sound_tags(text, direction, sub, realm):
+    mask = 0
+    t = text.lower()
+    for i, nm in enumerate(TAG_NAMES):
+        rx = TAG_RE.get(nm)
+        if rx and rx.search(t):
+            mask |= 1 << i
+    d = (direction or '').lower()
+    if DIR_RADICAL.search(d):
+        mask |= 1 << TAG_NAMES.index('радикальное')
+    if DIR_EXPERIMENT.search(d):
+        mask |= 1 << TAG_NAMES.index('экспериментальное')
+    if DIR_BEAUTY.search(d):
+        mask |= 1 << TAG_NAMES.index('красивое')
+    if not realm:
+        for nm in SUB_TAGS.get(sub, ()):
+            mask |= 1 << TAG_NAMES.index(nm)
+    return mask
 
 def settle(epoch, artist):
     """Окончательное имя эпохи.
@@ -438,7 +575,7 @@ def main():
 
     # --- справочники
     D = {'artist': [], 'group': [], 'epoch': [], 'sub': [], 'dir': [],
-         'country': [], 'sf': []}
+         'inst': [], 'country': [], 'sf': []}
     IX = {k: {} for k in D}
     SPAN = {}
     def idx(kind, val):
@@ -448,8 +585,10 @@ def main():
         return m[val]
 
     T = {k: [] for k in ('n','a','g','e','s','d','y','r','p','m','c','i','b','f','R',
-                         'E','L','Q')}
-    idx('sub', UNK); idx('dir', UNK)   # нулевой номер в обоих — «нет значения»
+                         'E','L','Q','C','F')}
+    idx('sub', UNK); idx('dir', UNK); idx('inst', UNK)
+    # нулевой номер во всех трёх — «нет значения»
+    SND = []   # (текст для разбора, исполнитель, композитор, раздел)
     def year_of(v):
         v = (v or '').strip()
         return int(float(v)) if v.replace('.', '', 1).isdigit() else 0
@@ -521,6 +660,7 @@ def main():
         # списке они мешают друг другу.
         if realm:
             direction = sub if sub != UNK else ('только эпоха' if known else UNK)
+            direction = DIRCANON.get(direction, direction)
             sub = UNK
         else:
             direction = UNK
@@ -555,11 +695,58 @@ def main():
         T['c'].append(idx('country', cc))
         T['i'].append(aid); T['b'].append(alb); T['f'].append(sf)
         T['R'].append(realm)
+        # Чем играется и как звучит. Инструмент досчитывается вторым
+        # проходом: сперва все распознанные, потом по ним — остальные.
+        itext = (r.get('B') or '') + ' | ' + (group or '')
+        SND.append((itext, (cl['perf'] if cl else artist), artist, realm))
+        T['F'].append(sound_tags(itext, direction, sub, realm))
 
     # Эпоха и жанр — разные вещи, и мешать их в одном списке неверно:
     # у академической музыки это отрезок времени, у повседневной — ветка
     # родства. Половина у ярлыка одна, поэтому считается прямо здесь и
     # разводит фасеты на странице.
+    # ---------------------------------------------------------- инструмент
+    # Три круга: название, потом исполнитель, потом композитор. Каждый
+    # следующий говорит только там, где предыдущий промолчал.
+    inst = [instrument_of(t) if rl else '' for t, _p, _c, rl in SND]
+    for i in range(len(SND)):
+        if not inst[i] and SND[i][3]:
+            inst[i] = instrument_of(SND[i][1])
+    box = {}
+    for i in range(len(SND)):
+        if inst[i]:
+            for x in split_names(SND[i][1]):
+                box.setdefault(x, collections.Counter())[inst[i]] += 1
+    pmap = {}
+    for k, c in box.items():
+        nm, v = c.most_common(1)[0]
+        tot = sum(c.values())
+        if v / float(tot) >= 0.7:
+            pmap[k] = (nm, tot)
+    for i in range(len(SND)):
+        if inst[i] or not SND[i][3]:
+            continue
+        votes = collections.Counter()
+        for x in split_names(SND[i][1]):
+            if x in pmap:
+                votes[pmap[x][0]] += pmap[x][1]
+        if votes:
+            inst[i] = votes.most_common(1)[0][0]
+    cbox = {}
+    for i in range(len(SND)):
+        if inst[i]:
+            cbox.setdefault(SND[i][2], collections.Counter())[inst[i]] += 1
+    cmap = {}
+    for k, c in cbox.items():
+        nm, v = c.most_common(1)[0]
+        tot = sum(c.values())
+        if tot >= 3 and v / float(tot) >= 0.6:
+            cmap[k] = nm
+    for i in range(len(SND)):
+        if not inst[i] and SND[i][3] and SND[i][2] in cmap:
+            inst[i] = cmap[SND[i][2]]
+    T['C'] = [idx('inst', x or UNK) for x in inst]
+
     epochs = [{'n': nm, 'lo': SPAN.get(nm, (0, 0))[0], 'hi': SPAN.get(nm, (0, 0))[1],
                'r': 0 if nm in POP_GENRES else 1}
               for nm in D['epoch']]
@@ -570,8 +757,9 @@ def main():
             'shelves': [{'n': x[0], 'lo': x[1], 'hi': x[2], 'k': x[3]}
                         for x in SHELVES],
             'mood': {'e': E_NAMES, 'l': L_NAMES, 'presets': PRESETS},
+            'tags': TAG_NAMES,
             'dict': {'artist': D['artist'], 'group': D['group'], 'epoch': epochs,
-                     'sub': D['sub'], 'dir': D['dir'],
+                     'sub': D['sub'], 'dir': D['dir'], 'inst': D['inst'],
                      'country': D['country'], 'sf': D['sf']},
             't': T}
     raw = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
@@ -589,6 +777,19 @@ def main():
         one = sum(1 for v in cnt.values() if v == 1)
         print('    %-12s одиночек %d из %d, безымянных %d'
               % (kind, one, len(cnt), sum(1 for x in T[col] if not x)))
+    ins = _c.Counter(D['inst'][T['C'][j]] for j in range(n) if T['R'][j])
+    ac = sum(T['R'])
+    got = ac - ins[UNK]
+    print('  чем играется: %d из %d академических (%.0f%%)'
+          % (got, ac, 100.0 * got / max(1, ac)))
+    print('    ' + ' · '.join('%s %d' % (k, v) for k, v in ins.most_common() if k != UNK))
+    print('  как звучит:')
+    for i, nm in enumerate(TAG_NAMES):
+        a = sum(1 for j in range(n) if T['F'][j] >> i & 1 and T['R'][j])
+        p = sum(1 for j in range(n) if T['F'][j] >> i & 1 and not T['R'][j])
+        print('    %-18s академ %4d · повседн %4d' % (nm, a, p))
+    print('    без единой метки: %d из %d'
+          % (sum(1 for x in T['F'] if not x), n))
     q = _c.Counter(T['Q'])
     hand = sum(v for k, v in q.items() if k & 2)
     read = sum(v for k, v in q.items() if k & 1)
