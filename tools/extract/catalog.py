@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 XLSX = os.path.join(ROOT, 'data', 'musical-cosmos-sheet.xlsx')
 OUT  = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'data', 'catalog.json')
-SCHEMA = 2
+SCHEMA = 3
 UNK = '—'
 
 COUNTRY = {
@@ -144,6 +144,88 @@ def load_attrib():
             m[a[0].strip()] = (a[1].strip(), a[2].strip())
     return m
 ATTRIB = load_attrib()
+
+# ------------------------------------------------------------- настроение
+# Две шкалы по пять делений: сколько в записи движения и какого она цвета.
+# Двух чисел хватает, чтобы место записи в поле было однозначным, а разметка
+# не превращалась в работу — на запись два решения, а не выбор из списка.
+E_NAMES = ['замерло', 'дышит', 'идёт', 'гонит', 'рвёт']
+L_NAMES = ['мрак', 'тень', 'ровно', 'тепло', 'свет']
+PRESETS = [
+    {'n': 'фон',              'e': [1, 2], 'l': [1, 5]},
+    {'n': 'сосредоточиться',  'e': [1, 3], 'l': [3, 4]},
+    {'n': 'тоска',            'e': [1, 2], 'l': [1, 2]},
+    {'n': 'свет',             'e': [2, 4], 'l': [4, 5]},
+    {'n': 'разогнаться',      'e': [4, 5], 'l': [3, 5]},
+    {'n': 'пробить',          'e': [4, 5], 'l': [1, 2]},
+]
+# Медленное стоит раньше быстрого: в «Adagio — Allegro» ведёт первая ремарка.
+TEMPO = [
+    (r'Grave|Largo|Larghissimo|Lento|Adagissimo|Molto adagio', 1),
+    (r'Adagio|Larghetto|Lentamente|Andante|Andantino|Sostenuto|Cantabile', 2),
+    (r'Moderato|Allegretto|Comodo|Marcia|Menuet|Minuet|Sarabande', 3),
+    (r'Allegro|Vivo|Animato|Con moto|Con brio|Scherzo', 4),
+    (r'Vivace|Presto|Prestissimo|Furioso|Agitato', 5),
+]
+LAD = re.compile(r'\b(Minor|Major|Moll|Dur)\b', re.I)
+
+def load_moods(name, width):
+    path = os.path.join(HERE, name)
+    m = {}
+    if not os.path.exists(path):
+        return m
+    for line in io.open(path, encoding='utf-8'):
+        line = line.rstrip('\n')
+        if not line.strip() or line.startswith('#'):
+            continue
+        a = (line.split('\t') + [''] * width)[:width]
+        key = a[0].strip()
+        if not key:
+            continue
+        def num(v):
+            v = v.strip()
+            return int(v) if v.isdigit() and 1 <= int(v) <= 5 else 0
+        e, l = num(a[1]), num(a[2])
+        if e or l:
+            m[key] = (e, l)
+    return m
+MOODS = load_moods('moods.tsv', 3)     # по субжанру и эпохе
+MOOD = load_moods('mood.tsv', 4)       # по автору, альбому и записи
+
+def mood_of(realm, title, sub, direction, epoch, artist, group, tid):
+    """Энергия, свет и откуда они взялись (1 — из названия, 2 — руками).
+
+    Порядок силы: точечная правка по номеру трека > то, что прочитано из
+    названия > правка по автору или альбому > умолчание по субжанру и эпохе.
+    Название стоит выше автора намеренно: сказать «Шопен тёмный» разумно,
+    но пьеса, у которой в заголовке стоит D Major, тёмной от этого не станет.
+    """
+    e, l = MOODS.get(sub) or MOODS.get(direction) or MOODS.get(epoch) or (3, 3)
+    q = 0
+
+    def put(h):
+        nonlocal e, l
+        if h[0]:
+            e = h[0]
+        if h[1]:
+            l = h[1]
+
+    h = MOOD.get('альбом:' + group) or MOOD.get(artist)
+    if h:
+        put(h); q |= 2
+    if realm:
+        for pat, v in TEMPO:
+            if re.search(r'\b(' + pat + r')\b', title, re.I):
+                e, q = v, q | 1
+                break
+        m = LAD.search(title)
+        if m:
+            l = 2 if m.group(1).lower() in ('minor', 'moll') else 4
+            q |= 1
+    t = MOOD.get('id:' + tid)
+    if t:
+        put(t); q |= 2
+    return e, l, q
 
 def load_epoch_fixes():
     """Ручные поправки к ярлыкам эпох: имя и границы.
@@ -280,7 +362,8 @@ def main():
             m[val] = len(D[kind]); D[kind].append(val)
         return m[val]
 
-    T = {k: [] for k in ('n','a','g','e','s','d','y','r','p','m','c','i','b','f','R')}
+    T = {k: [] for k in ('n','a','g','e','s','d','y','r','p','m','c','i','b','f','R',
+                         'E','L','Q')}
     idx('sub', UNK); idx('dir', UNK)   # нулевой номер в обоих — «нет значения»
     def year_of(v):
         v = (v or '').strip()
@@ -360,6 +443,9 @@ def main():
         T['e'].append(idx('epoch', epoch or UNK))
         T['s'].append(idx('sub', sub or UNK))
         T['d'].append(idx('dir', direction or UNK))
+        me, ml, mq = mood_of(realm, (r.get('B') or '') + ' ' + group,
+                             sub, direction, epoch, artist, group, tid)
+        T['E'].append(me); T['L'].append(ml); T['Q'].append(mq)
         T['y'].append(year_of(r.get('E')))
         T['r'].append(rk[0]); T['p'].append(rk[1])
         T['m'].append(mask)
@@ -375,6 +461,7 @@ def main():
             'ages': AGE_RU,
             'shelves': [{'n': x[0], 'lo': x[1], 'hi': x[2], 'k': x[3]}
                         for x in SHELVES],
+            'mood': {'e': E_NAMES, 'l': L_NAMES, 'presets': PRESETS},
             'dict': {'artist': D['artist'], 'group': D['group'], 'epoch': epochs,
                      'sub': D['sub'], 'dir': D['dir'],
                      'country': D['country'], 'sf': D['sf']},
@@ -394,6 +481,17 @@ def main():
         one = sum(1 for v in cnt.values() if v == 1)
         print('    %-12s одиночек %d из %d, безымянных %d'
               % (kind, one, len(cnt), sum(1 for x in T[col] if not x)))
+    q = _c.Counter(T['Q'])
+    hand = sum(v for k, v in q.items() if k & 2)
+    read = sum(v for k, v in q.items() if k & 1)
+    print('  настроение: руками %d · прочитано из названия %d · по умолчанию %d'
+          % (hand, read, q[0]))
+    grid = _c.Counter(zip(T['E'], T['L']))
+    print('    поле (энергия × свет), сколько записей в клетке:')
+    for e in range(1, 6):
+        print('      %-8s ' % E_NAMES[e - 1]
+              + ' '.join('%5d' % grid[(e, l)] for l in range(1, 6)))
+    print('      %-8s ' % '' + ' '.join('%5s' % n[:5] for n in L_NAMES))
     print('  полки: ' + ' · '.join(
         '%s %d' % (SHELVES[i][0], sum(1 for m in T['m'] if m >> i & 1))
         for i in range(len(SHELVES))))

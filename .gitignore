@@ -10,6 +10,8 @@ _t_*.html
 !tools/extract/genres.tsv
 !tools/extract/assign.tsv
 !tools/extract/attrib.tsv
+!tools/extract/moods.tsv
+!tools/extract/mood.tsv
 node_modules/
 .DS_Store
 Thumbs.db
