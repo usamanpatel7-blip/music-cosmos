@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 XLSX = os.path.join(ROOT, 'data', 'musical-cosmos-sheet.xlsx')
 OUT  = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'data', 'catalog.json')
-SCHEMA = 1
+SCHEMA = 2
 UNK = '—'
 
 COUNTRY = {
@@ -33,10 +33,27 @@ COUNTRY = {
  'QM':'Без страны','QZ':'Без страны','QT':'Без страны','TC':'Без страны',
  'CB':'Без страны','ZZ':'Без страны',
 }
-AGES = ['11-15','16-18 y.o.','19','20-21','22-24','Актуальный плейлист',
-        'Концерты','Концерты 2','Дайте Танк(!)']
-AGE_RU = ['11–15 лет','16–18 лет','19 лет','20–21 год','22–24 года',
-          'Актуальный','Концерты','Концерты 2','Дайте Танк(!)']
+# Полки: имя, годы жизни, вид и какие плейлисты таблицы сюда сводятся.
+# «Дайте Танк(!)» — не возраст, а одна группа, слушанная в девятнадцать:
+# отдельной полки она не заслуживает и стоит внутри девятнадцати.
+# Концертные списки — параллельная лента: они идут поверх возрастов,
+# а не после них, потому и помечены отдельно.
+SHELVES = [
+    ('11–15 лет',        11, 15, 'age',     ['11-15']),
+    ('16–18 лет',        16, 18, 'age',     ['16-18 y.o.']),
+    ('19 лет',           19, 19, 'age',     ['19', 'Дайте Танк(!)']),
+    ('20–21 год',        20, 21, 'age',     ['20-21']),
+    ('22–24 года',       22, 24, 'age',     ['22-24']),
+    ('Концерты 21–25',   21, 25, 'concert', ['Концерты']),
+    ('Сейчас 25–26',     25, 26, 'age',     ['Актуальный плейлист']),
+    ('Концерты 25–26',   25, 26, 'concert', ['Концерты 2']),
+]
+AGE_RU = [x[0] for x in SHELVES]
+BIT = {}
+for _i, _sh in enumerate(SHELVES):
+    for _raw in _sh[4]:
+        BIT[_raw] = _i
+AGES = list(BIT)
 
 # ------------------------------------------------------------------ книга
 def load(path):
@@ -84,6 +101,49 @@ def tsv(name):
             m[a[0].strip()] = a[1].strip()
     return m
 NAMES_RU, SUBCANON = tsv('names-ru.tsv'), tsv('subgenres.tsv')
+GENRE_FIX = tsv('genres.tsv')
+
+def load_assign():
+    """Поправки, которые решает автор или запись, а не ярлык — assign.tsv.
+
+    Ключ: имя автора либо «id:<номер трека>». Значение: жанр, направление
+    или субжанр, раздел. Пустое поле означает «оставить как есть».
+    """
+    path = os.path.join(HERE, 'assign.tsv')
+    m = {}
+    if not os.path.exists(path):
+        return m
+    for line in io.open(path, encoding='utf-8'):
+        line = line.rstrip('\n')
+        if not line.strip() or line.startswith('#'):
+            continue
+        a = (line.split('\t') + ['', '', ''])[:4]
+        key = a[0].strip()
+        if not key:
+            continue
+        realm = int(a[3]) if a[3].strip() in ('0', '1') else None
+        m[key] = (a[1].strip(), a[2].strip(), realm)
+    return m
+ASSIGN = load_assign()
+
+def load_attrib():
+    """Поправки авторства по номеру трека — attrib.tsv.
+
+    Значение: (композитор, эпоха или пустая строка).
+    """
+    path = os.path.join(HERE, 'attrib.tsv')
+    m = {}
+    if not os.path.exists(path):
+        return m
+    for line in io.open(path, encoding='utf-8'):
+        line = line.rstrip('\n')
+        if not line.strip() or line.startswith('#'):
+            continue
+        a = (line.split('\t') + ['', ''])[:3]
+        if a[0].strip() and a[1].strip():
+            m[a[0].strip()] = (a[1].strip(), a[2].strip())
+    return m
+ATTRIB = load_attrib()
 
 def load_epoch_fixes():
     """Ручные поправки к ярлыкам эпох: имя и границы.
@@ -210,7 +270,8 @@ def main():
             cur[0] = min(cur[0], rk); cur[1] += 1
 
     # --- справочники
-    D = {'artist': [], 'group': [], 'epoch': [], 'sub': [], 'country': [], 'sf': []}
+    D = {'artist': [], 'group': [], 'epoch': [], 'sub': [], 'dir': [],
+         'country': [], 'sf': []}
     IX = {k: {} for k in D}
     SPAN = {}
     def idx(kind, val):
@@ -219,7 +280,8 @@ def main():
             m[val] = len(D[kind]); D[kind].append(val)
         return m[val]
 
-    T = {k: [] for k in ('n','a','g','e','s','y','r','p','m','c','i','b','f','R')}
+    T = {k: [] for k in ('n','a','g','e','s','d','y','r','p','m','c','i','b','f','R')}
+    idx('sub', UNK); idx('dir', UNK)   # нулевой номер в обоих — «нет значения»
     def year_of(v):
         v = (v or '').strip()
         return int(float(v)) if v.replace('.', '', 1).isdigit() else 0
@@ -230,7 +292,7 @@ def main():
         cl  = classical.get(aid)
         known = bool(cl and cl['composer'] and 'не определ' not in cl['composer'].lower())
         if known:
-            realm, epoch, sub = 1, cl['epoch'], cl['dir']
+            realm, epoch, sub = 1, cl['epoch'], SUBCANON.get(cl['dir'], cl['dir'])
             artist, group = cl['composer'], (cl['work'] or (r.get('D') or '').strip())
             SPAN.setdefault(epoch, cl['span'])
         elif cl:
@@ -245,14 +307,46 @@ def main():
             if 'не определ' in epoch.lower() or 'не найден' in epoch.lower():
                 epoch = 'Жанр не определён'
 
+        # Слияние ярлыков: девять джазовых эпох в один жанр, «Модернизм XX
+        # века» в «Модернизм» и так далее — genres.tsv.
+        epoch = GENRE_FIX.get(epoch, epoch)
+        # Точечная поправка сильнее авторской, авторская — сильнее ярлыка.
+        tid = (r.get('O') or '').strip()
+        fix = ASSIGN.get('id:' + tid) or ASSIGN.get(artist)
+        if fix:
+            if fix[0]:
+                epoch = fix[0]
+                SPAN.setdefault(epoch, (0, 0))
+            if fix[1]:
+                sub = UNK if fix[1] == UNK else fix[1]
+            if fix[2] is not None:
+                realm = fix[2]
+
+        # Направление и субжанр — разные словари: у академической музыки
+        # это школы и течения, у повседневной — жанровые ветки, и в одном
+        # списке они мешают друг другу.
+        if realm:
+            direction = sub if sub != UNK else ('только эпоха' if known else UNK)
+            sub = UNK
+        else:
+            direction = UNK
+
+        # Запись под чужим композитором: находится по каталожному номеру
+        # в названии, правится поимённо — attrib.tsv.
+        at = ATTRIB.get('id:' + (r.get('O') or '').strip())
+        if at:
+            artist = at[0]
+            if at[1]:
+                epoch = at[1]
+
         isrc = (r.get('N') or '').strip()
         cc = COUNTRY.get(isrc[:2].upper(), 'Без страны') if len(isrc) >= 2 else 'Без страны'
 
         mask = 0
         for part in str(r.get('L') or '').split('|'):
             part = part.strip()
-            if part in AGES:
-                mask |= 1 << AGES.index(part)
+            if part in BIT:
+                mask |= 1 << BIT[part]
 
         m = re.search(r'/album/[^/]*/(\d+)', url)
         alb = m.group(1) if m else ''
@@ -265,6 +359,7 @@ def main():
         T['g'].append(idx('group', group or UNK))
         T['e'].append(idx('epoch', epoch or UNK))
         T['s'].append(idx('sub', sub or UNK))
+        T['d'].append(idx('dir', direction or UNK))
         T['y'].append(year_of(r.get('E')))
         T['r'].append(rk[0]); T['p'].append(rk[1])
         T['m'].append(mask)
@@ -277,9 +372,12 @@ def main():
 
     data = {'schema': SCHEMA,
             'built': datetime.datetime.utcnow().strftime('%Y-%m-%d'),
-            'ages': AGE_RU, 'agesRaw': AGES,
+            'ages': AGE_RU,
+            'shelves': [{'n': x[0], 'lo': x[1], 'hi': x[2], 'k': x[3]}
+                        for x in SHELVES],
             'dict': {'artist': D['artist'], 'group': D['group'], 'epoch': epochs,
-                     'sub': D['sub'], 'country': D['country'], 'sf': D['sf']},
+                     'sub': D['sub'], 'dir': D['dir'],
+                     'country': D['country'], 'sf': D['sf']},
             't': T}
     raw = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
     json.loads(raw)
@@ -287,8 +385,18 @@ def main():
 
     n = len(T['n'])
     print('catalog.json — схема %d, %.0f КБ, треков %d' % (SCHEMA, len(raw.encode()) / 1024, n))
-    print('  авторов %d · эпох и жанров %d · направлений %d · стран %d'
-          % (len(D['artist']), len(D['epoch']), len(D['sub']), len(D['country'])))
+    print('  авторов %d · жанров и эпох %d · субжанров %d · направлений %d · стран %d'
+          % (len(D['artist']), len(D['epoch']), len(D['sub']) - 1,
+             len(D['dir']) - 1, len(D['country'])))
+    import collections as _c
+    for kind, col in (('субжанр', 's'), ('направление', 'd')):
+        cnt = _c.Counter(x for x in T[col] if x)
+        one = sum(1 for v in cnt.values() if v == 1)
+        print('    %-12s одиночек %d из %d, безымянных %d'
+              % (kind, one, len(cnt), sum(1 for x in T[col] if not x)))
+    print('  полки: ' + ' · '.join(
+        '%s %d' % (SHELVES[i][0], sum(1 for m in T['m'] if m >> i & 1))
+        for i in range(len(SHELVES))))
     print('  академических %d · повседневных %d · в чартах Replay %d'
           % (sum(T['R']), n - sum(T['R']), sum(1 for x in T['r'] if x)))
     print('  ярлыков эпох, расклеенных по диапазону: %d' % split_fixed)

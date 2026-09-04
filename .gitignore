@@ -7,6 +7,9 @@ _t_*.html
 !tools/extract/names-ru.tsv
 !tools/extract/subgenres.tsv
 !tools/extract/epochs.tsv
+!tools/extract/genres.tsv
+!tools/extract/assign.tsv
+!tools/extract/attrib.tsv
 node_modules/
 .DS_Store
 Thumbs.db
