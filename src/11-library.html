@@ -288,6 +288,61 @@ body.sound #card.on{bottom:96px}
 #hud .pill:hover{color:var(--ink-2)}
 #hud .pill[aria-pressed=true]{color:var(--accent);border-color:rgba(242,166,90,.4)}
 
+/* ------------------------------------------------------------------- авторы
+   Не фильтр, а рейтинг: в панели он занимал высоту и предлагал искать
+   автора там, где искать неудобно, — поиск есть сверху. Ценным в нём было
+   другое: сколько у кого записей, на скольких полках он встречается и что
+   из этого дошло до Replay. Под это и сделано отдельное окно. */
+#rate{position:fixed;inset:0;z-index:7;display:none;padding:60px 24px 24px;
+  background:rgba(4,5,9,.86);backdrop-filter:blur(7px)}
+body.rate #rate{display:block}
+#rate .box{max-width:1120px;margin:0 auto;height:100%;display:flex;flex-direction:column;
+  background:var(--glass-2);border:1px solid var(--line-2);border-radius:16px;
+  box-shadow:0 30px 90px -30px rgba(0,0,0,.95);overflow:hidden}
+#rate .hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:14px 16px;border-bottom:1px solid var(--line)}
+#rate h2{font-family:var(--disp);font-size:1.05rem;margin:0;font-weight:600}
+#rate .hd .sp{flex:1}
+#rate input{flex:0 1 240px;min-width:130px;background:rgba(6,7,12,.7);
+  border:1px solid var(--line);border-radius:9px;color:var(--ink);
+  padding:7px 10px;font:inherit;font-size:.82rem}
+#rate .sw{display:flex;gap:5px}
+#rate .sw button,#rate .x{font:inherit;font-size:.73rem;cursor:pointer;padding:5px 10px;
+  border-radius:20px;color:var(--muted);background:rgba(6,7,12,.55);
+  border:1px solid var(--line)}
+#rate .sw button:hover,#rate .x:hover{color:var(--ink-2);border-color:var(--line-2)}
+#rate .sw button[aria-pressed=true]{color:var(--accent);border-color:rgba(242,166,90,.45)}
+#rate .cols{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:0}
+#rate .cols.one{grid-template-columns:1fr}
+#rate .col{overflow-y:auto;padding:6px 4px 14px}
+#rate .col+.col{border-left:1px solid var(--line)}
+#rate .ch{position:sticky;top:0;z-index:1;background:var(--glass-2);
+  font-family:var(--mono);font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);padding:8px 14px 7px}
+#rate .ch b{color:var(--ink-2);font-weight:500}
+#rate .r{display:grid;grid-template-columns:2rem 1fr;gap:9px;width:100%;
+  align-items:start;text-align:left;padding:7px 14px;background:none;border:0;
+  cursor:pointer;font:inherit;color:var(--ink-2);border-radius:10px}
+#rate .r:hover{background:rgba(150,166,210,.09);color:var(--ink)}
+#rate .r .no{font-family:var(--mono);font-size:.72rem;color:var(--muted);
+  text-align:right;padding-top:2px}
+#rate .r .nm{display:flex;align-items:baseline;gap:8px}
+#rate .r .nm span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#rate .r .nm b{font-family:var(--mono);font-size:.78rem;color:var(--ink);font-weight:500}
+#rate .bar{display:block;height:4px;border-radius:3px;background:rgba(150,166,210,.10);margin:5px 0 5px}
+#rate .bar i{display:block;height:100%;border-radius:3px;background:rgba(242,166,90,.6)}
+#rate .sub{font-family:var(--mono);font-size:.67rem;color:var(--muted);
+  display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+#rate .sh{display:flex;gap:2px}
+#rate .sh i{width:5px;height:5px;border-radius:50%;background:rgba(150,166,210,.22)}
+#rate .sh i.on{background:rgba(242,166,90,.75)}
+#rate .sub em{font-style:normal;color:rgba(242,166,90,.85)}
+@media (max-width:900px){
+  #rate{padding:52px 8px 8px}
+  #rate .cols,#rate .cols.one{grid-template-columns:1fr;grid-auto-rows:minmax(0,1fr)}
+  #rate .col+.col{border-left:0;border-top:1px solid var(--line)}
+}
+
 /* ------------------------------------------------------------------ легенда
    Цвет на карте что-то значит, и до сих пор это приходилось угадывать.
    Легенда не только объясняет, но и работает фильтром: щелчок по семье
@@ -487,6 +542,19 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
   </div>
   <div class="bar"><i id="pbar"></i></div>
 </div>
+<div id="rate" role="dialog" aria-modal="true" aria-label="Авторы">
+  <div class="box">
+    <div class="hd">
+      <h2>Авторы</h2>
+      <div class="sw" id="rsw"></div>
+      <input id="rq" type="search" placeholder="найти автора…" autocomplete="off"
+             spellcheck="false" aria-label="Найти автора">
+      <span class="sp"></span>
+      <button class="x" type="button" id="rx">закрыть</button>
+    </div>
+    <div class="cols"><div class="col" id="rc0"></div><div class="col" id="rc1"></div></div>
+  </div>
+</div>
 <div id="leg" role="group" aria-label="Что значит цвет"></div>
 <div id="zoom" role="group" aria-label="Масштаб">
   <button type="button" id="zin"  aria-label="Приблизить" title="Приблизить (+)">+</button>
@@ -499,6 +567,7 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
   <button class="pill" id="mode" type="button" aria-pressed="false">кольца</button>
   <button class="pill" id="calm" type="button" aria-pressed="false">спокойно</button>
   <button class="pill" id="tint" type="button" aria-pressed="false">цвет: эпоха</button>
+  <button class="pill" id="rateb" type="button" aria-pressed="false">авторы</button>
   <button class="pill" id="paneb" type="button" aria-pressed="false">панели: обе</button>
   <div id="crumb"></div>
 </div>
@@ -988,11 +1057,9 @@ var FAC=[
    only:function(x){ return +x>0; },
    name:function(x){ return INST[x]; },
    field:function(n){ return T.C[n]; }},
-  /* Автор стоит ниже направления: список авторов длинный и, стоя вторым,
-     оттеснял всё остальное под сгиб. */
-  {id:'art', title:'Автор', key:'art', skip:'art', show:8, search:true,
-   name:function(x){ return ARTIST[x]; },
-   field:function(n){ return T.a[n]; }},
+  /* Автора в панели нет: искать его сбоку неудобно, когда поиск есть
+     сверху, а ценное в этом списке было другое — сколько у кого записей.
+     Это не фильтр, а рейтинг, и он живёт отдельным окном. */
   {id:'cty', title:'Откуда запись', key:'cty', skip:'cty', show:7, search:true,
    name:function(x){ return COUNTRY[x]; },
    field:function(n){ return T.c[n]; }}
@@ -1158,7 +1225,12 @@ function drawChips(){
   if(F.rep) chip('rep','','в Replay');
   if(F.y0>YMIN||F.y1<YMAX) chip('year','',F.y0+'–'+F.y1);
   if(F.tl) chip('tl','','на ленте: '+F.tl);
-  var done={};
+  var done={art:1};
+  Object.keys(F.art).forEach(function(x){
+    /* Автор выбирается не в панели, а в рейтинге, поэтому его фишку надо
+       поставить отдельно — иначе снять выбор было бы нечем. */
+    if(F.art[x]) chip('art',x,ARTIST[x]);
+  });
   FAC.forEach(function(f){
     if(done[f.key]) return;          /* эпоха и жанр смотрят в один ключ */
     done[f.key]=1;
@@ -1169,6 +1241,111 @@ function drawChips(){
   if(h) h+='<button class="c all" type="button" data-x="clear">сбросить всё</button>';
   elChips.innerHTML=h;
 }
+
+/* ------------------------------------------------------------------- авторы
+   Рейтинг считается по текущей выборке, а не по всей библиотеке: «кто
+   держит барокко» — вопрос не менее частый, чем «кого больше всего».
+
+   Кроме числа записей у автора есть две вещи, которых нет в списке
+   фасета. Первая — на скольких полках он встречается: это и есть «сколько
+   лет вы к нему возвращаетесь», и по ней сортировать интереснее, чем по
+   объёму. Вторая — сколько его записей дошло до Replay. */
+var RSORT=0, RQ='';
+var RSORTN=['по записям','по возвращениям','по Replay'];
+var LIFEre=/\((?:ок\.\s*)?(\d{3,4})\s*[–—-]\s*(?:(\d{3,4})|н\.\s*в\.)/;
+function rateRows(){
+  var by={}, i, n, a, r;
+  for(i=0;i<RES.length;i++){
+    n=RES[i]; a=T.a[n];
+    r=by[a]||(by[a]={a:a,n:0,m:0,rep:0,best:0,y0:9999,y1:0,realm:T.R[n]});
+    r.n++; r.m|=T.m[n];
+    if(T.r[n]){ r.rep++; if(!r.best||T.r[n]<r.best) r.best=T.r[n]; }
+    if(T.y[n]){ if(T.y[n]<r.y0) r.y0=T.y[n]; if(T.y[n]>r.y1) r.y1=T.y[n]; }
+  }
+  var out=[[],[]];
+  for(a in by){
+    r=by[a];
+    r.sh=0;
+    for(i=0;i<AGES.length;i++) if(r.m&(1<<i)) r.sh++;
+    r.name=ARTIST[r.a];
+    out[r.realm?0:1].push(r);
+  }
+  var by0=function(x,y){
+    if(RSORT===1&&x.sh!==y.sh) return y.sh-x.sh;
+    if(RSORT===2&&x.rep!==y.rep) return y.rep-x.rep;
+    if(RSORT===2&&x.best!==y.best) return (x.best||1e9)-(y.best||1e9);
+    return y.n-x.n||x.name.localeCompare(y.name,'ru');
+  };
+  out[0].sort(by0); out[1].sort(by0);
+  return out;
+}
+function rateHTML(list,title){
+  var q=RQ?norm(RQ):'', k, r, mx=0, h='';
+  var vis=list.filter(function(x){ return !q||norm(x.name).indexOf(q)>=0; });
+  for(k=0;k<list.length;k++) if(list[k].n>mx) mx=list[k].n;
+  h+='<div class="ch">'+title+' · <b>'+vis.length+'</b></div>';
+  if(!vis.length) return h+'<div class="ch">никого</div>';
+  for(k=0;k<vis.length&&k<300;k++){
+    r=vis[k];
+    var life=LIFEre.exec(r.name), nm=r.name.replace(/\s*\(.*$/,'');
+    var sub=[];
+    if(life) sub.push(life[1]+'–'+(life[2]||'н.в.'));
+    else if(r.y1) sub.push(r.y0===r.y1?String(r.y0):r.y0+'–'+r.y1);
+    sub.push(plural(r.sh,'полка','полки','полок'));
+    if(r.rep) sub.push('<em>Replay '+r.rep+(r.best?', лучшее '+r.best:'')+'</em>');
+    var sh='<span class="sh">';
+    for(var q2=0;q2<AGES.length;q2++)
+      sh+='<i class="'+((r.m&(1<<q2))?'on':'')+'" title="'+esc(AGES[q2])+'"></i>';
+    sh+='</span>';
+    h+='<button class="r" type="button" data-art="'+r.a+'">'+
+       '<span class="no">'+(k+1)+'</span><span>'+
+       '<span class="nm"><span>'+esc(nm)+'</span><b>'+r.n+'</b></span>'+
+       '<span class="bar"><i style="width:'+(100*r.n/(mx||1)).toFixed(1)+'%"></i></span>'+
+       '<span class="sub">'+sh+sub.join(' · ')+'</span>'+
+       '</span></button>';
+  }
+  return h;
+}
+var elRate=document.getElementById('rate');
+function drawRate(){
+  if(!document.body.classList.contains('rate')) return;
+  var g2=rateRows();
+  var c0=document.getElementById('rc0'), c1=document.getElementById('rc1');
+  c0.innerHTML=rateHTML(g2[0],'композиторы');
+  c1.innerHTML=rateHTML(g2[1],'исполнители');
+  /* Пустая половина не должна занимать полэкрана словом «никого»: в джазе
+     композиторов нет, и это видно и без отведённой им колонки. */
+  c0.hidden=!g2[0].length&&!!g2[1].length;
+  c1.hidden=!g2[1].length&&!!g2[0].length;
+  /* Классом, а не стилем: на телефоне колонка и так одна, и вписанный
+     стиль перебил бы медиазапрос. */
+  c0.parentNode.classList.toggle('one',c0.hidden||c1.hidden);
+  document.getElementById('rsw').innerHTML=RSORTN.map(function(nm,i){
+    return '<button type="button" data-rs="'+i+'" aria-pressed="'+(RSORT===i)+'">'+nm+'</button>';
+  }).join('');
+}
+function rateOpen(on){
+  document.body.classList.toggle('rate',on);
+  document.getElementById('rateb').setAttribute('aria-pressed',String(!!on));
+  if(on){ drawRate(); setTimeout(function(){ document.getElementById('rq').focus(); },30); }
+}
+document.getElementById('rateb').addEventListener('click',function(){
+  rateOpen(!document.body.classList.contains('rate'));
+});
+document.getElementById('rx').addEventListener('click',function(){ rateOpen(false); });
+elRate.addEventListener('click',function(e){
+  if(e.target===elRate){ rateOpen(false); return; }
+  var b=e.target.closest('[data-rs]');
+  if(b){ RSORT=+b.dataset.rs; drawRate(); return; }
+  b=e.target.closest('[data-art]');
+  if(b){
+    F.art={}; F.art[b.dataset.art]=1;
+    Z=1; PANX=PANY=0; rateOpen(false); apply();
+  }
+});
+elRate.addEventListener('input',function(e){
+  if(e.target.id==='rq'){ RQ=e.target.value; drawRate(); }
+});
 
 /* ------------------------------------------------------------------ легенда */
 var elLeg=document.getElementById('leg');
@@ -1448,13 +1625,13 @@ function apply(keep){
   var rk=railKeep();
   runQuery(); drawChips(); drawFacets(); refreshList(keep);
   railRestore(rk);
-  syncSky(); drawCrumb(); saveHash();
+  syncSky(); drawCrumb(); drawRate(); saveHash();
 }
 document.addEventListener('click',function(e){
   var b;
   if((b=e.target.closest('#card [data-only]'))){
     F.art={}; F.art[b.dataset.only]=1; F.q=''; elQ.value='';
-    UI.art.open=true; apply(); return;
+    apply(); return;
   }
   if((b=e.target.closest('.fhead'))){
     var id=b.dataset.t;
@@ -1621,7 +1798,10 @@ window.addEventListener('keydown',function(e){
   if(e.key==='/'&&!typing()){
     e.preventDefault(); elQ.focus(); elQ.select(); return;
   }
-  if(e.key==='Escape'){ stepOut(); return; }
+  if(e.key==='Escape'){
+    if(document.body.classList.contains('rate')){ rateOpen(false); return; }
+    stepOut(); return;
+  }
   if((e.key==='ArrowDown'||e.key==='ArrowUp')&&!typing()){
     if(!VIEW.length) return;
     e.preventDefault();
@@ -1675,7 +1855,9 @@ function saveHash(){
   if(F.realm!==null) p.push('r='+F.realm);
   if(F.rep) p.push('replay=1');
   if(F.y0>YMIN||F.y1<YMAX) p.push('y='+F.y0+'-'+F.y1);
-  var seen={};
+  var seen={art:1}, aa=[], x0;
+  for(x0 in F.art) if(F.art[x0]) aa.push(x0);
+  if(aa.length) p.push('art='+aa.join('.'));
   FAC.forEach(function(f){
     if(seen[f.key]) return;
     seen[f.key]=1;
@@ -2195,7 +2377,7 @@ function actOn(h){
   if(h.kind==='track'){ sel=h.i; showCard(sel); paintList(true); scrollToSel(); return; }
   if(h.kind==='sun'){
     if(LEVEL){ sel=h.s.first; showCard(sel); paintList(true); scrollToSel(); }
-    else { F.art={}; F.art[h.s.k]=1; UI.art.open=true; Z=1; PANX=PANY=0; apply(); }
+    else { F.art={}; F.art[h.s.k]=1; Z=1; PANX=PANY=0; apply(); }
     return;
   }
   if(h.kind==='epoch'||h.kind==='band'){
@@ -2710,7 +2892,7 @@ function enterApp(){
     {t:'Барокко',   n:cnt(function(n){ return EPOCH[T.e[n]].n==='Барокко'; }),
      go:function(){ var k=ep('Барокко'); if(k>=0){ F.ep={}; F.ep[k]=1; UI.ep.open=true; } }},
     {t:'Бах',       n:cnt(function(n){ return ARTIST[T.a[n]].indexOf('Иоганн Себастьян Бах')===0; }),
-     go:function(){ var k=ar('Иоганн Себастьян Бах'); if(k>=0){ F.art={}; F.art[k]=1; UI.art.open=true; MODE=1; } }},
+     go:function(){ var k=ar('Иоганн Себастьян Бах'); if(k>=0){ F.art={}; F.art[k]=1; MODE=1; } }},
     {t:'Мои шестнадцать', n:cnt(function(n){ return T.m[n]&2; }),
      go:function(){ F.age={}; F.age[1]=1; }},
     {t:'Только Replay', n:cnt(function(n){ return !!T.r[n]; }),
@@ -2861,6 +3043,12 @@ window.libTL=function(){
     макс:[TLMAXA,TLMAXP], раньше:TLPRE};
 };
 window.libPane=function(st){ paneSet(st); return document.body.className; };
+window.libRate=function(){
+  var g2=rateRows();
+  return {композиторов:g2[0].length, исполнителей:g2[1].length, сортировка:RSORTN[RSORT],
+          топ:g2[0].slice(0,3).map(function(r){
+            return {имя:r.name, записей:r.n, полок:r.sh, replay:r.rep}; })};
+};
 window.libSun=function(){
   return SUNS.map(function(S){
     return {имя:sunName(S), записей:S.n, x:s2x(S.x), y:s2y(S.y), ядро:sunCore(S)};
