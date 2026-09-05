@@ -280,13 +280,37 @@ body.sound #card.on{bottom:96px}
 #play .bar i{display:block;height:100%;width:0;background:var(--accent)}
 
 /* ------------------------------------------------------------------- низ */
-#hud{position:fixed;left:calc(var(--rail) + 28px);top:76px;z-index:2;
-  display:flex;gap:7px;align-items:center;font-family:var(--mono);font-size:.7rem;
-  color:var(--muted)}
+/* Всё, что лежит над фигурой, собрано в одну колонку: кнопки, крошки,
+   подпись и легенда. Раньше каждая часть висела на своей координате, и
+   стоило одной перенестись на вторую строку, как она наезжала на другую. */
+#top{position:fixed;top:76px;z-index:2;display:flex;flex-direction:column;
+  gap:7px;align-items:flex-start;pointer-events:none;
+  left:calc(var(--rail) + 28px);right:calc(var(--listw) + 28px);
+  transition:opacity .45s}
+#top>*{pointer-events:auto;max-width:100%}
+body.map #top,body.norail #top{left:20px}
+body.map #top,body.nolist #top{right:20px}
+body.start #top{opacity:0;pointer-events:none}
+#hud{display:flex;flex-wrap:wrap;gap:7px;align-items:center;font-family:var(--mono);
+  font-size:.7rem;color:var(--muted)}
 #hud .pill{background:var(--glass);border:1px solid var(--line);border-radius:20px;
   padding:6px 13px;cursor:pointer;color:var(--muted)}
 #hud .pill:hover{color:var(--ink-2)}
 #hud .pill[aria-pressed=true]{color:var(--accent);border-color:rgba(242,166,90,.4)}
+/* Переключатель фигуры был такой же пилюлей, как «спокойно» и «панели», и
+   про него не догадывались. Теперь это переключатель с тремя видимыми
+   делениями: выбор виден целиком, а не по одному через раз. */
+#seg{display:inline-flex;gap:2px;padding:2px;border-radius:20px;
+  background:var(--glass);border:1px solid var(--line-2)}
+#seg button{font:inherit;cursor:pointer;border:0;background:none;color:var(--muted);
+  padding:5px 12px;border-radius:18px}
+#seg button:hover{color:var(--ink-2)}
+#seg button[aria-pressed=true]{background:rgba(242,166,90,.15);color:var(--accent)}
+#hud .sp{width:12px}
+/* Подпись к фигуре: что вообще нарисовано и что произойдёт от щелчка. */
+#what{font-family:var(--mono);font-size:.68rem;line-height:1.5;color:var(--muted);
+  opacity:.85;max-width:min(56ch,100%)}
+#what b{color:var(--ink-2);font-weight:500}
 
 /* ------------------------------------------------------------------- авторы
    Не фильтр, а рейтинг: в панели он занимал высоту и предлагал искать
@@ -347,12 +371,14 @@ body.rate #rate{display:block}
    Цвет на карте что-то значит, и до сих пор это приходилось угадывать.
    Легенда не только объясняет, но и работает фильтром: щелчок по семье
    оставляет её жанры. */
-#leg{position:fixed;z-index:2;top:118px;left:calc(var(--rail) + 28px);
-  right:calc(var(--listw) + 28px);display:flex;flex-wrap:wrap;gap:5px;
-  transition:opacity .45s}
-body.map #leg,body.norail #leg{left:20px}
-body.map #leg,body.nolist #leg{right:20px}
-body.start #leg{opacity:0;pointer-events:none}
+/* Легенда — одной строкой с прокруткой: в две строки она съедала половину
+   просвета, ради которого всё и затевалось. */
+#leg{display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;
+  scrollbar-width:none;padding-bottom:2px;
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+  mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent)}
+#leg::-webkit-scrollbar{display:none}
+#leg button{flex:none}
 #leg button{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:inherit;
   font-size:.73rem;color:var(--muted);background:var(--glass);
   border:1px solid var(--line);border-radius:20px;padding:4px 11px 4px 8px}
@@ -388,7 +414,7 @@ body.start #zoom{opacity:0;pointer-events:none}
 #tip i{font-style:normal;color:var(--accent)}
 
 /* ------------------------------------------------------------------ крошки */
-#crumb{display:flex;align-items:center;gap:3px;flex-wrap:wrap;max-width:44vw}
+#crumb{display:flex;align-items:center;gap:3px;flex-wrap:wrap}
 #crumb button{background:var(--glass);border:1px solid var(--line);border-radius:20px;
   padding:6px 12px;cursor:pointer;font:inherit;color:var(--ink-2);white-space:nowrap;
   max-width:230px;overflow:hidden;text-overflow:ellipsis}
@@ -473,14 +499,15 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
   #card{left:10px;right:10px;width:auto;bottom:10px}
   #play{left:10px;right:10px;width:auto;bottom:10px}
   body.sound #card.on{bottom:82px}
-  #hud{left:10px;right:10px;top:auto;bottom:10px;flex-wrap:wrap}
+  #top{left:10px;right:10px;top:auto;bottom:10px}
+  #hud{flex-wrap:wrap}
+  #what{display:none}
+  body.map #what{display:block;max-width:none}
+  #seg button{padding:5px 9px}
   #zoom{right:10px;bottom:auto;top:60px;flex-direction:row}
   body.card #zoom{opacity:0;pointer-events:none;transition:opacity .2s}
   /* На телефоне карта видна только во весь экран — там легенде и место. */
-  #leg{display:none;top:104px;left:10px;right:10px;flex-wrap:nowrap;
-    overflow-x:auto;scrollbar-width:none}
-  #leg::-webkit-scrollbar{display:none}
-  #leg button{flex:none}
+  #leg{display:none}
   body.map #leg{display:flex}
   body.map.card #leg{opacity:0;pointer-events:none}
   #crumb{max-width:100%}
@@ -555,7 +582,7 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
     <div class="cols"><div class="col" id="rc0"></div><div class="col" id="rc1"></div></div>
   </div>
 </div>
-<div id="leg" role="group" aria-label="Что значит цвет"></div>
+
 <div id="zoom" role="group" aria-label="Масштаб">
   <button type="button" id="zin"  aria-label="Приблизить" title="Приблизить (+)">+</button>
   <button type="button" id="zout" aria-label="Отдалить" title="Отдалить (−)">&minus;</button>
@@ -563,13 +590,22 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
           title="Весь вид (0)">100%</button>
 </div>
 <div id="tip" aria-hidden="true"></div>
+<div id="top">
 <div id="hud">
-  <button class="pill" id="mode" type="button" aria-pressed="false">кольца</button>
+  <div id="seg" role="group" aria-label="Фигура">
+    <button type="button" data-m="0" aria-pressed="true">кольца</button>
+    <button type="button" data-m="1" aria-pressed="false">орбиты</button>
+    <button type="button" data-m="2" aria-pressed="false">лента</button>
+  </div>
   <button class="pill" id="calm" type="button" aria-pressed="false">спокойно</button>
   <button class="pill" id="tint" type="button" aria-pressed="false">цвет: эпоха</button>
+  <span class="sp"></span>
   <button class="pill" id="rateb" type="button" aria-pressed="false">авторы</button>
   <button class="pill" id="paneb" type="button" aria-pressed="false">панели: обе</button>
+</div>
   <div id="crumb"></div>
+  <div id="what"></div>
+  <div id="leg" role="group" aria-label="Что значит цвет"></div>
 </div>
 
 <div id="start">
@@ -577,7 +613,7 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
     <p class="eyebrow">личная музыкальная библиотека</p>
     <h1>Библиотека</h1>
     <p class="nums"><b id="s1">—</b> записей · <b id="s2">—</b> авторов ·
-       <b id="s3">—</b> эпох и жанров · издания <b id="s4">—</b></p>
+       <b id="s3">—</b> эпох и <b id="s5">—</b> жанров · издания <b id="s4">—</b></p>
     <div class="sfield">
       <input id="sq" type="search" placeholder="найти трек, автора, произведение…"
              autocomplete="off" spellcheck="false" aria-label="Поиск">
@@ -2168,7 +2204,7 @@ function sunName(S){ return LEVEL?GROUP[S.k]:ARTIST[S.k]; }
 var CX=0, CY=0, RU=1, GAPL=0, GAPR=1e5;
 /* Сколько единиц фигуры влезает вправо и вверх от середины: просвет редко
    бывает квадратным, и вписывать в него круг — значит терять поля. */
-var FX=1, FY=1;
+var FX=1, FY=1, TOPY=110;
 var CXt=0, CYt=0, RUt=1, START=true;
 function frameSky(){
   /* Фигура ставится в просвет между панелями: панели непрозрачны, и если
@@ -2176,7 +2212,13 @@ function frameSky(){
      На стартовом экране панелей нет — там фигура занимает всё окно. */
   /* Сверху стоят пилюли и легенда: если считать середину по всему окну,
      верхняя система уезжает под них. */
-  var top=START?0:(VW>900?150:118), bot=START?0:14;
+  /* Сколько занято сверху — спрашиваем у самой колонки: она бывает и в
+     одну строку, и в четыре. */
+  var el=document.getElementById('top');
+  var top=START?0:Math.max(96,Math.round(el.getBoundingClientRect().bottom)+12);
+  if(VW<=900&&!START) top=112;
+  var bot=START?0:14;
+  TOPY=top;
   CYt=START?VH*0.5:(top+VH-bot)/2;
   if(START){
     CXt=VW*0.5; GAPL=6; GAPR=VW-6;
@@ -2595,7 +2637,7 @@ function tlNames(){
            Math.abs(used[p][2]-yy)<13){ clash=1; yy+=dir; break; }
       tries++;
     }
-    if(clash||yy<106||yy>VH-6) continue;
+    if(clash||yy<TOPY+8||yy>VH-6) continue;
     used.push([sx,w,yy]);
     g.textBaseline=up?'bottom':'top';
     g.strokeStyle='rgba(6,7,12,.85)'; g.lineWidth=3; g.strokeText(nm,sx,yy);
@@ -2702,14 +2744,14 @@ function sky(now){
     if(gx>GAPL+30&&gx<GAPR-30){
       g.strokeStyle='rgba(150,166,210,.10)'; g.lineWidth=1;
       g.setLineDash([3,6]);
-      g.beginPath(); g.moveTo(gx,116); g.lineTo(gx,VH-16); g.stroke();
+      g.beginPath(); g.moveTo(gx,TOPY+6); g.lineTo(gx,VH-16); g.stroke();
       g.setLineDash([]);
     }
     g.font='500 11px "IBM Plex Mono",ui-monospace,monospace';
     g.textAlign='center'; g.textBaseline='bottom';
     g.fillStyle='rgba(233,238,250,.30)';
     [[GUT.l,'композиторы'],[GUT.r,'исполнители']].forEach(function(p2){
-      var lx=s2x(p2[0].x), ly=Math.max(VW>900?162:130,s2y(p2[0].y)-12);
+      var lx=s2x(p2[0].x), ly=Math.max(TOPY+16,s2y(p2[0].y)-12);
       if(lx>GAPL+40&&lx<GAPR-40) g.fillText(p2[1],lx,ly);
     });
   }
@@ -2760,15 +2802,32 @@ function sky(now){
     else showTip(h);
   }
 }
-var elMode=document.getElementById('mode'), elCalm=document.getElementById('calm');
+var elSeg=document.getElementById('seg'), elCalm=document.getElementById('calm');
+var elWhat=document.getElementById('what');
 var MODEN=['кольца','орбиты','лента'];
+/* Подпись к фигуре: без неё приходилось догадываться, что означает
+   радиус, сектор и почему тела разъехались на две стороны. */
+var WHAT=[
+  'Кольцо — <b>год издания</b>, сектор — <b>жанр</b>. Светятся только найденные; '+
+  'щелчок по сектору оставляет его жанр.',
+  'Солнце — <b>автор</b>, планеты вокруг — его записи. Слева композиторы, '+
+  'справа исполнители; щелчок по солнцу входит внутрь, <b>Esc</b> выводит назад.',
+  'Ось — <b>год</b>. Вверх растёт академическая музыка по годам сочинения, '+
+  'вниз — повседневная по годам издания. Щелчок по оси оставляет один год.'
+];
 function modeLabel(){
-  elMode.textContent=MODEN[MODE];
-  elMode.setAttribute('aria-pressed',String(!!MODE));
+  var bs=elSeg.querySelectorAll('button'), i;
+  for(i=0;i<bs.length;i++) bs[i].setAttribute('aria-pressed',String(+bs[i].dataset.m===MODE));
+  if(elWhat) elWhat.innerHTML=WHAT[MODE];
 }
-elMode.addEventListener('click',function(){
-  MODE=(MODE+1)%3; modeLabel(); Z=1; PANX=PANY=0;
-  tlPane(); frameSky(); resize(); syncSky(); saveHash();
+function setMode(m){
+  if(m===MODE) return;
+  MODE=m; modeLabel(); Z=1; PANX=PANY=0;
+  tlPane(); frameSky(); resize(); syncSky(); zoomLabel(); saveHash();
+}
+elSeg.addEventListener('click',function(e){
+  var b=e.target.closest('button[data-m]');
+  if(b) setMode(+b.dataset.m);
 });
 /* Ленте нужна ширина: четыре века в просвет между панелями не помещаются,
    там весь XX век сжимается в палец. Поэтому на входе в неё список
@@ -2880,7 +2939,9 @@ function enterApp(){
 (function buildStart(){
   document.getElementById('s1').textContent=N;
   document.getElementById('s2').textContent=ARTIST.length;
-  document.getElementById('s3').textContent=EPOCH.length;
+  /* Эпохи и жанры разведены, и считать их одним числом больше нельзя. */
+  document.getElementById('s3').textContent=EPOCH.filter(function(e){ return e.r; }).length;
+  document.getElementById('s5').textContent=EPOCH.filter(function(e){ return !e.r; }).length;
   document.getElementById('s4').textContent=YMIN+'–'+YMAX;
   var ep=function(nm){ return dictFind(EPOCH,nm,function(x){ return x.n; }); };
   var ar=function(nm){
@@ -3043,6 +3104,7 @@ window.libTL=function(){
     макс:[TLMAXA,TLMAXP], раньше:TLPRE};
 };
 window.libPane=function(st){ paneSet(st); return document.body.className; };
+window.libMode=function(m){ setMode(m); return MODEN[MODE]; };
 window.libRate=function(){
   var g2=rateRows();
   return {композиторов:g2[0].length, исполнителей:g2[1].length, сортировка:RSORTN[RSORT],
