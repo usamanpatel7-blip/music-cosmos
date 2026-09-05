@@ -145,6 +145,13 @@ button,input,select{font:inherit;color:inherit}
   letter-spacing:.06em;margin-left:auto;white-space:nowrap}
 .more{background:none;border:0;color:var(--accent);font-size:.76rem;cursor:pointer;
   padding:5px 6px;font-family:var(--mono)}
+.decs{display:flex;flex-wrap:wrap;gap:5px;margin:9px 2px 2px}
+.decs button{font:inherit;font-family:var(--mono);font-size:.71rem;cursor:pointer;
+  padding:4px 9px;border-radius:20px;color:var(--muted);
+  background:rgba(6,7,12,.55);border:1px solid var(--line)}
+.decs button:hover{color:var(--ink-2);border-color:var(--line-2)}
+.decs button[aria-pressed=true]{color:var(--accent);border-color:rgba(242,166,90,.45)}
+.decs button.off{opacity:.35;cursor:default}
 .years{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.78rem;
   color:var(--ink-2);margin-top:2px}
 .years input{width:66px;background:rgba(6,7,12,.7);border:1px solid var(--line);
@@ -334,7 +341,7 @@ body.start #zoom{opacity:0;pointer-events:none}
 #crumb button[aria-current]{color:var(--accent);border-color:rgba(242,166,90,.4);
   cursor:default}
 #crumb i{font-style:normal;opacity:.45;padding:0 1px}
-#mapb{display:inline-block}
+#paneb{display:inline-block}
 /* Панели убираются по отдельности: фигуре можно отдать половину экрана
    или весь экран целиком. */
 body.map #list,body.nolist #list{opacity:0;pointer-events:none}
@@ -422,7 +429,7 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
   body.map #leg{display:flex}
   body.map.card #leg{opacity:0;pointer-events:none}
   #crumb{max-width:100%}
-  #railb,#listb{display:none}
+
   body.card #hud .pill,body.card #crumb{opacity:0;pointer-events:none;transition:opacity .2s}
   body.map.card #card{bottom:56px}
   #start .in{text-align:left}
@@ -492,9 +499,7 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
   <button class="pill" id="mode" type="button" aria-pressed="false">кольца</button>
   <button class="pill" id="calm" type="button" aria-pressed="false">спокойно</button>
   <button class="pill" id="tint" type="button" aria-pressed="false">цвет: эпоха</button>
-  <button class="pill" id="railb" type="button" aria-pressed="false">фильтры</button>
-  <button class="pill" id="listb" type="button" aria-pressed="false">список</button>
-  <button class="pill" id="mapb" type="button" aria-pressed="false">во весь экран</button>
+  <button class="pill" id="paneb" type="button" aria-pressed="false">панели: обе</button>
   <div id="crumb"></div>
 </div>
 
@@ -512,8 +517,8 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
     <div class="ways" id="ways"></div>
     <p class="hint">Клик по карте ведёт внутрь: солнце — автор, планета — запись.
        Пилюля слева перебирает три фигуры: кольца, орбиты и ленту лет.
-       Колесо приближает, тяга двигает. Точка слева от названия включает звук,
-       клавиша <b>F</b> отдаёт фигуре весь экран.
+       Колесо и кнопки справа приближают, тяга двигает. Точка слева от названия
+       включает звук, клавиша <b>F</b> отдаёт фигуре весь экран.
        <br>Или прочитайте <a href="12-portrait.html">музыкальный портрет</a>:
        что эти четыре тысячи записей говорят о слушателе.</p>
   </div>
@@ -839,8 +844,15 @@ for(i=0;i<N;i++){
 }
 var LAYEN="qwertyuiop[]asdfghjkl;'zxcvbnm,./`",
     LAYRU="йцукенгшщзхъфывапролджэячсмитьбю.ё";
+/* Раскладку перекладываем в обе стороны и только для поиска: раньше
+   строка переписывалась прямо в поле, и набрать по-английски слово,
+   которого нет в библиотеке, было физически нельзя — на первом же
+   промахе ввод превращался в кириллицу, а дальше дописывалось к ней. */
 function swapKb(t){ var o='', p;
   for(var n=0;n<t.length;n++){ p=LAYEN.indexOf(t[n]); o+=(p>=0?LAYRU[p]:t[n]); }
+  return o; }
+function swapKbRu(t){ var o='', p;
+  for(var n=0;n<t.length;n++){ p=LAYRU.indexOf(t[n]); o+=(p>=0?LAYEN[p]:t[n]); }
   return o; }
 
 /* ================================================================= фильтры */
@@ -882,10 +894,26 @@ function pass(n,skip){
   return true;
 }
 var Q=[], RES=[], ON=new Uint8Array(N);
-function runQuery(){
-  Q=F.q?norm(F.q).split(/\s+/).filter(Boolean):[];
+function tokens(v){ return v?norm(v).split(/\s+/).filter(Boolean):[]; }
+function scan(){
   RES.length=0; ON.fill(0);
   for(var n=0;n<N;n++) if(pass(n)){ RES.push(n); ON[n]=1; }
+}
+function runQuery(){
+  var base=norm(F.q||'');
+  Q=tokens(base);
+  scan();
+  /* Ничего не нашлось — пробуем ту же строку в другой раскладке, но
+     набранное не трогаем: «,f[» найдёт Баха, а «Sting» останется «Sting». */
+  if(base&&!RES.length){
+    var alt=[swapKb(base),swapKbRu(base)], k;
+    for(k=0;k<alt.length;k++){
+      if(alt[k]===base) continue;
+      Q=tokens(alt[k]); scan();
+      if(RES.length) break;
+    }
+    if(!RES.length) Q=tokens(base);
+  }
   sortRes();
 }
 var CMP={
@@ -983,31 +1011,19 @@ function esc(s){ return String(s).replace(/[&<>"]/g,function(c){
 
 /* Лента лет: полоса каждой полки стоит там, где она была в жизни, а не
    в порядке списка. Концертные идут поверх возрастных — это видно рамкой. */
+/* Полки были нарисованы полосками на общей шкале лет. Полоски читались
+   ползунками, ползунками не были и ничего не делали — остался обычный
+   список с числами, как у прочих фасетов. */
 function timeHTML(f){
-  var c=counts(f.field,f.skip), picked=F[f.key], h='<div class="tl">', a, mx=1;
-  var lo=99, hi=0;
+  var c=counts(f.field,f.skip), picked=F[f.key], h='<div class="opts">', a;
   for(a=0;a<SHELF.length;a++){
-    lo=Math.min(lo,SHELF[a].lo); hi=Math.max(hi,SHELF[a].hi);
-    mx=Math.max(mx,c[a]||0);
+    var cnt=c[a]||0;
+    h+='<button class="opt'+(cnt?'':' off')+'" type="button" aria-pressed="'+
+       (picked[a]?'true':'false')+'" data-f="'+f.id+'" data-k="'+a+'">'+
+       '<span class="bx"></span><span class="t">'+esc(SHELF[a].n)+'</span>'+
+       '<span class="n">'+cnt+'</span></button>';
   }
-  function px(y){ return (100*(y-lo)/(hi+1-lo)); }
-  for(a=0;a<SHELF.length;a++){
-    var sh=SHELF[a], cnt=c[a]||0;
-    h+='<button class="tlr'+(cnt?'':' off')+'" type="button" data-kind="'+sh.k+'"'+
-       ' aria-pressed="'+(picked[a]?'true':'false')+'" data-f="'+f.id+'" data-k="'+a+'"'+
-       ' title="'+esc(sh.n)+' — '+cnt+'">'+
-       '<span class="tn">'+esc(sh.n)+'</span>'+
-       '<span class="tt"><i class="tb" style="left:'+px(sh.lo).toFixed(1)+
-         '%;width:'+(px(sh.hi+1)-px(sh.lo)).toFixed(1)+'%"></i></span>'+
-       '<span class="tc">'+cnt+'</span></button>';
-  }
-  h+='</div><div class="tlax"><span></span><b>';
-  /* Последняя подпись всегда стоит, а соседнюю с ней пятёрку выкидываем:
-     «25 26» слипались в одно пятно. */
-  for(a=lo;a<=hi;a++) if(a===lo||a===hi||(a%5===0&&hi-a>1))
-    h+='<s style="left:'+px(a).toFixed(1)+'%"></s><i style="left:'+px(a).toFixed(1)+'%">'+a+'</i>';
-  h+='</b><span></span></div>';
-  return h;
+  return h+'</div>';
 }
 /* Поле настроения: пять делений движения по горизонтали, пять делений
    цвета по вертикали. Клетка — это пересечение, а не отдельный ярлык,
@@ -1116,7 +1132,7 @@ function drawFacets(){
      '<div class="years"><input id="y0" type="number" value="'+F.y0+'" min="'+YMIN+
      '" max="'+YMAX+'"><span style="flex:1;height:1px;background:var(--line)"></span>'+
      '<input id="y1" type="number" value="'+F.y1+'" min="'+YMIN+'" max="'+YMAX+
-     '"></div></div></div>';
+     '"></div>'+decHTML()+'</div></div>';
   FAC.forEach(function(f){
     var p=0, x;
     for(x in F[f.key]) if(F[f.key][x]) p++;
@@ -1186,6 +1202,23 @@ elLeg.addEventListener('click',function(e){
   Z=1; PANX=PANY=0; apply();
 });
 
+/* Десятилетия кнопками: «рок семидесятых» — это два щелчка, а не попытка
+   попасть мышью в промежуток на диаграмме. */
+function decHTML(){
+  var d0=Math.floor(YMIN/10)*10, d1=Math.floor(YMAX/10)*10, y, h='<div class="decs">';
+  for(y=d0;y<=d1;y+=10){
+    var lo=Math.max(YMIN,y), hi=Math.min(YMAX,y+9), c=0, x;
+    for(x=0;x<N;x++) if(T.y[x]>=lo&&T.y[x]<=hi&&pass(x,'year')) c++;
+    var on=(F.y0===lo&&F.y1===hi);
+    h+='<button type="button" data-dec="'+lo+'-'+hi+'"'+(c?'':' class="off"')+
+       ' aria-pressed="'+on+'" title="'+c+'">'+
+       (y<2000?String(y).slice(2)+'-е':y+'-е')+'</button>';
+  }
+  h+='<button type="button" data-dec="all" aria-pressed="'+
+     (F.y0===YMIN&&F.y1===YMAX)+'">всё</button>';
+  return h+'</div>';
+}
+
 /* --------------------------------------------------- гистограмма по годам */
 var HSTEP=2, HB=[];
 function drawHist(){
@@ -1202,14 +1235,23 @@ function drawHist(){
   var bw=Wd/n;
   for(x=0;x<n;x++){
     var y0=YMIN+x*HSTEP, inr=(y0+HSTEP-1>=F.y0&&y0<=F.y1);
-    var hh=mx?(HB[x]?Math.max(3,HB[x]/mx*(Hg-30)):0):0;
+    var hh=mx?(HB[x]?Math.max(3,HB[x]/mx*(Hg-42)):0):0;
     g2.fillStyle=inr?'rgba(242,166,90,.82)':'rgba(150,166,210,.18)';
-    g2.fillRect(x*bw+.5,Hg-hh-18,Math.max(1.5,bw-1.5),hh);
+    g2.fillRect(x*bw+.5,Hg-hh-28,Math.max(1.5,bw-1.5),hh);
   }
-  g2.font='500 16px "IBM Plex Mono",monospace';
-  g2.fillStyle='rgba(118,126,147,.95)'; g2.textBaseline='bottom';
-  g2.textAlign='left';  g2.fillText(String(YMIN),1,Hg);
-  g2.textAlign='right'; g2.fillText(String(YMAX),Wd-1,Hg);
+  /* На диаграмме нужны деления, иначе промежуток не прочитать: раньше
+     стояли только края, и «где тут семидесятые» приходилось угадывать. */
+  g2.font='500 15px "IBM Plex Mono",monospace';
+  g2.textBaseline='bottom'; g2.textAlign='center';
+  for(x=Math.ceil(YMIN/10)*10;x<=YMAX;x+=10){
+    var px=(x-YMIN)/(YMAX-YMIN+1)*Wd;
+    g2.fillStyle='rgba(150,166,210,.24)';
+    g2.fillRect(px,Hg-26,1,6);
+    if(x%20===0){
+      g2.fillStyle='rgba(118,126,147,.95)';
+      g2.fillText(x<2000?"'"+String(x).slice(2):String(x),px,Hg-2);
+    }
+  }
 }
 
 /* ==================================================================== лист */
@@ -1373,8 +1415,39 @@ function showCard(n){
 }
 
 /* ============================================================== применение */
+/* Панель обязана остаться на месте. Мало сохранить прокрутку: над списком
+   фасетов лежат фишки выбранного, и стоит появиться новой строке — весь
+   список уезжает вниз ровно на её высоту. Поэтому запоминается не
+   прокрутка, а положение списка фасетов относительно окна, и после
+   пересборки прокрутка правится на разницу. */
+function railKeep(){
+  /* Держимся не за число прокрутки, а за верхний видимый фасет: над ним
+     появляются и исчезают фишки выбранного, а сам список то короче, то
+     длиннее — по числу прокрутки не вернёшься. */
+  var r=document.getElementById('rail'), hs=r.querySelectorAll('.fhead[data-t]');
+  var top=r.getBoundingClientRect().top, id=null, off=0, bd=1e9, i, q;
+  for(i=0;i<hs.length;i++){
+    q=hs[i].getBoundingClientRect().top-top;
+    if(q>=-6&&q<bd){ bd=q; id=hs[i].dataset.t; off=q; }
+  }
+  return {r:r, id:id, off:off, was:r.scrollTop};
+}
+function railRestore(k){
+  if(!k||!k.r) return;
+  if(k.id){
+    var el=k.r.querySelector('.fhead[data-t="'+k.id+'"]');
+    if(el){
+      var now=el.getBoundingClientRect().top-k.r.getBoundingClientRect().top;
+      k.r.scrollTop=Math.max(0,k.r.scrollTop+(now-k.off));
+      return;
+    }
+  }
+  k.r.scrollTop=k.was;
+}
 function apply(keep){
+  var rk=railKeep();
   runQuery(); drawChips(); drawFacets(); refreshList(keep);
+  railRestore(rk);
   syncSky(); drawCrumb(); saveHash();
 }
 document.addEventListener('click',function(e){
@@ -1385,7 +1458,11 @@ document.addEventListener('click',function(e){
   }
   if((b=e.target.closest('.fhead'))){
     var id=b.dataset.t;
-    if(UI[id]){ UI[id].open=!UI[id].open; drawFacets(); }
+    if(UI[id]){
+      var rk0=railKeep();
+      UI[id].open=!UI[id].open; drawFacets();
+      railRestore(rk0);
+    }
     return;
   }
   if((b=e.target.closest('[data-pre]'))){
@@ -1411,6 +1488,12 @@ document.addEventListener('click',function(e){
   }
   if((b=e.target.closest('[data-realm]'))){
     var v=+b.dataset.realm; F.realm=(F.realm===v?null:v); apply(); return;
+  }
+  if((b=e.target.closest('[data-dec]'))){
+    var dv=b.dataset.dec;
+    if(dv==='all'){ F.y0=YMIN; F.y1=YMAX; }
+    else { var pr=dv.split('-'); F.y0=+pr[0]; F.y1=+pr[1]; }
+    apply(); return;
   }
   if((b=e.target.closest('[data-rep]'))){ F.rep=!F.rep; apply(); return; }
   if(e.target.closest('#cardx')){ stepOut(); return; }
@@ -1447,14 +1530,7 @@ document.addEventListener('input',function(e){
   var t=e.target;
   if(t===elQ){
     clearTimeout(t._t);
-    t._t=setTimeout(function(){
-      F.q=t.value; runQuery();
-      if(F.q&&!RES.length){                      /* ,f[ находит Баха */
-        var alt=swapKb(norm(F.q));
-        if(alt!==norm(F.q)){ F.q=alt; t.value=alt; }
-      }
-      apply();
-    },110);
+    t._t=setTimeout(function(){ F.q=t.value; apply(true); },110);
     return;
   }
   if(t.dataset&&t.dataset.fq){
@@ -1466,12 +1542,44 @@ document.addEventListener('input',function(e){
     return;
   }
   if(t.id==='y0'||t.id==='y1'){
-    var a=+document.getElementById('y0').value, c=+document.getElementById('y1').value;
-    if(!a||!c) return;
-    F.y0=Math.max(YMIN,Math.min(a,c)); F.y1=Math.min(YMAX,Math.max(a,c));
-    apply(true);
+    /* Пока цифры набираются, панель не пересобирается: раньше на каждой
+       клавише поле пересоздавалось и теряло фокус, поэтому вписать
+       «1975» было физически невозможно. Ждём четырёх цифр и паузы. */
+    clearTimeout(YT);
+    YT=setTimeout(function(){ if(commitYears()) applyYears(); },300);
   }
 });
+var YT=0;
+/* Значения из полей переносятся в фильтр одним местом: и по паузе в наборе,
+   и при уходе из поля. Иначе набранное в первом поле терялось, стоило
+   щёлкнуть по второму. */
+function commitYears(){
+  var a=document.getElementById('y0'), c=document.getElementById('y1');
+  if(!a||!c||a.value.length<4||c.value.length<4) return false;
+  var x=+a.value, y=+c.value;
+  if(!x||!y) return false;
+  F.y0=Math.max(YMIN,Math.min(x,y)); F.y1=Math.min(YMAX,Math.max(x,y));
+  return true;
+}
+/* Лёгкое применение: всё, кроме пересборки боковой панели. Счётчики
+   фасетов подтянутся, когда человек выйдет из поля. */
+function applyYears(){
+  runQuery(); drawChips(); refreshList(true); syncSky(); drawCrumb(); saveHash();
+  var l=document.getElementById('ylab');
+  if(l) l.textContent=F.y0+'–'+F.y1;
+  drawHist();
+}
+document.addEventListener('change',function(e){
+  if(e.target.id==='y0'||e.target.id==='y1'){ clearTimeout(YT); commitYears(); apply(true); }
+});
+/* Уход из поля мышью «change» не даёт, если значение не менялось руками
+   в последнем такте — поэтому ловим и его. */
+document.addEventListener('focusout',function(e){
+  if(e.target.id==='y0'||e.target.id==='y1'){
+    clearTimeout(YT);
+    if(commitYears()) apply(true);
+  }
+},true);
 document.getElementById('sort').addEventListener('change',function(){
   SORT=this.value; sortRes(); refreshList(); saveHash();
 });
@@ -1495,16 +1603,26 @@ document.addEventListener('pointermove',function(e){
   F.y0=Math.max(YMIN,Math.min(hd.a,b)); F.y1=Math.min(YMAX,Math.max(hd.a,b));
   drawHist();
   var l=document.getElementById('ylab'); if(l) l.textContent=F.y0+'–'+F.y1;
+  var i0=document.getElementById('y0'), i1=document.getElementById('y1');
+  if(i0) i0.value=F.y0;
+  if(i1) i1.value=F.y1;
 });
 document.addEventListener('pointerup',function(){ if(hd){ hd=null; apply(true); } });
 
 /* ============================================================== клавиатура */
+/* Любое поле ввода забирает клавиши себе. Раньше проверялся только
+   главный поиск, и буква «а», набранная в поиске внутри фасета, отдавала
+   фигуре весь экран — отсюда и «открывается будто произвольно». */
+function typing(){
+  var a=document.activeElement;
+  return !!a&&(a.isContentEditable||/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName));
+}
 window.addEventListener('keydown',function(e){
-  if(e.key==='/'&&document.activeElement!==elQ){
+  if(e.key==='/'&&!typing()){
     e.preventDefault(); elQ.focus(); elQ.select(); return;
   }
   if(e.key==='Escape'){ stepOut(); return; }
-  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+  if((e.key==='ArrowDown'||e.key==='ArrowUp')&&!typing()){
     if(!VIEW.length) return;
     e.preventDefault();
     var cur=viewRow(sel);
@@ -1519,27 +1637,20 @@ window.addEventListener('keydown',function(e){
   }
   /* Панели убираются с клавиатуры: снимать их приходится часто, а тянуться
      мышью к пилюле — нет. */
-  if((e.key==='f'||e.key==='F'||e.key==='а'||e.key==='А')&&
-     document.activeElement!==elQ&&!e.metaKey&&!e.ctrlKey){
-    e.preventDefault(); document.getElementById('mapb').click(); return;
+  if(typing()) return;
+  if((e.key==='f'||e.key==='F'||e.key==='а'||e.key==='А')&&!e.metaKey&&!e.ctrlKey){
+    e.preventDefault(); paneSet(paneState()===2?0:2); return;
   }
-  if((e.key==='+'||e.key==='=')&&!/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)){
-    e.preventDefault(); zoomBy(1.35); return;
-  }
-  if((e.key==='-'||e.key==='_')&&!/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)){
-    e.preventDefault(); zoomBy(1/1.35); return;
-  }
-  if(e.key==='0'&&!/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)){
-    e.preventDefault(); Z=1; PANX=PANY=0; zoomLabel(); return;
-  }
-  if(e.key==='['){ e.preventDefault(); document.getElementById('railb').click(); return; }
-  if(e.key===']'){ e.preventDefault(); document.getElementById('listb').click(); return; }
-  if(e.key===' '&&document.activeElement!==elQ&&
-     !/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)){
+  if(e.key==='+'||e.key==='='){ e.preventDefault(); zoomBy(1.35); return; }
+  if(e.key==='-'||e.key==='_'){ e.preventDefault(); zoomBy(1/1.35); return; }
+  if(e.key==='0'){ e.preventDefault(); Z=1; PANX=PANY=0; zoomLabel(); return; }
+  if(e.key==='['){ e.preventDefault(); paneSide('norail'); return; }
+  if(e.key===']'){ e.preventDefault(); paneSide('nolist'); return; }
+  if(e.key===' '){
     if(PL>=0){ e.preventDefault(); MCPlayer.toggle(); return; }
     if(sel>=0){ e.preventDefault(); playAt(sel); return; }
   }
-  if(e.key==='Enter'&&sel>=0&&document.activeElement!==elQ){
+  if(e.key==='Enter'&&sel>=0){
     var u=appleUrl(sel); if(u) window.open(u,'_blank','noopener');
   }
 });
@@ -2483,17 +2594,16 @@ elMode.addEventListener('click',function(){
    Пилюля «список» при этом меняет вид, так что подмены не происходит. */
 var listHid=0;
 function tlPane(){
-  var b=document.body, lb=document.getElementById('listb');
+  var b=document.body;
   if(MODE===2){
     if(innerWidth>900&&!b.classList.contains('map')&&!b.classList.contains('nolist')){
-      listHid=1; b.classList.add('nolist'); lb.setAttribute('aria-pressed','false');
+      listHid=1; b.classList.add('nolist');
     }
   } else if(listHid){
     listHid=0;
-    if(!b.classList.contains('map')){
-      b.classList.remove('nolist'); lb.setAttribute('aria-pressed','true');
-    }
+    if(!b.classList.contains('map')) b.classList.remove('nolist');
   }
+  paneLabel();
 }
 elCalm.addEventListener('click',function(){
   CALM=!CALM; this.setAttribute('aria-pressed',String(CALM));
@@ -2501,22 +2611,47 @@ elCalm.addEventListener('click',function(){
 });
 /* Панели убираются по одной или обе сразу: фигура — половина смысла
    страницы, и ей должно быть можно отдать весь экран. */
-function pane(cls,btn){
-  document.getElementById(btn).addEventListener('click',function(){
-    if(cls==='nolist'||cls==='map') listHid=0;   /* дальше панель ваша */
-    var on=document.body.classList.toggle(cls);
-    this.setAttribute('aria-pressed',String(cls==='map'?on:!on));
-    if(cls==='map'){
-      document.body.classList.remove('rail','norail','nolist');
-      document.getElementById('railb').setAttribute('aria-pressed','false');
-      document.getElementById('listb').setAttribute('aria-pressed','false');
-    }
-    /* Расстановка солнц зависит от формы просвета, поэтому после смены
-       панелей её надо пересчитать, а не только перерисовать. */
-    frameSky(); resize(); syncSky();
-  });
+/* Три кнопки — «фильтры», «список», «во весь экран» — делали одно и то же
+   разными словами и занимали треть ряда. Осталась одна: она перебирает
+   три вида. Панели поимённо по-прежнему снимаются клавишами [ и ]. */
+var elPane=document.getElementById('paneb');
+var PANEN=['панели: обе','карта шире','во весь экран'];
+function paneState(){
+  var b=document.body;
+  if(b.classList.contains('map')) return 2;
+  if(b.classList.contains('nolist')&&!b.classList.contains('norail')) return 1;
+  return 0;
 }
-pane('norail','railb'); pane('nolist','listb'); pane('map','mapb');
+function paneLabel(){
+  var st=paneState();
+  elPane.textContent=PANEN[st];
+  elPane.setAttribute('aria-pressed',String(st>0));
+}
+function paneSync(){
+  /* Расстановка солнц зависит от формы просвета, поэтому после смены
+     панелей её надо пересчитать, а не только перерисовать. */
+  paneLabel(); frameSky(); resize(); syncSky();
+}
+function paneSet(st){
+  var b=document.body;
+  b.classList.remove('norail','nolist','map','rail');
+  if(st===1) b.classList.add('nolist');
+  if(st===2) b.classList.add('map');
+  listHid=0; paneSync();
+}
+function paneStep(){
+  /* На узком экране панели и так лежат друг на друге: промежуточный вид
+     там ничего не меняет, поэтому их два, а не три. */
+  var st=paneState();
+  paneSet(innerWidth>900?(st+1)%3:(st===2?0:2));
+}
+function paneSide(cls){
+  var b=document.body;
+  b.classList.remove('map');
+  b.classList.toggle(cls);
+  listHid=0; paneSync();
+}
+elPane.addEventListener('click',paneStep);
 var elTint=document.getElementById('tint');
 function tintLabel(){
   elTint.setAttribute('aria-pressed',String(!!TINT));
@@ -2657,8 +2792,14 @@ function paintPlay(){
   elPcv.innerHTML=art?'<img src="'+esc(art)+'" alt="" width="42" height="42">':'';
 }
 MCPlayer.on('track',function(id){
+  var was=PL;
   PL=IDX[id]===void 0?-1:IDX[id];
   document.body.classList.add('sound');
+  /* Очередь идёт дальше сама, и раньше карточка оставалась от прошлой
+     записи: на доигравший трек нельзя было нажать, чтобы его прочитать.
+     Выбор переезжает вместе со звуком, но только если он и вёл — руками
+     выбранную запись звук не перебивает. */
+  if(PL>=0&&(sel<0||sel===was)){ sel=PL; showCard(sel); scrollToSel(); }
   paintPlay(); paintList(true);
   if(sel===PL) showCard(sel);
 });
@@ -2719,6 +2860,7 @@ window.libTL=function(){
     год:function(y){ return {x:s2x(tlX(y)), y:y0+8}; },
     макс:[TLMAXA,TLMAXP], раньше:TLPRE};
 };
+window.libPane=function(st){ paneSet(st); return document.body.className; };
 window.libSun=function(){
   return SUNS.map(function(S){
     return {имя:sunName(S), записей:S.n, x:s2x(S.x), y:s2y(S.y), ядро:sunCore(S)};
