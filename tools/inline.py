@@ -16,7 +16,7 @@ tools/player.js, — а копии в страницах расставляет 
 import io, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PAGES = ['src/11-library.html', 'src/12-portrait.html']
+PAGES = ['src/11-library.html', 'src/12-portrait.html', 'src/13-epochs.html']
 JSON = os.path.join(ROOT, 'data', 'catalog.json')
 PLAY = os.path.join(ROOT, 'tools', 'player.js')
 
