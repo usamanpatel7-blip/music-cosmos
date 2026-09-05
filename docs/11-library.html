@@ -426,7 +426,7 @@ body.map #hud,body.nolist #hud{left:20px}
 body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
 #app,#hud,#card{transition:opacity .45s}
 #start{position:fixed;inset:0;z-index:20;display:flex;align-items:center;
-  justify-content:center;padding:28px;
+  justify-content:center;padding:74px 28px 34px;overflow:auto;
   background:radial-gradient(ellipse at 50% 46%,rgba(6,7,12,.20),rgba(6,7,12,.72) 58%,
     rgba(6,7,12,.94));
   transition:opacity .5s,visibility .5s}
@@ -450,13 +450,56 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
 #start #sq:focus{border-color:var(--accent)}
 #start .go{background:var(--accent);border:0;border-radius:11px;padding:13px 22px;
   font-weight:600;color:#0A0B10;cursor:pointer;white-space:nowrap}
-#start .ways{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:22px 0 0}
-#start .ways button{background:rgba(8,10,17,.82);border:1px solid var(--line);
-  border-radius:20px;padding:7px 14px;cursor:pointer;font-size:.83rem;color:var(--ink-2);
-  transition:border-color .18s,color .18s}
-#start .ways button:hover{color:var(--ink);border-color:var(--accent)}
+#start .sub{font-size:.95rem;color:var(--ink-2);margin:14px 0 26px;
+  text-shadow:0 1px 10px rgba(6,7,12,.95),0 0 22px rgba(6,7,12,.85)}
+/* Двери стоят колонкой под полем поиска, а не россыпью пилюль: у каждой
+   теперь есть вторая строка — зачем её открывать, — и в пилюлю это не
+   помещается. */
+#start .ways{display:flex;flex-direction:column;gap:6px;margin:20px auto 0;
+  max-width:520px;text-align:left}
+#start .ways button{display:flex;align-items:baseline;gap:12px;width:100%;
+  background:rgba(8,10,17,.82);border:1px solid var(--line);border-radius:12px;
+  padding:10px 14px;cursor:pointer;color:var(--ink-2);text-align:left;
+  transition:border-color .18s,color .18s,background .18s}
+#start .ways button:hover{color:var(--ink);border-color:var(--accent);
+  background:rgba(242,166,90,.07)}
+#start .ways button i{font-style:normal;font-size:.92rem;font-weight:600;
+  color:var(--ink)}
 #start .ways button em{font-style:normal;color:var(--muted);font-family:var(--mono);
+  font-size:.74rem;margin-left:auto;font-variant-numeric:tabular-nums}
+#start .ways button u{display:block;text-decoration:none;color:var(--muted);
+  font-size:.78rem;margin-top:2px;line-height:1.45}
+#start .ways button span{min-width:0}
+#start .ways2{display:flex;gap:7px;justify-content:center;margin:14px 0 0}
+#start .ways2 button{background:none;border:1px solid var(--line);border-radius:20px;
+  padding:7px 15px;cursor:pointer;font-size:.82rem;color:var(--ink-2);
+  transition:border-color .18s,color .18s}
+#start .ways2 button:hover{color:var(--ink);border-color:var(--accent)}
+#start .ways2 button em{font-style:normal;color:var(--muted);font-family:var(--mono);
   font-size:.72rem;margin-left:6px}
+#snav{position:absolute;top:20px;left:0;right:0;display:flex;gap:5px;
+  justify-content:center;padding:0 16px}
+#snav a,#snav button{background:rgba(8,10,17,.7);border:1px solid var(--line);
+  border-radius:20px;padding:6px 14px;font-size:.8rem;color:var(--ink-2);
+  cursor:pointer;text-decoration:none;white-space:nowrap;flex:none;
+  transition:border-color .18s,color .18s}
+#snav a:hover,#snav button:hover{color:var(--ink);border-color:var(--accent)}
+#about{position:fixed;inset:0;z-index:60;display:none;align-items:center;
+  justify-content:center;padding:24px;background:rgba(4,5,9,.82);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#about.on{display:flex}
+#about .box{max-width:620px;width:100%;max-height:84vh;overflow:auto;
+  background:var(--glass-2);border:1px solid var(--line-2);border-radius:16px;
+  padding:28px 30px}
+#about h2{font-family:var(--disp);font-weight:800;font-size:1.5rem;margin:0 0 14px;
+  letter-spacing:-.02em}
+#about p{font-size:.92rem;color:var(--ink-2);line-height:1.66;margin:0 0 14px}
+#about b{color:var(--ink);font-weight:600}
+#about a{color:var(--accent)}
+#about .x{position:sticky;bottom:0;display:block;margin:18px 0 0 auto;
+  background:none;border:1px solid var(--line-2);border-radius:20px;
+  padding:7px 16px;font-size:.82rem;color:var(--ink-2);cursor:pointer}
+#about .x:hover{color:var(--ink);border-color:var(--accent)}
 #start .hint a{color:var(--accent)}
 #start .hint b{color:var(--ink);font-weight:600}
 #start .hint{font-size:.79rem;color:var(--ink-2);margin:30px 0 0;line-height:1.6;
@@ -500,8 +543,14 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
   body.card #hud .pill,body.card #crumb{opacity:0;pointer-events:none;transition:opacity .2s}
   body.map.card #card{bottom:56px}
   #start .in{text-align:left}
-  #start .ways{justify-content:flex-start}
+  #start .ways2{justify-content:flex-start}
   #start .sfield{flex-direction:column}
+  /* Экран стал выше телефона, а центрирование в таком случае срезает
+     верх — прижимаем содержимое к началу и оставляем место под шапку. */
+  #start{align-items:flex-start;padding:64px 18px 40px}
+  #snav{justify-content:flex-start;overflow-x:auto;scrollbar-width:none;
+    padding:0 18px}
+  #snav::-webkit-scrollbar{display:none}
   #bar .brand span{display:none}
 }
 @media (prefers-reduced-motion: reduce){ *{transition-duration:.001ms!important} }
@@ -593,25 +642,58 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
 </div>
 
 <div id="start">
+  <nav id="snav" aria-label="Разделы">
+    <a href="13-epochs.html">эпохи</a>
+    <a href="13-epochs.html#%D0%91%D0%B0%D1%80%D0%BE%D0%BA%D0%BA%D0%BE">эссе о барокко</a>
+    <a href="12-portrait.html">музыкальный портрет</a>
+    <button type="button" id="sabout">о проекте</button>
+  </nav>
   <div class="in">
-    <p class="eyebrow">личная музыкальная библиотека</p>
-    <h1>Библиотека</h1>
-    <p class="nums"><b id="s1">—</b> записей · <b id="s2">—</b> авторов ·
-       <b id="s3">—</b> эпох и <b id="s5">—</b> жанров · издания <b id="s4">—</b></p>
+    <p class="eyebrow">Каждый человек — это вселенная. Я представляю вам проект</p>
+    <h1>Моя музыкальная вселенная</h1>
+    <p class="sub">Цифровая полка на четыре с лишним тысячи записей,
+       которую я собирал пятнадцать лет.</p>
     <div class="sfield">
-      <input id="sq" type="search" placeholder="найти трек, автора, произведение…"
+      <input id="sq" type="search" placeholder="найти запись, автора, произведение…"
              autocomplete="off" spellcheck="false" aria-label="Поиск">
-      <button class="go" id="sgo" type="button">Смотреть</button>
+      <button class="go" id="sgo" type="button">Искать</button>
     </div>
     <div class="ways" id="ways"></div>
-    <p class="hint">Клик по карте ведёт внутрь: солнце — автор, планета — запись.
-       Пилюля слева перебирает три фигуры: кольца, орбиты и ленту лет.
-       Колесо и кнопки справа приближают, тяга двигает. Точка слева от названия
-       включает звук, клавиша <b>F</b> отдаёт фигуре весь экран.
-       <br>Или зайдите с другой стороны: <a href="13-epochs.html">эпохи</a> —
-       десять текстов о том, что происходило с людьми и как это слышно, со
-       звучащими примерами; <a href="12-portrait.html">музыкальный портрет</a> —
-       что эти четыре тысячи записей говорят о слушателе.</p>
+    <div class="ways2" id="ways2"></div>
+    <p class="hint">А если искать нечего — и не надо. Каждая запись звучит:
+       тридцать секунд из витрины Apple, и выбранное играет подряд, так что
+       любой фильтр — это уже готовая программа.
+       <br>Понять, а не перебрать, лучше всего с <a href="13-epochs.html">эпох</a>:
+       что происходило с людьми и как это слышно.</p>
+  </div>
+</div>
+
+<div id="about" role="dialog" aria-modal="true" aria-label="О проекте">
+  <div class="box">
+    <h2>О проекте</h2>
+    <p>Это моя личная музыкальная библиотека — <b>4334 записи</b>, которые
+       копились пятнадцать лет: от того, что слушалось в одиннадцать, до
+       того, что играет сейчас. Обычно такая полка видна только владельцу и
+       только списком. Здесь она развёрнута в карту и в текст.</p>
+    <p>Половина полки — <b>академическая музыка</b>, и ради неё всё и
+       затевалось. По ней можно ходить как по истории: десять эпох с
+       границами, авторы с годами жизни, направления и школы. Вторая
+       половина — повседневная: рок, поп, джаз, электроника. Обе живут в
+       одном каталоге и на одной карте.</p>
+    <p>Данные — выгрузка библиотеки Apple Music и годовые чарты Replay,
+       разобранные вручную: композитор, эпоха, направление, инструмент. Что
+       разобрано неверно — поправляется таблицами рядом с данными, а не
+       внутри них, поэтому исходную выгрузку всегда можно перечитать
+       заново.</p>
+    <p>Страница сделана без библиотек и без сборки: один файл, который
+       открывается двойным щелчком и работает без сети. Звук — превью из
+       витрины Apple, по тридцать секунд; рядом с каждой записью есть
+       переход в Apple&nbsp;Music, чтобы дослушать целиком.</p>
+    <p>Соседние страницы: <a href="13-epochs.html">эпохи</a> — что
+       происходило с людьми и как это слышно;
+       <a href="12-portrait.html">музыкальный портрет</a> — что четыре
+       тысячи записей говорят о слушателе.</p>
+    <button class="x" type="button" id="aboutx">закрыть</button>
   </div>
 </div>
 
@@ -947,8 +1029,43 @@ function swapKbRu(t){ var o='', p;
   return o; }
 
 /* ================================================================= фильтры */
+/* ------------------------------------------------------------- подборки
+   Дверь со стартового экрана — это не набор галочек, а вопрос: кто из них
+   не дожил до сорока. Держать такой вопрос выбором авторов нельзя —
+   в шапке встанет дюжина фишек вместо одной строки, и снять их можно
+   только по одной. Поэтому у подборки свой ключ, своя фишка и своё место
+   в адресе, а условие считается один раз при загрузке. */
+var LIFE=/\((?:ок\.\s*)?(\d{3,4})\s*[–—-]\s*(\d{3,4})\)/;
+var PICKS={
+  young:{t:'Никто из них не дожил до сорока',
+    w:'Двенадцать авторов, умерших раньше сорока лет. Моцарт, Шуберт, '+
+      'Шопен, Мендельсон, Пёрселл, Гершвин, Бизе — и Курт Кобейн.',
+    make:function(){
+      var s2={}, m, i2;
+      for(i2=0;i2<ARTIST.length;i2++){
+        m=LIFE.exec(ARTIST[i2]);
+        if(m&&(+m[2]-+m[1])<40) s2[i2]=1;
+      }
+      return function(n){ return !!s2[T.a[n]]; };
+    }},
+  radical:{t:'Музыка, которая не хочет нравиться',
+    w:'Авангард XX века целиком плюс нововенская школа и новая сложность: '+
+      'то, что писалось не для того, чтобы понравиться с первого раза.',
+    make:function(){
+      var av=-1, hard={}, i2, k2;
+      for(i2=0;i2<EPOCH.length;i2++) if(EPOCH[i2].n==='Авангард XX века') av=i2;
+      for(i2=0;i2<DIR.length;i2++){
+        k2=DIR[i2];
+        if(k2==='авангард'||k2==='нововенская школа'||k2==='новая сложность')
+          hard[i2]=1;
+      }
+      return function(n){ return T.e[n]===av||!!hard[T.d[n]]; };
+    }}
+};
+(function(){ for(var k2 in PICKS) PICKS[k2].ok=PICKS[k2].make(); })();
+
 function blank(){ return {q:'',realm:null,ep:{},sub:{},art:{},age:{},
-                          inst:{},y0:YMIN,y1:YMAX,rep:false,tl:0}; }
+                          inst:{},y0:YMIN,y1:YMAX,rep:false,tl:0,pick:''}; }
 var F=blank(), SORT='rel', sel=-1, MODE=0, CALM=false;
 function empty(o){ for(var x in o) if(o[x]) return false; return true; }
 
@@ -973,6 +1090,7 @@ function pass(n,skip){
     var y=T.y[n]; if(!y||y<F.y0||y>F.y1) return false;
   }
   if(skip!=='rep'&&F.rep&&!T.r[n]) return false;
+  if(skip!=='pick'&&F.pick&&PICKS[F.pick]&&!PICKS[F.pick].ok(n)) return false;
   if(skip!=='tl'&&F.tl&&TLYR[n]!==F.tl) return false;
   return true;
 }
@@ -1194,6 +1312,7 @@ function drawChips(){
   if(F.q) chip('q','','«'+F.q+'»');
   if(F.realm!==null) chip('realm','',F.realm?'Академическая':'Повседневная');
   if(F.rep) chip('rep','','в топе года');
+  if(F.pick&&PICKS[F.pick]) chip('pick','',PICKS[F.pick].t.toLowerCase());
   if(F.y0>YMIN||F.y1<YMAX) chip('year','',F.y0+'–'+F.y1);
   if(F.tl) chip('tl','','на ленте: '+F.tl);
   var done={art:1};
@@ -1630,6 +1749,7 @@ document.addEventListener('click',function(e){
     else if(t==='q'){ F.q=''; elQ.value=''; }
     else if(t==='realm') F.realm=null;
     else if(t==='rep') F.rep=false;
+    else if(t==='pick') F.pick='';
     else if(t==='year'){ F.y0=YMIN; F.y1=YMAX; }
     else if(t==='tl') F.tl=0;
     else delete F[t][b.dataset.k];
@@ -1804,6 +1924,7 @@ function saveHash(){
   if(F.q) p.push('q='+encodeURIComponent(F.q));
   if(F.realm!==null) p.push('r='+F.realm);
   if(F.rep) p.push('replay=1');
+  if(F.pick) p.push('pick='+F.pick);
   if(F.y0>YMIN||F.y1<YMAX) p.push('y='+F.y0+'-'+F.y1);
   var seen={art:1}, aa=[], x0;
   for(x0 in F.art) if(F.art[x0]) aa.push(x0);
@@ -1832,6 +1953,7 @@ function loadHash(){
     if(key==='q'){ F.q=v; elQ.value=v; }
     else if(key==='r') F.realm=+v;
     else if(key==='replay') F.rep=true;
+    else if(key==='pick'){ if(PICKS[v]) F.pick=v; }
     else if(key==='y'){ var a=v.split('-'); F.y0=+a[0]||YMIN; F.y1=+a[1]||YMAX; }
     else if(key==='s') SORT=v;
     else if(key==='m') MODE=Math.max(0,Math.min(2,+v||1));
@@ -2869,46 +2991,60 @@ function enterApp(){
   setTimeout(function(){ elStart.style.display='none'; },560);
 }
 (function buildStart(){
-  document.getElementById('s1').textContent=N;
-  document.getElementById('s2').textContent=ARTIST.length;
-  /* Эпохи и жанры разведены, и считать их одним числом больше нельзя. */
-  document.getElementById('s3').textContent=EPOCH.filter(function(e){ return e.r; }).length;
-  document.getElementById('s5').textContent=EPOCH.filter(function(e){ return !e.r; }).length;
-  document.getElementById('s4').textContent=YMIN+'–'+YMAX;
   var ep=function(nm){ return dictFind(EPOCH,nm,function(x){ return x.n; }); };
-  var ar=function(nm){
-    for(var n=0;n<ARTIST.length;n++) if(ARTIST[n].indexOf(nm)===0) return n;
-    return -1;
-  };
   var cnt=function(f){ var c=0,n; for(n=0;n<N;n++) if(f(n)) c++; return c; };
+  /* Двери отвечают не «сколько тут всего», а «зачем сюда заходить»: у
+     каждой есть вторая строка, и она обещает не объём, а находку. */
   var WAYS=[
-    {t:'Барокко',   n:cnt(function(n){ return EPOCH[T.e[n]].n==='Барокко'; }),
-     go:function(){ var k=ep('Барокко'); if(k>=0){ F.ep={}; F.ep[k]=1; UI.ep.open=true; } }},
-    {t:'Бах',       n:cnt(function(n){ return ARTIST[T.a[n]].indexOf('Иоганн Себастьян Бах')===0; }),
-     go:function(){ var k=ar('Иоганн Себастьян Бах'); if(k>=0){ F.art={}; F.art[k]=1; MODE=1; } }},
-    {t:'Мои шестнадцать', n:cnt(function(n){ return T.m[n]&2; }),
-     go:function(){ F.age={}; F.age[1]=1; }},
-    {t:'Мои треки на повторе', n:cnt(function(n){ return !!T.r[n]; }),
+    {t:'Год, когда всё изменилось',
+     w:'Двадцать два года. За три года собрана треть всей полки',
+     n:cnt(function(n){ return !!(T.m[n]&16); }),
+     go:function(){ F.age={}; F.age[4]=1; }},
+    {t:'Мои треки на повторе',
+     w:'То, что дошло до личного чарта года — и вернулось в него не раз',
+     n:cnt(function(n){ return !!T.r[n]; }),
      go:function(){ F.rep=true; SORT='rank'; }},
-    {t:'Шестидесятые', n:cnt(function(n){ return T.y[n]>=1960&&T.y[n]<=1969; }),
-     go:function(){ F.y0=1960; F.y1=1969; }},
-    {t:'Случайная запись', n:0,
-     go:function(){ sel=(Math.random()*N)|0; }},
+    {t:'Мне было шестнадцать, и это слышно',
+     w:'Полка, которую сегодня открываешь с нежностью и лёгким ужасом',
+     n:cnt(function(n){ return !!(T.m[n]&2); }),
+     go:function(){ F.age={}; F.age[1]=1; }},
+    {t:PICKS.young.t,
+     w:'Моцарт, Шуберт, Шопен, Мендельсон, Пёрселл, Гершвин — и Курт Кобейн',
+     n:cnt(PICKS.young.ok),
+     go:function(){ F.pick='young'; SORT='art'; }},
+    {t:PICKS.radical.t,
+     w:'Авангард: его писали не для того, чтобы понравиться с первого раза',
+     n:cnt(PICKS.radical.ok),
+     go:function(){ F.pick='radical'; }}
+  ];
+  var MORE=[
+    {t:'Наугад', n:0, go:function(){ sel=(Math.random()*N)|0; }},
     {t:'Вся библиотека', n:N, go:function(){}}
   ];
-  var el=document.getElementById('ways');
-  el.innerHTML=WAYS.map(function(w,k){
-    return '<button type="button" data-w="'+k+'">'+esc(w.t)+
-      (w.n?'<em>'+w.n+'</em>':'')+'</button>';
-  }).join('');
-  el.addEventListener('click',function(e){
-    var b=e.target.closest('button[data-w]'); if(!b) return;
-    var w=WAYS[+b.dataset.w];
+  function open(w){
     F=blank(); elQ.value=''; SORT='rel'; sel=-1;
     w.go();
     document.getElementById('sort').value=SORT;
     modeLabel(); enterApp(); apply();
     if(sel>=0){ showCard(sel); scrollToSel(); }
+  }
+  var el=document.getElementById('ways');
+  el.innerHTML=WAYS.map(function(w,k){
+    return '<button type="button" data-w="'+k+'"><span><i>'+esc(w.t)+'</i>'+
+      '<u>'+esc(w.w)+'</u></span><em>'+w.n+'</em></button>';
+  }).join('');
+  el.addEventListener('click',function(e){
+    var b=e.target.closest('button[data-w]');
+    if(b) open(WAYS[+b.dataset.w]);
+  });
+  var el2=document.getElementById('ways2');
+  el2.innerHTML=MORE.map(function(w,k){
+    return '<button type="button" data-w="'+k+'">'+esc(w.t)+
+      (w.n?'<em>'+w.n+'</em>':'')+'</button>';
+  }).join('');
+  el2.addEventListener('click',function(e){
+    var b=e.target.closest('button[data-w]');
+    if(b) open(MORE[+b.dataset.w]);
   });
   function goSearch(){
     var v=elSq.value.trim();
@@ -2918,6 +3054,18 @@ function enterApp(){
   }
   document.getElementById('sgo').addEventListener('click',goSearch);
   elSq.addEventListener('keydown',function(e){ if(e.key==='Enter') goSearch(); });
+
+  /* «О проекте» — не отдельная страница: всё, что там нужно сказать,
+     умещается в пять абзацев, а лишний файл пришлось бы держать в согласии
+     с этим. */
+  var ab=document.getElementById('about');
+  function about(on){ ab.classList.toggle('on',on); }
+  document.getElementById('sabout').addEventListener('click',function(){ about(true); });
+  document.getElementById('aboutx').addEventListener('click',function(){ about(false); });
+  ab.addEventListener('click',function(e){ if(e.target===ab) about(false); });
+  addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&ab.classList.contains('on')){ e.stopPropagation(); about(false); }
+  },true);
 })();
 
 /* ==================================================================== звук
