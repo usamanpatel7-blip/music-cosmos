@@ -5,7 +5,9 @@
 <meta property="og:description" content="4334 записи за шесть лет. Из них 4280 встречаются ровно в одном плейлисте: библиотека не копится, а сменяется целиком. Тридцать пять исключений — поимённо.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"></noscript>
 
 <style>
 :root{
@@ -1112,20 +1114,18 @@ function resize(){
   g.setTransform(DPR,0,0,DPR,0,0);
   layout();
 }
-var t0=performance.now(), frame=0, STEP=2, fAcc=0, fN=0, fLast=t0, low=0, high=0;
+/* Мерится стоимость отрисовки, а не частота requestAnimationFrame:
+   пропущенный кадр всё равно приходит вовремя, и прежний замер показывал
+   шестьдесят даже тогда, когда на экране двигалось тридцать. Начинаем с
+   каждого кадра и разрежаем только когда рисовать действительно дорого. */
+var t0=performance.now(), frame=0, STEP=1, cAcc=0, cN=0, fLast=t0;
 var vis=true;
 function draw(now){
   if(!REDUCE) requestAnimationFrame(draw);
   if(!vis) return;
-  fAcc+=now-fLast; fLast=now; fN++;
-  if(fN>=30){
-    var f=1000/(fAcc/fN); fAcc=0; fN=0;
-    if(f<44){ if(++low>=2&&STEP<4){ STEP++; low=0; } high=0; }
-    else if(f>55){ if(++high>=6&&STEP>2){ STEP--; high=0; } low=0; }
-    else low=high=0;
-  }
-  frame++;
-  if(!REDUCE&&frame%STEP) return;
+  fLast=now; frame++;
+  if(!REDUCE&&STEP>1&&frame%STEP) return;
+  var tDraw=now;
   var t=(now-t0)/1000, a, m, p;
   g.fillStyle='#06070C'; g.fillRect(0,0,VW,VH);
   g.globalCompositeOperation='source-over';
@@ -1161,6 +1161,14 @@ function draw(now){
   for(a=0;a<AN;a++){
     var nm=VW<760?SHORT[a]:AGES[a].replace(/ (лет|год|года)$/,'');
     g.fillText(nm,COLS[a].x,COLS[a].base+9);
+  }
+  if(!REDUCE){
+    cAcc+=performance.now()-tDraw; cN++;
+    if(cN>=20){
+      var cost=cAcc/cN; cAcc=0; cN=0;
+      if(cost>11&&STEP<3) STEP++;
+      else if(cost<5&&STEP>1) STEP--;
+    }
   }
 }
 addEventListener('resize',resize);

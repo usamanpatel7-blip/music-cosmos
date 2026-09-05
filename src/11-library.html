@@ -5,7 +5,9 @@
 <meta property="og:description" content="Каталог на 4334 трека с фасетным поиском. Задник живой: кольца — годы, сектора — эпохи, светятся только найденные.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"></noscript>
 
 <style>
 :root{
@@ -2271,7 +2273,20 @@ function s2x(nx){ return CX+PANX+nx*RU*Z; }
 function s2y(ny){ return CY+PANY+ny*RU*Z*ASP; }
 
 var t0=performance.now(), fLast=t0, raf=0, frame=0;
-var STEP=2, fAcc=0, fN=0, low=0, high=0;
+/* Экономия на слабой машине.
+
+   Раньше мерилась частота requestAnimationFrame и по ней рос STEP —
+   «рисовать каждый второй кадр». Замер был не тот: пропущенный кадр
+   всё равно приходит вовремя, поэтому счётчик показывал шестьдесят
+   и тогда, когда на экране двигалось пятнадцать. А стартовое значение
+   STEP=2 означало, что задник изначально шёл на тридцати кадрах — на
+   плавно едущей игле это видно как рывки.
+
+   Теперь мерится стоимость самой отрисовки, и дешевеет она в правильном
+   порядке: сперва меньше тел в кадре, и только когда убавлять уже
+   некуда — реже кадры. Пропущенный кадр портит движение сильнее, чем
+   недорисованная тысяча точек из четырёх. */
+var STEP=1, CAPS=[2400,1500,900,500], CAPI=0, cAcc=0, cN=0, COST=0;
 var TXn=0, TYn=0;
 function target(n,t,rot){
   if(MODE===2){
@@ -2302,7 +2317,7 @@ function step(n,t,rot){
 /* ============================================================ попадание
    Ищется только среди тел, посчитанных в этом кадре: остальные стоят на
    устаревших местах, и клик по ним соврал бы. */
-var HOVER=null, MX=-1, MY=-1;
+var HOVER=null, MX=-1, MY=-1, hMX=-2, hMY=-2, hF=-99;
 /* Насколько велико нарисованное солнце — не то же, что радиус его системы:
    система занимает всю кучу орбит, а видно только ядро. */
 function sunCore(S){
@@ -2649,15 +2664,10 @@ function tlNames(){
 /* ==================================================================== рендер */
 function sky(now){
   raf=requestAnimationFrame(sky);
-  fAcc+=now-fLast; fLast=now; fN++;
-  if(fN>=30){
-    var f=1000/(fAcc/fN); fAcc=0; fN=0;
-    if(f<44){ if(++low>=2&&STEP<4){ STEP++; low=0; } high=0; }
-    else if(f>55){ if(++high>=6&&STEP>2){ STEP--; high=0; } low=0; }
-    else low=high=0;
-  }
+  fLast=now;
   frame++;
-  if(frame%STEP) return;   /* задник идёт на 30 к/с, а на слабой машине реже */
+  if(STEP>1&&frame%STEP) return;
+  var tDraw=now;
   CX+=(CXt-CX)*0.09; CY+=(CYt-CY)*0.09; RU+=(RUt-RU)*0.09;
   var t=(now-t0)/1000, u=RU*Z, n, p;
   var rot=CALM?t*0.004:t*0.016, needle=(t*0.40)%TAU;
@@ -2698,7 +2708,7 @@ function sky(now){
      сверх этого берётся равномерная выборка: плотность остаётся честной. */
   g.globalCompositeOperation='lighter';
   NDRAWN=0;
-  var skip=Math.max(1,Math.ceil(RES.length/2400));
+  var skip=Math.max(1,Math.ceil(RES.length/CAPS[CAPI]));
   var isHov=HOVER&&HOVER.kind==='track'?HOVER.i:-1;
   for(p=0;p<RES.length;p+=skip){
     n=RES[p];
@@ -2791,15 +2801,28 @@ function sky(now){
     g.lineTo(s2x(0)+Math.cos(needle+rot)*u,s2y(0)+Math.sin(needle+rot)*u); g.stroke();
   }
   if(MODE===2) g.restore();
-  /* Наведение считается по свежим местам, один раз за нарисованный кадр. */
-  if(!START&&MX>=0&&!drag){
+  /* Наведение считается по свежим местам, но не на каждом кадре: курсор
+     стоит, а тела едут, поэтому достаточно пересчитывать при движении
+     мыши и изредка вхолостую. Подсказка переписывается только когда цель
+     сменилась — раньше innerHTML менялся шестьдесят раз в секунду, и
+     каждый раз это была вынужденная перекладка страницы. */
+  if(!START&&MX>=0&&!drag&&(MX!==hMX||MY!==hMY||frame-hF>10)){
+    hMX=MX; hMY=MY; hF=frame;
     var h=hitAt(MX,MY);
     var same=(h&&HOVER&&h.kind===HOVER.kind&&
-             (h.i===HOVER.i||(h.s&&h.s===HOVER.s)||h.e===HOVER.e));
-    HOVER=h;
-    cv.style.cursor=h?'pointer':'grab';
-    if(!same||!h) showTip(h);
-    else showTip(h);
+             (h.i===HOVER.i||(h.s&&h.s===HOVER.s)||h.e===HOVER.e))||(!h&&!HOVER);
+    if(!same){
+      HOVER=h;
+      cv.style.cursor=h?'pointer':'grab';
+      showTip(h);
+    }
+  }
+  /* Стоимость кадра — единственная честная мера нагрузки. */
+  cAcc+=performance.now()-tDraw; cN++;
+  if(cN>=20){
+    COST=cAcc/cN; cAcc=0; cN=0;
+    if(COST>11){ if(CAPI<CAPS.length-1) CAPI++; else if(STEP<3) STEP++; }
+    else if(COST<5){ if(STEP>1) STEP--; else if(CAPI>0) CAPI--; }
   }
 }
 var elSeg=document.getElementById('seg'), elCalm=document.getElementById('calm');
@@ -3123,6 +3146,7 @@ window.lib=function(){
           произведений:VIEW.filter(function(v){return !!v.w;}).length,
           режим:MODEN[MODE],уровень:LEVEL,
           старт:START,масштаб:+Z.toFixed(2),солнц:SUNS.length,
+          шаг:STEP,потолок:CAPS[CAPI],ценакадра:+COST.toFixed(1),
           сортировка:SORT,выбран:sel,фильтр:f};
 };
 window.libHit=function(x,y){ MX=x; MY=y; return hitAt(x,y); };
