@@ -561,6 +561,7 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
 <div id="app">
   <div class="pane" id="bar">
     <button class="gbtn" id="burger" type="button" aria-label="Фильтры">☰</button>
+    <a class="gbtn" href="index.html" aria-label="На главную" title="На главную">⌂</a>
     <div class="brand">Библиотека<i>.</i><span> каталог</span></div>
     <input id="q" type="search" placeholder="трек, автор, произведение…   /"
            autocomplete="off" spellcheck="false" aria-label="Поиск по каталогу">
@@ -643,6 +644,8 @@ body.start #app,body.start #hud,body.start #card{opacity:0;pointer-events:none}
 
 <div id="start">
   <nav id="snav" aria-label="Разделы">
+    <a href="index.html">главная</a>
+    <a href="08-cosmos.html">карта</a>
     <a href="13-epochs.html">эпохи</a>
     <a href="13-epochs.html#%D0%91%D0%B0%D1%80%D0%BE%D0%BA%D0%BA%D0%BE">эссе о барокко</a>
     <a href="12-portrait.html">музыкальный портрет</a>
@@ -1417,7 +1420,8 @@ function drawRate(){
 function rateOpen(on){
   document.body.classList.toggle('rate',on);
   document.getElementById('rateb').setAttribute('aria-pressed',String(!!on));
-  if(on){ drawRate(); setTimeout(function(){ document.getElementById('rq').focus(); },30); }
+  if(on) drawRate();
+  modalState(on?elRate:null,on?document.getElementById('rq'):null);
 }
 document.getElementById('rateb').addEventListener('click',function(){
   rateOpen(!document.body.classList.contains('rate'));
@@ -1865,6 +1869,12 @@ function typing(){
   return !!a&&(a.isContentEditable||/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName));
 }
 window.addEventListener('keydown',function(e){
+  if(activeDialog) return;
+  if(START){
+    if(e.key==='/'&&!typing()){ e.preventDefault(); elSq.focus(); }
+    return;
+  }
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
   if(e.key==='/'&&!typing()){
     e.preventDefault(); elQ.focus(); elQ.select(); return;
   }
@@ -1888,6 +1898,7 @@ window.addEventListener('keydown',function(e){
   /* Панели убираются с клавиатуры: снимать их приходится часто, а тянуться
      мышью к пилюле — нет. */
   if(typing()) return;
+  if(document.activeElement&&document.activeElement.closest('button,a')) return;
   if((e.key==='f'||e.key==='F'||e.key==='а'||e.key==='А')&&!e.metaKey&&!e.ctrlKey){
     e.preventDefault(); paneSet(paneState()===2?0:2); return;
   }
@@ -1949,17 +1960,27 @@ function loadHash(){
   if(!h) return;
   h.split('&').forEach(function(kv){
     var n=kv.indexOf('='); if(n<0) return;
-    var key=kv.slice(0,n), v=decodeURIComponent(kv.slice(n+1));
+    var key=kv.slice(0,n), v;
+    try { v=decodeURIComponent(kv.slice(n+1)); } catch(e){ return; }
     if(key==='q'){ F.q=v; elQ.value=v; }
-    else if(key==='r') F.realm=+v;
-    else if(key==='replay') F.rep=true;
-    else if(key==='pick'){ if(PICKS[v]) F.pick=v; }
-    else if(key==='y'){ var a=v.split('-'); F.y0=+a[0]||YMIN; F.y1=+a[1]||YMAX; }
-    else if(key==='s') SORT=v;
-    else if(key==='m') MODE=Math.max(0,Math.min(2,+v||1));
-    else if(key==='tl') F.tl=+v||0;
-    else if(F[key]&&typeof F[key]==='object')
-      v.split('.').forEach(function(x){ F[key][x]=1; });
+    else if(key==='r'){ if(v==='0'||v==='1') F.realm=+v; }
+    else if(key==='replay') F.rep=v==='1';
+    else if(key==='pick'){ if(Object.prototype.hasOwnProperty.call(PICKS,v)) F.pick=v; }
+    else if(key==='y'){
+      var a=/^(\d{1,4})-(\d{1,4})$/.exec(v);
+      if(a){ F.y0=Math.max(YMIN,Math.min(YMAX,Math.min(+a[1],+a[2])));
+        F.y1=Math.max(YMIN,Math.min(YMAX,Math.max(+a[1],+a[2]))); }
+    }
+    else if(key==='s'){ if(['rel','art','name','yearD','yearA','rank','ep'].indexOf(v)>=0) SORT=v; }
+    else if(key==='m'){ if(/^[012]$/.test(v)) MODE=+v; }
+    else if(key==='tl'){ if(/^\d{1,4}$/.test(v)&&+v>=TLY0&&+v<=TLY1) F.tl=+v; }
+    else {
+      var limits={ep:EPOCH.length,art:ARTIST.length,sub:SUB.length,inst:INST.length,age:AGES.length};
+      if(Object.prototype.hasOwnProperty.call(limits,key))
+        v.split('.').forEach(function(x){
+          if(/^\d+$/.test(x)&&+x<limits[key]) F[key][+x]=1;
+        });
+    }
   });
   document.getElementById('sort').value=SORT;
 }
@@ -1969,6 +1990,7 @@ function loadHash(){
 addEventListener('hashchange',function(){
   if(location.hash===selfHash) return;
   F=blank(); elQ.value=''; SORT='rel'; MODE=0; sel=-1;
+  if(location.hash.replace(/^#/,'')) enterApp();
   loadHash(); modeLabel(); tlPane(); showCard(-1); apply();
 });
 
@@ -1988,7 +2010,7 @@ var NX=new Float32Array(N), NY=new Float32Array(N), SEEN=new Uint8Array(N),
     OSX=new Float32Array(N), OSY=new Float32Array(N), ORD=new Float32Array(N),
     OPH=new Float32Array(N), OSP=new Float32Array(N), OK=new Uint8Array(N);
 var DRAWN=new Int32Array(N), NDRAWN=0;
-var SUNS=[], LEVEL=0, ASP=0.94, SPLIT=false, GUT=null;
+var SUNS=[], SUNLABELS=[], LEVEL=0, ASP=0.94, SPLIT=false, GUT=null;
 var Z=1, PANX=0, PANY=0;
 /* Спрайт на каждый жанр, прямо из его цвета: раньше цвет тела подбирался
    ближайшим из восьми заготовок и врал на оттенок. */
@@ -2115,6 +2137,7 @@ function onlyKey(o){
 }
 function syncSky(){
   SUNS.length=0;
+  SUNLABELS.length=0;
   if(MODE===2) tlLayout();
   if(MODE!==1){ OK.fill(0); LEVEL=0; return; }
   /* Два уровня. Пока автор не выбран — солнца это авторы выборки. Как только
@@ -2198,6 +2221,20 @@ function syncSky(){
     if(!moved) break;
   }
   SPLIT=split;
+  // Rebuild labels only when the selection or layout changes.
+  var ord=SUNS.map(function(S,i){ return i; });
+  if(SPLIT){
+    var la=[], ra=[];
+    SUNS.forEach(function(S,i){ (S.sd<0?la:ra).push(i); });
+    var by2=function(a,b){ return SUNS[b].n-SUNS[a].n; };
+    la.sort(by2); ra.sort(by2);
+    ord=la.slice(0,6).concat(ra.slice(0,6));
+  }
+  SUNLABELS=ord.slice(0,LEVEL?8:12).map(function(i){
+    var name=sunName(SUNS[i]).replace(/\s*\(.*$/,'');
+    return {index:i,name:name.length>28?name.slice(0,27)+'…':name};
+  });
+
   /* Фигура ставится по собственным границам, а не по расстоянию до нуля:
      при перекосе областей она иначе жмётся к одному краю кадра. */
   var x0=1e9, x1=-1e9, y0b=1e9, y1b=-1e9;
@@ -2689,14 +2726,26 @@ function drawTL(u){
 }
 
 /* ==================================================================== рендер */
+function sameHit(a,b){
+  if(!a||!b) return a===b;
+  if(a.kind!==b.kind) return false;
+  if(a.kind==='track') return a.i===b.i;
+  if(a.kind==='sun') return a.s===b.s;
+  if(a.kind==='epoch') return a.e===b.e;
+  if(a.kind==='band') return a.b===b.b&&a.e===b.e;
+  if(a.kind==='row') return a.r===b.r&&a.a===b.a;
+  if(a.kind==='year') return a.y===b.y;
+  return false;
+}
 function sky(now){
   raf=requestAnimationFrame(sky);
+  if(activeDialog) return;
   fLast=now;
   frame++;
   if(STEP>1&&frame%STEP) return;
   var tDraw=now;
   CX+=(CXt-CX)*0.09; CY+=(CYt-CY)*0.09; RU+=(RUt-RU)*0.09;
-  var t=(now-t0)/1000, u=RU*Z, n, p;
+  var t=REDUCE?0:(now-t0)/1000, u=RU*Z, n, p;
   var rot=CALM?t*0.004:t*0.016, needle=(t*0.40)%TAU;
   g.fillStyle='#06070C'; g.fillRect(0,0,VW,VH);
   /* Лента идёт во всю ширину просвета, поэтому её край надо срезать по
@@ -2810,18 +2859,9 @@ function sky(now){
     g.textAlign='center'; g.textBaseline='top';
     /* Имена берутся с каждой стороны отдельно: иначе все десять достаются
        композиторам, у которых записей больше, и правая область немая. */
-    var ord=SUNS.map(function(S,i){ return i; });
-    if(SPLIT){
-      var la=[], ra=[];
-      SUNS.forEach(function(S,i){ (S.sd<0?la:ra).push(i); });
-      var by2=function(a,b){ return SUNS[b].n-SUNS[a].n; };
-      la.sort(by2); ra.sort(by2);
-      ord=la.slice(0,6).concat(ra.slice(0,6));
-    }
-    var top=Math.min(ord.length,LEVEL?8:12);
+    var top=SUNLABELS.length;
     for(p=0;p<top;p++){
-      var S3=SUNS[ord[p]], nm=sunName(S3).replace(/\s*\(.*$/,'');
-      if(nm.length>28) nm=nm.slice(0,27)+'…';
+      var S3=SUNS[SUNLABELS[p].index], nm=SUNLABELS[p].name;
       var lx=s2x(S3.x), w2=g.measureText(nm).width*0.5;
       if(lx-w2<GAPL||lx+w2>GAPR) continue;
       var isH=HOVER&&HOVER.kind==='sun'&&HOVER.s===S3;
@@ -2847,8 +2887,7 @@ function sky(now){
   if(!START&&MX>=0&&!drag&&(MX!==hMX||MY!==hMY||frame-hF>10)){
     hMX=MX; hMY=MY; hF=frame;
     var h=hitAt(MX,MY);
-    var same=(h&&HOVER&&h.kind===HOVER.kind&&
-             (h.i===HOVER.i||(h.s&&h.s===HOVER.s)||h.e===HOVER.e))||(!h&&!HOVER);
+    var same=sameHit(h,HOVER);
     if(!same){
       HOVER=h;
       cv.style.cursor=h?'pointer':'grab';
@@ -2970,7 +3009,7 @@ wkLabel();
 addEventListener('resize',resize);
 document.addEventListener('visibilitychange',function(){
   if(document.hidden){ if(raf) cancelAnimationFrame(raf); raf=0; }
-  else if(!raf&&!REDUCE) raf=requestAnimationFrame(sky);
+  else if(!raf) raf=requestAnimationFrame(sky);
 });
 
 /* =============================================================== стартовый
@@ -2978,6 +3017,36 @@ document.addEventListener('visibilitychange',function(){
    не пустой обзор, а несколько готовых дверей. Ссылка с фильтром экран
    пропускает: пришедшему по ней уже сказали, что смотреть. */
 var elStart=document.getElementById('start'), elSq=document.getElementById('sq');
+var activeDialog=null, dialogReturn=null;
+function screenInert(){
+  ['app','top','zoom','card','play','start','about','rate'].forEach(function(id){
+    var el=document.getElementById(id);
+    el.inert=activeDialog?el!==activeDialog:
+      (id==='about'||id==='rate'||(START?id!=='start':id==='start'));
+  });
+}
+function modalState(dialog,focus){
+  if(dialog&&!activeDialog) dialogReturn=document.activeElement;
+  activeDialog=dialog; screenInert();
+  if(focus) focus.focus();
+  else if(dialogReturn){ dialogReturn.focus(); dialogReturn=null; }
+}
+addEventListener('keydown',function(e){
+  if(!activeDialog) return;
+  if(e.key==='Escape'){
+    e.preventDefault(); e.stopImmediatePropagation();
+    if(activeDialog===elRate) rateOpen(false);
+    else { activeDialog.classList.remove('on'); modalState(null); }
+    return;
+  }
+  if(e.key==='Tab'){
+    var nodes=Array.from(activeDialog.querySelectorAll('a[href],button,input,select,[tabindex="0"]'))
+      .filter(function(el){ return !el.disabled&&el.getClientRects().length; });
+    var first=nodes[0], last=nodes[nodes.length-1];
+    if(e.shiftKey&&document.activeElement===first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey&&document.activeElement===last){ e.preventDefault(); first.focus(); }
+  }
+},true);
 function dictFind(arr,name,f){
   for(var n=0;n<arr.length;n++) if((f?f(arr[n]):arr[n])===name) return n;
   return -1;
@@ -2987,6 +3056,8 @@ function enterApp(){
   START=false;
   elStart.classList.add('off');
   document.body.classList.remove('start');
+  screenInert();
+  elQ.focus({preventScroll:true});
   frameSky();
   setTimeout(function(){ elStart.style.display='none'; },560);
 }
@@ -3001,7 +3072,7 @@ function enterApp(){
      n:cnt(function(n){ return !!(T.m[n]&16); }),
      go:function(){ F.age={}; F.age[4]=1; }},
     {t:'Мои треки на повторе',
-     w:'То, что дошло до личного чарта года — и вернулось в него не раз',
+     w:'Записи, которые попадали в мой личный чарт года',
      n:cnt(function(n){ return !!T.r[n]; }),
      go:function(){ F.rep=true; SORT='rank'; }},
     {t:'Мне было шестнадцать, и это слышно',
@@ -3048,7 +3119,8 @@ function enterApp(){
   });
   function goSearch(){
     var v=elSq.value.trim();
-    F=blank(); F.q=v; elQ.value=v; sel=-1;
+    F=blank(); F.q=v; elQ.value=v; sel=-1; SORT='rel';
+    document.getElementById('sort').value=SORT;
     enterApp(); apply();
     if(v) setTimeout(function(){ elQ.focus(); },600);
   }
@@ -3059,13 +3131,13 @@ function enterApp(){
      умещается в пять абзацев, а лишний файл пришлось бы держать в согласии
      с этим. */
   var ab=document.getElementById('about');
-  function about(on){ ab.classList.toggle('on',on); }
+  function about(on){
+    ab.classList.toggle('on',on);
+    modalState(on?ab:null,on?document.getElementById('aboutx'):null);
+  }
   document.getElementById('sabout').addEventListener('click',function(){ about(true); });
   document.getElementById('aboutx').addEventListener('click',function(){ about(false); });
   ab.addEventListener('click',function(e){ if(e.target===ab) about(false); });
-  addEventListener('keydown',function(e){
-    if(e.key==='Escape'&&ab.classList.contains('on')){ e.stopPropagation(); about(false); }
-  },true);
 })();
 
 /* ==================================================================== звук
@@ -3165,7 +3237,8 @@ window.libSound=function(){
 document.getElementById('tot').textContent=N;
 loadHash();
 if(location.hash.replace(/^#/,'')){ START=false; elStart.style.display='none'; }
-else { document.body.classList.add('start'); setTimeout(function(){ elSq.focus(); },120); }
+else { document.body.classList.add('start'); }
+screenInert();
 modeLabel(); tlPane();
 resize();
 apply();

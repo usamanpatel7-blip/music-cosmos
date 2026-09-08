@@ -13,7 +13,8 @@ tools/player.js, — а копии в страницах расставляет 
     var CAT={…};                      ← data/catalog.json
     /* < player */ … /* player > */   ← tools/player.js
 """
-import io, os, re, sys
+import io, os, re, sys, json
+from map_data import map_data
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PAGES = ['src/11-library.html', 'src/12-portrait.html', 'src/13-epochs.html']
@@ -48,3 +49,17 @@ for rel in PAGES:
         io.open(path, 'w', encoding='utf-8').write(page)
     print('  %-24s %s · %.0f КБ' % (os.path.basename(rel), ', '.join(hits),
                                     len(page.encode()) / 1024))
+
+# Page 08 uses a compact tree, but its source is the same corrected catalog.
+path = os.path.join(ROOT, 'src', '08-cosmos.html')
+page = io.open(path, encoding='utf-8').read()
+tree = map_data(json.loads(data))
+raw = json.dumps(tree, ensure_ascii=False, separators=(',', ':'))
+if '</script' in raw.lower():
+    sys.exit('во вшиваемых данных карты есть </script')
+page, hits = re.subn(r'var DATA=.*?;\n', lambda m: 'var DATA=' + raw + ';\n',
+                     page, count=1, flags=re.S)
+if hits != 1:
+    sys.exit('в src/08-cosmos.html не найдено место для данных')
+io.open(path, 'w', encoding='utf-8', newline='\n').write(page)
+print('  08-cosmos.html           данные из catalog.json')
