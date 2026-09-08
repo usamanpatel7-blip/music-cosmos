@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%23070b16%22/%3E%3Ccircle cx=%2211%22 cy=%2215%22 r=%225%22 fill=%22%23f0b45c%22/%3E%3Ccircle cx=%2222%22 cy=%2219%22 r=%223.4%22 fill=%22%23ff7a6b%22/%3E%3Ccircle cx=%2224%22 cy=%229%22 r=%221.7%22 fill=%22%238fd0ff%22/%3E%3C/svg%3E">
+<title>Спросить в ответ</title>
+<meta name="description" content="Фронт работ по познавательному слою Music Cosmos: сайт рассказывает и ничего не спрашивает. Семь механик, которые учат слышать, четыре очереди, ни одного видео.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Спросить в ответ">
+<meta property="og:description" content="Познавательный слой Music Cosmos: семь механик, которые учат слышать, четыре очереди работ, ни одного видео.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#EEEFF4; --surface:#FFFFFF; --surface-2:#F4F5F9;
+    --ink:#15141D; --ink-2:#45435A; --muted:#6C6A82;
+    --line:#D8D7E2; --line-soft:#E6E5EE;
+    --accent:#4E3BC4; --accent-soft:#EDEBFB;
+    --acad:#A85B12; --daily:#4E5BD4; --ramp:78,59,196;
+    --crit:#A8453A; --warn:#8C6F1C; --ok:#2E7D5B;
+    --q0:#4E3BC4; --q1:#2F7FA8; --q2:#3E8C6A; --q3:#9A6A1E;
+    --shadow:0 1px 2px rgba(21,20,29,.06), 0 8px 24px -12px rgba(21,20,29,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0F1016; --surface:#171822; --surface-2:#1D1E2B;
+      --ink:#E9E8F1; --ink-2:#B6B4C8; --muted:#8A88A0;
+      --line:#2C2C3C; --line-soft:#242433;
+      --accent:#A79AF6; --accent-soft:#1E1B33;
+      --acad:#C08340; --daily:#7684E4; --ramp:167,154,246;
+      --crit:#E08A7E; --warn:#D2B463; --ok:#6FC79A;
+      --q0:#A79AF6; --q1:#68B5D8; --q2:#6FC3A4; --q3:#D2A85E;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0F1016; --surface:#171822; --surface-2:#1D1E2B;
+    --ink:#E9E8F1; --ink-2:#B6B4C8; --muted:#8A88A0;
+    --line:#2C2C3C; --line-soft:#242433;
+    --accent:#A79AF6; --accent-soft:#1E1B33;
+    --acad:#C08340; --daily:#7684E4; --ramp:167,154,246;
+    --crit:#E08A7E; --warn:#D2B463; --ok:#6FC79A;
+    --q0:#A79AF6; --q1:#68B5D8; --q2:#6FC3A4; --q3:#D2A85E;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1000px; margin:0 auto; padding:56px 24px 80px}
+  h1,h2,h3{font-family:Archivo,"IBM Plex Sans",sans-serif; text-wrap:balance; margin:0}
+  h1{font-weight:800; font-size:clamp(2rem,5.2vw,3.2rem); letter-spacing:-.03em; line-height:1.05}
+  h2{font-weight:800; font-size:1.55rem; letter-spacing:-.02em}
+  h3{font-weight:600; font-size:1.02rem; letter-spacing:-.008em}
+  p{margin:0}
+  a{color:var(--accent)}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:3px}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted)}
+  .lede{color:var(--ink-2); font-size:1.07rem; max-width:64ch; margin-top:18px}
+  .lede strong{color:var(--ink); font-weight:600}
+  header.top{display:flex; flex-direction:column; gap:14px; padding-bottom:36px; border-bottom:1px solid var(--line)}
+  .back{font-family:"IBM Plex Mono",monospace; font-size:.76rem; letter-spacing:.06em; text-decoration:none}
+  section{margin-top:58px}
+  .shead{display:flex; flex-direction:column; gap:9px; margin-bottom:22px}
+  .shead p{color:var(--ink-2); max-width:68ch; font-size:.96rem}
+  .shead .eyebrow{color:var(--accent)}
+
+  .figures{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr));
+    gap:1px; background:var(--line-soft); border:1px solid var(--line-soft);
+    border-radius:10px; overflow:hidden; margin-top:34px}
+  .fig{background:var(--surface); padding:16px 18px; display:flex; flex-direction:column; gap:3px}
+  .fig b{font-family:Archivo,sans-serif; font-weight:800; font-size:1.7rem;
+    letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1.1}
+  .fig span{font-size:.79rem; color:var(--muted); line-height:1.35}
+  .fig.alarm b{color:var(--crit)}
+
+  .tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px;
+    background:var(--surface); box-shadow:var(--shadow)}
+  table{border-collapse:collapse; width:100%; min-width:620px; font-size:.9rem}
+  th,td{text-align:left; padding:11px 14px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+  thead th{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); font-weight:500;
+    background:var(--surface-2); border-bottom:1px solid var(--line)}
+  tbody tr:last-child td{border-bottom:none}
+  td.num{font-variant-numeric:tabular-nums; white-space:nowrap}
+  td.field{font-family:"IBM Plex Mono",monospace; font-size:.83rem; white-space:nowrap}
+  td.note{color:var(--ink-2)}
+  .chip{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:.7rem;
+    letter-spacing:.05em; padding:2px 8px; border-radius:20px; white-space:nowrap;
+    border:1px solid currentColor; font-weight:500}
+  .chip.no{color:var(--crit)} .chip.part{color:var(--warn)} .chip.yes{color:var(--ok)}
+
+  /* ---- поле энергия × свет ---- */
+  .fieldgrid{display:grid; grid-template-columns:auto repeat(5,1fr); gap:2px;
+    align-items:stretch; margin-top:4px}
+  .fieldgrid .rl{font-family:"IBM Plex Mono",monospace; font-size:.7rem; color:var(--muted);
+    display:flex; align-items:center; justify-content:flex-end; padding-right:8px; white-space:nowrap}
+  .cell{aspect-ratio:1.9/1; border-radius:3px; display:flex; align-items:center;
+    justify-content:center; font-family:"IBM Plex Mono",monospace; font-size:.72rem;
+    font-variant-numeric:tabular-nums; background:var(--surface-2); color:var(--ink-2);
+    box-shadow:inset 0 0 0 999px rgba(var(--ramp), var(--v, 0))}
+  .cell.deep{color:var(--surface)}
+  .fieldfoot{display:grid; grid-template-columns:auto repeat(5,1fr); gap:2px; margin-top:6px}
+  .fieldfoot .rl{visibility:hidden}
+  .fieldfoot span{font-family:"IBM Plex Mono",monospace; font-size:.7rem; color:var(--muted);
+    text-align:center}
+  .fieldwrap{border:1px solid var(--line); border-radius:10px; background:var(--surface);
+    padding:18px; box-shadow:var(--shadow); overflow-x:auto}
+  .fieldwrap .cap{font-size:.85rem; color:var(--ink-2); margin-bottom:14px; max-width:70ch}
+  .fieldwrap .cap b{color:var(--ink); font-weight:600}
+  .fieldinner{min-width:460px}
+
+  .bets{display:grid; gap:1px; background:var(--line-soft);
+    border:1px solid var(--line-soft); border-radius:10px; overflow:hidden}
+  .bet{background:var(--surface); padding:16px 18px; display:grid;
+    grid-template-columns:minmax(180px,.85fr) 1.6fr; gap:6px 22px; align-items:start}
+  .bet .t{font-family:Archivo,sans-serif; font-weight:600; font-size:1rem;
+    letter-spacing:-.01em; color:var(--ink)}
+  .bet .d{font-size:.9rem; color:var(--ink-2)}
+  .bet .d b{color:var(--ink); font-weight:600}
+
+  .loop{display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); margin-top:6px}
+  .step{background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:15px 17px; display:flex; flex-direction:column; gap:6px}
+  .step .n{font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--accent)}
+  .step .t{font-weight:600; font-size:.97rem}
+  .step .d{font-size:.86rem; color:var(--ink-2)}
+
+  .tools{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(295px,1fr))}
+  .tool{background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:17px 19px 15px; display:flex; flex-direction:column; gap:9px}
+  .tool .teach{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--accent)}
+  .tool h3{font-size:1.06rem}
+  .tool .d{font-size:.89rem; color:var(--ink-2); flex:1}
+  .tool .d b{color:var(--ink); font-weight:600}
+  .tool .need{font-family:"IBM Plex Mono",monospace; font-size:.73rem; color:var(--muted);
+    border-top:1px solid var(--line-soft); padding-top:9px; line-height:1.5}
+  .tool.ready{border-color:var(--ok)}
+  .tool.ready .teach{color:var(--ok)}
+
+  .sense{display:grid; gap:1px; background:var(--line-soft);
+    border:1px solid var(--line-soft); border-radius:10px; overflow:hidden}
+  .sense > div{background:var(--surface); padding:15px 18px; display:flex;
+    flex-direction:column; gap:5px}
+  .sense .k{font-family:"IBM Plex Mono",monospace; font-size:.71rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted)}
+  .sense .v{font-size:.92rem; color:var(--ink-2)}
+  .sense .v b{color:var(--ink); font-weight:600}
+
+  .rail{position:relative; padding-left:34px}
+  .rail::before{content:""; position:absolute; left:9px; top:10px; bottom:10px; width:1px;
+    background:linear-gradient(180deg,var(--q0),var(--q1),var(--q2),var(--q3)); opacity:.5}
+  .tier{position:relative; margin-bottom:42px}
+  .tier::before{content:""; position:absolute; left:-30px; top:7px; width:11px; height:11px;
+    border-radius:50%; background:var(--tc); box-shadow:0 0 0 4px var(--bg), 0 0 12px var(--tc)}
+  .tier-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; margin-bottom:5px}
+  .tier-id{font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:.76rem;
+    letter-spacing:.1em; color:var(--tc); text-transform:uppercase}
+  .tier-why{color:var(--muted); font-size:.87rem; max-width:66ch; margin-bottom:16px}
+  .items{display:grid; gap:1px; background:var(--line-soft);
+    border:1px solid var(--line-soft); border-radius:10px; overflow:hidden}
+  .item{background:var(--surface); padding:14px 16px; display:grid;
+    grid-template-columns:auto 1fr; gap:4px 12px}
+  .item .num{font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--tc);
+    font-variant-numeric:tabular-nums; padding-top:2px}
+  .item .body{display:flex; flex-direction:column; gap:5px; min-width:0}
+  .item .desc{font-size:.89rem; color:var(--ink-2)}
+  .tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:1px}
+  .tag{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.04em;
+    color:var(--muted); background:var(--surface-2); border:1px solid var(--line-soft);
+    padding:1px 7px; border-radius:4px; white-space:nowrap}
+  .tag.blocked{color:var(--crit); border-color:currentColor; background:transparent}
+  .tag.win{color:var(--ok); border-color:currentColor; background:transparent}
+
+  .decisions{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(285px,1fr))}
+  .dec{background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:16px 18px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow)}
+  .dec .q{font-weight:600; font-size:.96rem; color:var(--ink)}
+  .dec .opt{font-size:.86rem; color:var(--ink-2)}
+  .dec .opt b{font-weight:600; color:var(--ink)}
+  .dec .imp{font-family:"IBM Plex Mono",monospace; font-size:.7rem; color:var(--muted);
+    border-top:1px solid var(--line-soft); padding-top:8px; margin-top:2px}
+  .dec.key{border-color:var(--accent); background:var(--accent-soft)}
+
+  .callout{margin-top:22px; padding:16px 18px; border-radius:10px;
+    background:var(--accent-soft); border:1px solid var(--line-soft);
+    font-size:.92rem; color:var(--ink-2); max-width:78ch}
+  .callout b{color:var(--ink); font-weight:600}
+  .shifts{display:grid; gap:1px; background:var(--line-soft);
+    border:1px solid var(--line-soft); border-radius:10px; overflow:hidden}
+  .shift{background:var(--surface); padding:14px 17px; display:grid;
+    grid-template-columns:auto 1fr; gap:4px 14px}
+  .shift .id{font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--accent);
+    padding-top:2px; white-space:nowrap}
+  .shift .d{font-size:.89rem; color:var(--ink-2)}
+  .shift .d b{color:var(--ink); font-weight:600}
+  .anti{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px}
+  .anti span{font-size:.83rem; color:var(--muted); background:var(--surface-2);
+    border:1px solid var(--line-soft); border-radius:20px; padding:4px 12px;
+    text-decoration:line-through; text-decoration-color:var(--line)}
+  pre.code{font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--ink-2);
+    background:var(--surface-2); border:1px solid var(--line-soft); border-radius:8px;
+    padding:12px 14px; overflow-x:auto; margin:14px 0 0; line-height:1.7}
+  code{font-family:"IBM Plex Mono",monospace; font-size:.85em; color:var(--ink)}
+  footer{margin-top:64px; padding-top:26px; border-top:1px solid var(--line);
+    display:flex; flex-direction:column; gap:12px; font-size:.87rem; color:var(--muted)}
+  @media (max-width:660px){
+    .wrap{padding:36px 16px 64px}
+    .rail{padding-left:24px}
+    .tier::before{left:-21px}
+    .item{grid-template-columns:1fr}
+    .item .num{padding-top:0}
+    .bet{grid-template-columns:1fr; gap:4px}
+    .shift{grid-template-columns:1fr; gap:3px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; transition-duration:.001ms !important}
+  }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <a class="back" href="index.html">← все страницы</a>
+  <div class="eyebrow">14 · познавательный слой · семь механик · четыре очереди · ноль видео</div>
+  <h1>Спросить в ответ</h1>
+  <p class="lede">
+    За последние недели сайт стал говорить хорошо. Каталог ищет, карта летает,
+    портрет читается как повесть, эпохи звучат по тридцать секунд. И при этом
+    <strong>он ни разу ни о чём не спрашивает того, кто пришёл</strong>. Посетитель
+    узнаёт про чужого человека — про то, как в одиннадцать лет была одна группа на треть
+    библиотеки, а в двадцать два всё перевернулось, — и уходит, ничего не узнав про себя.
+    Познавательный слой начинается ровно здесь: не в том, чтобы рассказать больше,
+    а в том, чтобы задать первый вопрос. Ниже — какие, из чего они собираются
+    (почти всё уже стоит) и в каком порядке это делать.
+  </p>
+  <div class="figures">
+    <div class="fig alarm"><b>0</b><span>вопросов, на которые посетитель может ответить</span></div>
+    <div class="fig"><b>4334</b><span>записи звучат: тридцать секунд из витрины Apple, без входа и без сервера</span></div>
+    <div class="fig"><b>42,2 %</b><span>записей получили координаты звучания по умолчанию — по субжанру, а не по звуку</span></div>
+    <div class="fig"><b>1 из 10</b><span>эпох написана. Остальным девяти нужен не текст, а вопрос</span></div>
+  </div>
+</header>
+
+<section>
+  <div class="shead">
+    <div class="eyebrow">что уже стоит</div>
+    <h2>Редкий случай: звук уже играет</h2>
+    <p>
+      Обычно продукт про слушание упирается в звук — права, ключи, бэкенд, авторизация.
+      Здесь этого барьера нет: превью берутся из витрины Apple тегом <code>&lt;script&gt;</code>,
+      идентификатор есть у всех 4334 записей, страница работает даже с <code>file://</code>.
+      Всё, что нужно познавательному слою, кроме самих вопросов, уже собрано.
+    </p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>актив</th><th>где</th><th>что из этого следует</th></tr></thead>
+      <tbody>
+        <tr><td class="field">превью 30 с</td><td class="note"><code>tools/player.js</code></td>
+            <td class="note">Слепое прослушивание можно делать сегодня. Ни ключа, ни бэкенда, ни входа в Apple Music</td></tr>
+        <tr><td class="field">поле «энергия × свет»</td><td class="note"><code>catalog.json</code>, поля <code>E</code> и <code>L</code></td>
+            <td class="note">Готовая система координат для ощущения: пять делений движения × пять делений цвета. Есть у каждой записи</td></tr>
+        <tr><td class="field">шесть возрастных полок</td><td class="note"><code>catalog.json</code>, <code>shelves</code></td>
+            <td class="note">От «11–15» до «сейчас 25–26». Возраст можно спрашивать на слух</td></tr>
+        <tr><td class="field">24 вещи в двух прочтениях</td><td class="note">разбор в <a href="12-portrait.html">портрете</a></td>
+            <td class="note">51 запись, уже найденная и сопоставленная. Готовый материал для сравнения без подготовки</td></tr>
+        <tr><td class="field">восемь признаков звучания</td><td class="note"><code>catalog.json</code>, поле <code>F</code></td>
+            <td class="note">«красивое», «радикальное», «камерное», «виртуозное» и ещё четыре — словарь, на котором можно спрашивать. Проставлены у 2552 записей</td></tr>
+        <tr><td class="field">карта, каталог, эпохи, портрет</td><td class="note">08, 11, 13, 12</td>
+            <td class="note">Есть куда поставить ответ и есть чем показать, где он оказался</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <div class="eyebrow">диагноз</div>
+    <h2>Три причины, по которым это пока выставка, а не познание</h2>
+  </div>
+  <div class="bets">
+    <div class="bet">
+      <div class="t">Посетителю не отведена роль</div>
+      <div class="d">Портрет говорит о владельце в третьем лице, и говорит отлично. Но это <b>рассказ о постороннем человеке</b>: узнать из него можно про него, а не про себя. Единственное, что предложено посетителю, — согласиться.</div>
+    </div>
+    <div class="bet">
+      <div class="t">Ответу некуда попасть</div>
+      <div class="d">Хранилище браузера используется на трёх страницах — и всюду под кеш адресов превью и состояние фильтров. <b>Ни одной величины, которую породил бы человек</b>, в проекте не существует.</div>
+    </div>
+    <div class="bet">
+      <div class="t">Слово приходит раньше уха</div>
+      <div class="d">На странице эпох сначала написано, что это за эпоха, и только потом можно послушать. Порядок кажется естественным, но <b>он лишает звук работы</b>: услышанное уже названо, и проверять нечего.</div>
+    </div>
+  </div>
+  <div class="callout">
+    <b>И поэтому отказ от видео — не потеря канала.</b> Ролик, ради которого в
+    <a href="09-story.html">разборе форм</a> половина оценок ставилась по графе «кадр», —
+    это тот же монолог, только дороже и без возможности переспросить. Убрав его,
+    проект теряет способ рассказать и не теряет ни одного способа спросить. Звук,
+    вопрос, тишина, движение карты и полторы сотни слов текста — этого достаточно,
+    и всё это уже написано.
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <div class="eyebrow">ставка</div>
+    <h2>Шесть решений, из которых выводится остальное</h2>
+    <p>Не пожелания к тону, а ограничения, определяющие объём. Каждое можно отменить — тогда меняется список механик ниже.</p>
+  </div>
+  <div class="bets">
+    <div class="bet">
+      <div class="t">Чужая библиотека честнее своей</div>
+      <div class="d">Кажется, что познавать себя надо на своей музыке. На своей не выходит: она подтверждает то, что человек о себе уже знает. <b>Чужие четырнадцать лет в звуке задают вопросы, на которые нет заготовленного ответа</b> — и именно поэтому эта библиотека годится посторонним, хотя собрана одним.</div>
+    </div>
+    <div class="bet">
+      <div class="t">Ухо раньше слова</div>
+      <div class="d">Сначала звучит, потом называется. Термин, эпоха и имя приходят как имя уже случившемуся ощущению. Порядок обратный школьному и <b>ровно поэтому работает без видео</b>: видео всегда объясняет поверх звука.</div>
+    </div>
+    <div class="bet">
+      <div class="t">Вопрос вместо утверждения</div>
+      <div class="d">Продукт не сообщает посетителю его вкус. Он спрашивает, запоминает ответ и показывает форму ответов. <b>Знание о себе производит слушатель</b>, продукт держит зеркало и считает.</div>
+    </div>
+    <div class="bet">
+      <div class="t">Ответ — это данные, которых у проекта нет</div>
+      <div class="d">Сорок два процента записей стоят в поле «энергия × свет» там, куда их поставил субжанр, а не звук. Ответы слушателя — <b>единственный источник, способный это исправить</b>. Учебная механика и починка данных здесь буквально одно действие.</div>
+    </div>
+    <div class="bet">
+      <div class="t">Ответы остаются в браузере</div>
+      <div class="d">Ни аккаунтов, ни сервера, ни аналитики поведения. Это и позиция, и <b>минус целый слой работ</b>: у проекта до сих пор нет бэкенда, и заводить его ради обучения не нужно.</div>
+    </div>
+    <div class="bet">
+      <div class="t">Ни очков, ни серий, ни уровней</div>
+      <div class="d">Награда — одна фраза о себе, которую до этого нельзя было написать. Продукт, который считает дни подряд, начинает их добывать, и <b>честность зеркала на этом кончается</b>.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <div class="eyebrow">поле</div>
+    <h2>Система координат для ощущения уже есть — и наполовину угадана</h2>
+    <p>
+      В каталоге у каждой записи две величины: сколько в ней движения
+      (<code>замерло · дышит · идёт · гонит · рвёт</code>) и какого она цвета
+      (<code>мрак · тень · ровно · тепло · свет</code>). Это готовая сетка,
+      на которую можно ставить точку ухом. Вот как библиотека лежит на ней сейчас.
+    </p>
+  </div>
+  <div class="fieldwrap">
+    <div class="cap">
+      Число в клетке — сколько записей в ней стоит. <b>Больше половины библиотеки
+      собралось в трёх клетках из двадцати пяти</b>, четыре клетки пусты совсем:
+      разметка по умолчанию сгоняет всё к середине, и фильтр по настроению
+      различает хуже, чем мог бы.
+    </div>
+    <div class="fieldinner">
+      <div class="fieldgrid">
+        <div class="rl">свет</div>
+        <div class="cell" style="--v:0.00">0</div><div class="cell" style="--v:0.00">0</div><div class="cell" style="--v:0.09">5</div><div class="cell" style="--v:0.20">26</div><div class="cell" style="--v:0.20">27</div>
+        <div class="rl">тепло</div>
+        <div class="cell" style="--v:0.12">8</div><div class="cell" style="--v:0.46">170</div><div class="cell deep" style="--v:0.75">499</div><div class="cell" style="--v:0.45">163</div><div class="cell" style="--v:0.24">40</div>
+        <div class="rl">ровно</div>
+        <div class="cell" style="--v:0.10">6</div><div class="cell deep" style="--v:0.65">363</div><div class="cell deep" style="--v:0.72">451</div><div class="cell deep" style="--v:0.65">357</div><div class="cell" style="--v:0.16">16</div>
+        <div class="rl">тень</div>
+        <div class="cell" style="--v:0.29">60</div><div class="cell" style="--v:0.48">181</div><div class="cell deep" style="--v:0.92">915</div><div class="cell deep" style="--v:0.92">944</div><div class="cell" style="--v:0.32">73</div>
+        <div class="rl">мрак</div>
+        <div class="cell" style="--v:0.00">0</div><div class="cell" style="--v:0.00">0</div><div class="cell" style="--v:0.09">5</div><div class="cell" style="--v:0.12">9</div><div class="cell" style="--v:0.16">16</div>
+      </div>
+
+      <div class="fieldfoot">
+        <div class="rl">x</div>
+        <span>замерло</span><span>дышит</span><span>идёт</span><span>гонит</span><span>рвёт</span>
+      </div>
+    </div>
+  </div>
+  <p class="lede" style="margin-top:22px; max-width:72ch">
+    Отсюда и берётся главная механика. Человек слушает двадцать пять секунд, не зная,
+    кто играет, и ставит точку на этом поле. Ему открывается, куда её поставил каталог,
+    и что это была за запись. Он учится слышать — а его ответ ложится строкой в тот самый
+    файл правок, из которого поле и собирается:
+  </p>
+  <pre class="code"># tools/extract/mood.tsv — формат уже существует и читается сборкой
+id:1560901398	4	2	Keep it Going — поставлено на слух, 11 ответов</pre>
+  <p class="lede" style="max-width:72ch">
+    Ни нового формата данных, ни нового конвейера. <strong>Учебная механика и разметка
+    каталога — одно и то же действие</strong>, и это самая дешёвая петля, которая
+    в проекте вообще возможна.
+  </p>
+  <div class="loop" style="margin-top:24px">
+    <div class="step"><div class="n">шаг 1</div><div class="t">Слушает вслепую</div><div class="d">25 секунд без имени, автора и эпохи. Ставит точку на поле.</div></div>
+    <div class="step"><div class="n">шаг 2</div><div class="t">Видит расхождение</div><div class="d">Своя точка и точка каталога рядом. Между ними — расстояние, и это урок.</div></div>
+    <div class="step"><div class="n">шаг 3</div><div class="t">Узнаёт запись</div><div class="d">Имя, автор, эпоха, возраст владельца — после ответа, не до.</div></div>
+    <div class="step"><div class="n">шаг 4</div><div class="t">Ответ идёт в дело</div><div class="d">Локально — уточняет вопросы дальше. У владельца — строкой в <code>mood.tsv</code>.</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <div class="eyebrow">механики</div>
+    <h2>Семь инструментов</h2>
+    <p>
+      Каждый включается отдельно и проверяется отдельно. Ни один не требует нового
+      источника данных: всё собирается из каталога, плеера и того, что уже посчитано
+      в портрете и разборе форм.
+    </p>
+  </div>
+  <div class="tools">
+
+    <div class="tool ready">
+      <div class="teach">всё уже есть</div>
+      <h3>Поле на слух</h3>
+      <div class="d">Двадцать пять секунд неизвестной записи — и точка на поле «энергия × свет». Потом расхождение, потом имя. <b>Основная механика: она учит слышать и одновременно чинит 1828 записей, стоящих по умолчанию.</b> Через двадцать попыток видно, что вы слышите точно, а где систематически промахиваетесь — например, принимаете медленное за тёмное.</div>
+      <div class="need">нужно: вопросы · журнал ответов · экспорт в mood.tsv</div>
+    </div>
+
+    <div class="tool ready">
+      <div class="teach">материал готов</div>
+      <h3>Два прочтения</h3>
+      <div class="d">Одна вещь у двух исполнителей подряд — Гилельс и Гринберг, Гульд и Диннерстайн. В портрете это показано как факт о владельце; здесь становится вопросом к вам: <b>какое из двух ваше — и только потом, чем они отличаются.</b> 24 вещи и 51 запись уже сопоставлены, подбирать нечего.</div>
+      <div class="need">нужно: интерфейс выбора · порядок вслепую</div>
+    </div>
+
+    <div class="tool ready">
+      <div class="teach">полки размечены</div>
+      <h3>Возраст на слух</h3>
+      <div class="d">Фрагмент — и один вопрос: это из одиннадцати, шестнадцати, девятнадцати, двадцати двух или из «сейчас»? Шесть полок проставлены у всей библиотеки. <b>Это звучащая версия главного сюжета проекта</b>: взросление слышно, и проверить это можно за пять минут, а не прочитав пять глав.</div>
+      <div class="need">нужно: вопросы · журнал ответов</div>
+    </div>
+
+    <div class="tool">
+      <div class="teach">учит термину через звук</div>
+      <h3>Словарь на ощупь</h3>
+      <div class="d">Термин не начинается с определения. «Остинато» сначала даёт три фрагмента подряд и зажигает на карте тела, где оно есть; определение — один абзац после, когда ухо уже поймало общее. Восемь признаков звучания в каталоге («камерное», «виртуозное», «радикальное») — <b>готовая первая дюжина словарных статей.</b></div>
+      <div class="need">нужно: ≈ 40 терминов · разметка по записям</div>
+    </div>
+
+    <div class="tool">
+      <div class="teach">даёт девяти эпохам содержание</div>
+      <h3>Пороги</h3>
+      <div class="d">Эпоха — это момент, когда поменялось представление о норме. Два фрагмента по разные стороны границы и вопрос: что изменилось? <b>Девять эпох из десяти сейчас стоят без эссе</b>, и порог — способ дать им содержание, не написав девять эссе: одна пара, три предложения, один вопрос.</div>
+      <div class="need">нужно: 9 пар · по 3 фразы на порог</div>
+    </div>
+
+    <div class="tool">
+      <div class="teach">собирает то, чего нет в данных</div>
+      <h3>Что осталось</h3>
+      <div class="d">Восемь треков продержались в годовом топе два года подряд, пять лет — ни один. Это можно послушать целиком за четыре минуты, а потом задать единственный вопрос, на который у продукта нет данных: <b>а что осталось у вас — и с какого возраста.</b> Одна строка ответа, и она ваша.</div>
+      <div class="need">нужно: хранилище в браузере · экспорт своих ответов</div>
+    </div>
+
+    <div class="tool">
+      <div class="teach">возвращает ответы человеку</div>
+      <h3>Ваш портрет</h3>
+      <div class="d">Пять-семь фраз, выведенных из ваших же ответов, и у каждой две кнопки: «это про меня» и «это не про меня». Обратная сторона <a href="12-portrait.html">двенадцатой страницы</a>: там портрет владельца, написанный по данным, здесь — ваш, написанный по слуху. <b>Несогласие ценнее согласия</b>: это момент, когда человек формулирует себя сам.</div>
+      <div class="need">нужно: журнал ответов · формулировки</div>
+    </div>
+
+  </div>
+  <p class="lede" style="max-width:72ch; margin-top:18px">
+    Восьмая механика — <strong>возвращение</strong>: через три недели тот же фрагмент
+    и единственный вопрос, звучит ли он так же. Это единственная допустимая здесь форма
+    повторения, и стоит она одного поля с датой в журнале ответов.
+  </p>
+</section>
+
+<section>
+  <div class="shead">
+    <div class="eyebrow">чувственный слой</div>
+    <h2>Чем передаётся ощущение, когда нет видео</h2>
+    <p>То, что придётся сделать точно, а не «красиво»: у каждого пункта есть проверяемая величина.</p>
+  </div>
+  <div class="sense">
+    <div><div class="k">атом опыта</div><div class="v"><b>25 секунд, не запись целиком.</b> Столько держится внимание на незнакомом звуке без картинки, и ровно столько отдаёт витрина. Начало фрагмента витрина выбирает сама — для академических записей это иногда середина части, и это <b>единственное место, где придётся править руками.</b></div></div>
+    <div><div class="k">тишина</div><div class="v"><b>Полторы секунды молчания и темноты между фрагментами</b> — обязательные, не настраиваемые. Без паузы два фрагмента слипаются в один, и сравнение в «Двух прочтениях» перестаёт работать.</div></div>
+    <div><div class="k">темнота как материал</div><div class="v">На время звучания интерфейс уходит целиком: ни панелей, ни подписей, ни счётчиков. Остаётся поле, точка и звук. Интерфейс возвращается по окончании фрагмента, а не по движению мыши.</div></div>
+    <div><div class="k">поле вместо карты</div><div class="v">У познавательного слоя другой главный экран. <b>Карта показывает принадлежность — поле показывает ощущение</b>, и вопрос «на что это похоже» задаётся на поле. Карта включается на шаге узнавания: вот куда эта запись попала в чужой жизни.</div></div>
+    <div><div class="k">текст</div><div class="v"><b>Один экран — одна мысль, полторы сотни слов.</b> Длинная статья здесь вредна: она конкурирует со звуком. Эссе о барокко — правильный формат для страницы эпох и неправильный для урока.</div></div>
+    <div><div class="k">движение</div><div class="v">Перелёт камеры — тоже ощущение, и он уже написан. «Далеко» и «близко» в этой карте читаются телом; на шаге узнавания камера доводит до места, а не показывает его сразу.</div></div>
+    <div><div class="k">уважение к настройке</div><div class="v">При <code>prefers-reduced-motion: reduce</code> перелёты укорачиваются, дыхание гаснет. <b>Звук, вопросы и тексты остаются полностью</b> — на них всё и держится, так что познавательный слой доступен целиком.</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <div class="eyebrow">данные</div>
+    <h2>Чего не хватает</h2>
+    <p>Коротко — потому что почти всё уже есть. Это полный список нового.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>что</th><th>для чего</th><th>есть?</th><th>объём и способ</th></tr></thead>
+      <tbody>
+        <tr><td class="field">журнал ответов</td><td class="note">все механики, портрет, возвращение</td><td><span class="chip no">нет</span></td>
+            <td class="note">Схема на страницу, хранение в браузере. Обязательные поля — запись, ответ, дата. Без даты нет «возвращения»</td></tr>
+        <tr><td class="field">отбор вопросов</td><td class="note">поле на слух, возраст на слух</td><td><span class="chip no">нет</span></td>
+            <td class="note">Правило выбора следующей записи: не подряд, не из одной эпохи, с перевесом в сторону тех 1828, что стоят по умолчанию</td></tr>
+        <tr><td class="field">экспорт в mood.tsv</td><td class="note">чтобы ответы чинили каталог</td><td><span class="chip part">формат готов</span></td>
+            <td class="note">Кнопка «выгрузить правки»: строки <code>id:…&nbsp;энергия&nbsp;свет</code>. Конвейер их уже читает</td></tr>
+        <tr><td class="field">смещение фрагмента</td><td class="note">записи, где витрина даёт неудачные 25 секунд</td><td><span class="chip part">частично</span></td>
+            <td class="note">Витрина отдаёт фрагмент сама; править — только там, где он попал в паузу. Оценивается после первой сотни вопросов, не раньше</td></tr>
+        <tr><td class="field">девять порогов</td><td class="note">эпохи без эссе</td><td><span class="chip no">нет</span></td>
+            <td class="note">Девять пар записей и по три фразы. Это часы, а не недели, — в отличие от девяти эссе</td></tr>
+        <tr><td class="field">словарь</td><td class="note">словарь на ощупь</td><td><span class="chip part">8 признаков</span></td>
+            <td class="note">≈ 40 терминов и разметка по записям. Первые восемь уже проставлены у 2552 записей</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <div class="eyebrow">фронт работ</div>
+    <h2>Четыре очереди</h2>
+    <p>
+      Порядок задан не интересностью, а тем, что первая очередь целиком стоит
+      на готовом: звук играет, поле размечено, полки проставлены. Показать её результат
+      можно через полторы недели, и он сразу отвечает на вопрос, ради которого всё затевалось.
+    </p>
+  </div>
+
+  <div class="rail">
+
+    <div class="tier" style="--tc:var(--q0)">
+      <div class="tier-head"><span class="tier-id">Очередь G</span><h3>Первый вопрос — 1–2 недели</h3></div>
+      <p class="tier-why">
+        Ничего нового не нужно: превью играют, координаты есть, полки проставлены.
+        Пишутся только вопрос, журнал и экран ответа. Это и минимальная проверка всей идеи:
+        если «поле на слух» не увлекает, остальные шесть механик не спасут.
+      </p>
+      <div class="items">
+        <div class="item"><div class="num">G1</div><div class="body"><div class="desc">Экран слепого прослушивания: 25 секунд, тишина, темнота, поле «энергия × свет» и одна точка, которую можно поставить.</div><div class="tags"><span class="tag win">звук готов</span></div></div></div>
+        <div class="item"><div class="num">G2</div><div class="body"><div class="desc">Экран расхождения: ваша точка, точка каталога, расстояние между ними — и только после этого имя, автор, эпоха и возраст полки.</div><div class="tags"><span class="tag">ухо раньше слова</span></div></div></div>
+        <div class="item"><div class="num">G3</div><div class="body"><div class="desc">Журнал ответов в браузере и обещание рядом с первой кнопкой: ответы никуда не уходят. Схема сразу с датой — на ней стоит «возвращение».</div><div class="tags"><span class="tag">схема</span><span class="tag">приватность</span></div></div></div>
+        <div class="item"><div class="num">G4</div><div class="body"><div class="desc">Отбор вопросов: не подряд, не из одной эпохи, с перевесом к 1828 записям, стоящим в поле по умолчанию.</div><div class="tags"><span class="tag">правило</span></div></div></div>
+        <div class="item"><div class="num">G5</div><div class="body"><div class="desc">Выгрузка правок строками <code>mood.tsv</code>. Учебная механика начинает чинить каталог с первого же прохода.</div><div class="tags"><span class="tag win">формат готов</span></div></div></div>
+        <div class="item"><div class="num">G6</div><div class="body"><div class="desc">Четвёртая дверь на главной: «узнать, что вы слышите». Сейчас там три двери, и все три ведут смотреть, а не слушать.</div><div class="tags"><span class="tag">index</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tier" style="--tc:var(--q1)">
+      <div class="tier-head"><span class="tier-id">Очередь H</span><h3>Ещё три вопроса — 2 недели</h3></div>
+      <p class="tier-why">
+        Механики на том же движке, что и первая: тот же плеер, тот же журнал, тот же
+        экран расхождения. Материал для всех трёх уже посчитан — в портрете и в разборе форм.
+      </p>
+      <div class="items">
+        <div class="item"><div class="num">H1</div><div class="body"><div class="desc">Два прочтения: 24 вещи, 51 запись, порядок вслепую, вопрос «какое ваше» перед вопросом «кто играет».</div><div class="tags"><span class="tag win">материал готов</span></div></div></div>
+        <div class="item"><div class="num">H2</div><div class="body"><div class="desc">Возраст на слух: шесть полок, вопрос из одного касания, накопление ошибок по возрастам.</div><div class="tags"><span class="tag win">полки готовы</span></div></div></div>
+        <div class="item"><div class="num">H3</div><div class="body"><div class="desc">Что осталось: восемь выживших треков подряд и один вопрос о вас, ответ на который сохраняется строкой.</div><div class="tags"><span class="tag">09 · находка</span></div></div></div>
+        <div class="item"><div class="num">H4</div><div class="body"><div class="desc">Ваш портрет: пять-семь фраз по вашим ответам, кнопки «это про меня» и «это не про меня», отдельно — что вы слышите точнее всего.</div><div class="tags"><span class="tag">G3</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tier" style="--tc:var(--q2)">
+      <div class="tier-head"><span class="tier-id">Очередь I</span><h3>Слово после звука — параллельно, темп задаёт письмо</h3></div>
+      <p class="tier-why">
+        Единственная очередь, срок которой определяется не разработкой. Здесь же
+        решается судьба девяти эпох без эссе: порог дешевле эссе примерно на порядок
+        и для обучения работает лучше.
+      </p>
+      <div class="items">
+        <div class="item"><div class="num">I1</div><div class="body"><div class="desc">Девять порогов: пара записей по разные стороны границы, три фразы, один вопрос. Эпохи получают содержание, не дожидаясь эссе.</div><div class="tags"><span class="tag win">часы вместо недель</span></div></div></div>
+        <div class="item"><div class="num">I2</div><div class="body"><div class="desc">Словарь на ощупь: сорок терминов, три фрагмента на термин, абзац определения после прослушивания. Первая дюжина — из восьми готовых признаков звучания.</div><div class="tags"><span class="tag">разметка</span></div></div></div>
+        <div class="item"><div class="num">I3</div><div class="body"><div class="desc">Формат урока: одна мысль на экран, полторы сотни слов, вопрос в конце. Фиксируется до написания текстов, иначе каждый будет своим.</div><div class="tags"><span class="tag">формат</span></div></div></div>
+        <div class="item"><div class="num">I4</div><div class="body"><div class="desc">Один эталонный порог целиком и честный замер: сколько он стоит. План на остальные восемь — после замера, а не до.</div><div class="tags"><span class="tag win">начинать сегодня</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tier" style="--tc:var(--q3)">
+      <div class="tier-head"><span class="tier-id">Очередь J</span><h3>Долгая память — со второго месяца</h3></div>
+      <p class="tier-why">Всё, что имеет смысл только на втором и третьем заходе. Раньше делать нечего: не на чем проверить.</p>
+      <div class="items">
+        <div class="item"><div class="num">J1</div><div class="body"><div class="desc">Возвращение: через три недели тот же фрагмент и вопрос «звучит так же?». Одно поле в журнале и одно правило отбора.</div><div class="tags"><span class="tag win">дёшево</span></div></div></div>
+        <div class="item"><div class="num">J2</div><div class="body"><div class="desc">Второй заход поля на слух на тех же записях: единственный честный ответ на вопрос, научил ли продукт слышать.</div><div class="tags"><span class="tag">G1</span></div></div></div>
+        <div class="item"><div class="num">J3</div><div class="body"><div class="desc">Сведение ответов многих слушателей — только если решено, что ответы куда-то уезжают. Сегодня сервера нет и он не нужен.</div><div class="tags"><span class="tag blocked">решение владельца</span></div></div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <div class="eyebrow">сверка</div>
+    <h2>Что это меняет в уже написанном</h2>
+  </div>
+  <div class="shifts">
+    <div class="shift"><div class="id">09 · формы</div><div class="d">Восемнадцать форм оценены по двум графам: «кадр» — как снимается ролик, и «ссылка» — как удерживает пришедшего. <b>Отказ от видео убирает первую графу целиком</b>, и порядок форм пересобирается по одной оставшейся. Формы, набравшие вес только за счёт кадра, из плана выпадают.</div></div>
+    <div class="shift"><div class="id">13 · эпохи</div><div class="d">Одно эссе из десяти написано, остальные девять ждут текста, которого может не быть ещё долго. <b>Порог заменяет ожидание</b>: пара записей и три фразы дают эпохе содержание сегодня, а эссе доедет позже и никуда не денется.</div></div>
+    <div class="shift"><div class="id">каталог · поле</div><div class="d">42,2 % записей стоят в поле по умолчанию, и половина библиотеки собралась в трёх клетках из двадцати пяти. <b>Это чинится не разметкой, а вопросами</b>: слушатель ставит точки быстрее, чем редактор заполняет таблицу, и делает это по звуку.</div></div>
+    <div class="shift"><div class="id">index · главная</div><div class="d">Три двери ведут смотреть: найти, полетать, увидеть во времени. <b>Четвёртой двери — послушать вслепую — нет</b>, а именно она даёт посетителю роль. Пока её нет, страница остаётся рассказом о чужой музыке.</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <div class="eyebrow">решения</div>
+    <h2>Четыре вопроса до старта</h2>
+    <p>Первые два меняют неделю работ, третий и четвёртый — весь продукт.</p>
+  </div>
+  <div class="decisions">
+    <div class="dec">
+      <div class="q">Подтверждаем отказ от видео?</div>
+      <div class="opt"><b>Да</b> — графа «кадр» из разбора форм уходит, порядок работ пересобирается по удержанию, и всё вышеописанное становится основной линией. <b>Нет</b> — очереди идут параллельно и конкурируют за то же время.</div>
+      <div class="imp">Влияет на: приоритеты 09 · весь этот план</div>
+    </div>
+    <div class="dec">
+      <div class="q">Девять эпох: эссе или пороги?</div>
+      <div class="opt"><b>Пороги</b> — содержание появляется за дни, обучение работает лучше, эссе можно дописывать потом. <b>Эссе</b> — единый голос страницы, но девять текстов уровня барокко это месяцы, и всё это время девять эпох стоят пустыми.</div>
+      <div class="imp">Влияет на: очередь I · страницу 13</div>
+    </div>
+    <div class="dec">
+      <div class="q">Уезжают ли ответы куда-нибудь?</div>
+      <div class="opt"><b>Нет</b> — всё в браузере, сервера по-прежнему нет, ответы посетителей чинят каталог только у владельца, вручную. <b>Да</b> — появляется первый в проекте бэкенд, а с ним согласия, хранение и ответственность за чужие данные.</div>
+      <div class="imp">Влияет на: J3 · приватность · наличие бэкенда</div>
+    </div>
+    <div class="dec key">
+      <div class="q">Для кого это в итоге?</div>
+      <div class="opt"><b>Для посетителя</b> — библиотека владельца становится учебным материалом, и её частность превращается в достоинство: чужая жизнь в звуке. <b>Для владельца</b> — это инструмент разметки с хорошим интерфейсом, и тогда половину экранов можно не делать. <b>Это разные продукты</b>, и первый вопрос, который задаст посетитель, — «чьё это и почему я должен слушать».</div>
+      <div class="imp">Влияет на: всё · главную страницу в первую очередь</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <div class="eyebrow">проверка</div>
+    <h2>Чем мерить, что это учит</h2>
+    <p>
+      Обучающие продукты обычно измеряют посещение. Здесь можно иначе: журнал ответов
+      даёт прямые величины, и почти все читаются с первой сотни ответов, на одном человеке.
+    </p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>что</th><th>почему это признак обучения</th><th>чем меряется</th></tr></thead>
+      <tbody>
+        <tr><td class="field">точность на поле</td><td class="note">Ухо либо учится ставить звук на место, либо нет</td><td class="note">Среднее расстояние между вашей точкой и точкой каталога: первые двадцать ответов против последних двадцати</td></tr>
+        <tr><td class="field">различение клеток</td><td class="note">Сначала слышно «быстро — медленно», потом «тень — мрак». Это и есть рост разрешающей способности</td><td class="note">Сколько разных клеток поля вы используете за двадцать ответов. В начале — три-четыре</td></tr>
+        <tr><td class="field">возраст на слух</td><td class="note">Проверяет, слышен ли главный сюжет проекта, а не прочитан ли он</td><td class="note">Доля попаданий по шести полкам; отдельно — куда именно уезжают ошибки</td></tr>
+        <tr><td class="field">несогласие с портретом</td><td class="note">Зеркало работает, когда с ним спорят. Полное согласие означает слишком общие фразы</td><td class="note">Кнопка «это не про меня»: цель — не ноль, а осмысленное несогласие хотя бы с одной фразой из семи</td></tr>
+        <tr><td class="field">возврат через три недели</td><td class="note">Единственная форма лояльности, допустимая без серий и очков</td><td class="note">Доля вернувшихся к вопросу «звучит так же?» — и доля ответивших «нет»</td></tr>
+        <tr><td class="field">первое «не знаю»</td><td class="note">Если оно не наступает, вопросы слишком лёгкие и продукт ничему не учит</td><td class="note">Номер шага, на котором нажали «не знаю». Норма — в первой десятке</td></tr>
+        <tr><td class="field">починенных записей</td><td class="note">Побочная величина, но она показывает, что петля замкнулась</td><td class="note">Сколько из 1828 записей по умолчанию получили координату по слуху</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="anti">
+    <span>время на странице</span>
+    <span>серии дней подряд</span>
+    <span>число открытых карточек</span>
+    <span>процент пройденного курса</span>
+    <span>очки и уровни</span>
+  </div>
+  <p class="lede" style="max-width:74ch; margin-top:14px">
+    Эти пять не измеряются сознательно. Продукт, который считает минуты, рано или поздно
+    начинает их добывать, — и зеркало превращается в ленту.
+  </p>
+</section>
+
+<footer>
+  <p>
+    Цифры посчитаны по <code>data/catalog.json</code> (схема 4, сборка 2026-09-05):
+    4334 записи, поля <code>E</code> и <code>L</code> — «энергия» и «свет» по пять делений,
+    <code>Q</code> — откуда они взялись, <code>F</code> — восемь признаков звучания,
+    <code>shelves</code> — шесть возрастных полок. Разбор двух прочтений и восьми выживших
+    треков взят из <a href="12-portrait.html">портрета</a> и <a href="09-story.html">разбора форм</a>.
+  </p>
+  <p>
+    Механика превью — <code>tools/player.js</code>; формат правок настроения —
+    <code>tools/extract/mood.tsv</code>. Прежние очереди работ — в
+    <a href="00-plan.html">плане</a> и <a href="01-order.html">порядке сборки</a>.
+  </p>
+</footer>
+</div>
+
+</html>
