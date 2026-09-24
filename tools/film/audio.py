@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Звук фильма: голос двумя частями, треск винила и синтезированный рифф
-в финале → out/film-audio.wav (и .m4a)."""
+в финале → out/film-audio.wav и public/film-audio.m4a (звук для Remotion)."""
 import numpy as np, subprocess, wave, os
 HERE=os.path.dirname(os.path.abspath(__file__))
 SR=48000
@@ -80,5 +80,5 @@ wav=(np.clip(out,-1,1)*32767).astype(np.int16)
 os.makedirs(os.path.join(HERE,'out'),exist_ok=True)
 with wave.open(os.path.join(HERE,'out','film-audio.wav'),'wb') as w:
     w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(wav.tobytes())
-subprocess.run(['ffmpeg','-v','error','-y','-i',os.path.join(HERE,'out','film-audio.wav'),'-c:a','aac','-b:a','96k',os.path.join(HERE,'out','film-audio.m4a')])
+subprocess.run(['ffmpeg','-v','error','-y','-i',os.path.join(HERE,'out','film-audio.wav'),'-c:a','aac','-b:a','96k',os.path.join(HERE,'public','film-audio.m4a')])
 print('ok',len(wav)/SR)

@@ -1,46 +1,10 @@
-<!doctype html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<title>Одна вещь — фильм</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-/* Фильм «Моя музыкальная эволюция». Один кадр = одна функция времени:
-   renderAt(t) рисует всё заново, поэтому страница годится и для живого
-   просмотра под звук, и для покадровой съёмки в MP4 (tools/film/render.cjs).
-   Шрифты и тайминги вшивает tools/film/build.py. */
-/*@@FONTS@@*/
-html,body{margin:0;background:#1b1a1d;height:100%}
-body{display:flex;align-items:center;justify-content:center}
-svg{display:block;width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh;background:#f4ecd9}
-.m{mix-blend-mode:multiply}
-#ui{position:fixed;left:12px;bottom:12px;font:13px system-ui;color:#ddd}
-#ui button{font:inherit}
-</style>
-</head>
-<body>
-<svg id="s" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="boil" x="-3%" y="-3%" width="106%" height="106%">
-      <feTurbulence id="turb" type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="1" result="n"/>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="5.5" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-    <pattern id="ht" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(28)"><circle cx="4.5" cy="4.5" r="2" fill="#23308a"/></pattern>
-    <pattern id="htp" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-18)"><circle cx="4.5" cy="4.5" r="2.4" fill="#ff5d8f"/></pattern>
-    <pattern id="hty" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(10)"><circle cx="5" cy="5" r="3" fill="#ffd23c"/></pattern>
-    <clipPath id="wipe"><rect id="wiper" x="0" y="0" width="1600" height="900"/></clipPath>
-  </defs>
-  <image id="paper" x="0" y="0" width="1600" height="900" preserveAspectRatio="none"/>
-  <g clip-path="url(#wipe)"><g id="scene" filter="url(#boil)"></g></g>
-  <g id="subs"></g>
-</svg>
-<div id="ui"></div>
-<script>
-var TIMING=/*@@TIMING@@*/{cues:[],sent:[]};
-</script>
-<script>
-(function(){
-"use strict";
+/* Движок сцен фильма «Моя музыкальная эволюция».
+   Каждая сцена — функция времени фильма t (секунды): рисует кадр заново
+   в виде строки SVG (viewBox 1600×900). Ризограф: синие линии, заливки со
+   сдвигом, «умножение» цветов. Компоненты Remotion (Film.tsx) раскладывают
+   сцены по главам и добавляют бумагу, «кипение» линий, шторку и субтитры. */
+import TIMING from './timing.json';
+
 /* ---------------------------------------------------------------- цвета
    Ризограф: синие линии, флуоресцентный розовый и жёлтый, бирюза.
    Заливки печатаются со сдвигом относительно линий — как при плохой
@@ -50,6 +14,8 @@ var S=TIMING.sent.map(function(s){ return s.t0; });
 var SE=TIMING.sent.map(function(s){ return s.t1; });
 var END=170;
 var O=[];                                   /* разметка текущего кадра */
+var MIS=[5,4];                              /* сдвиг заливок, как при плохой приводке */
+var OPQ=false;                              /* герой: заливки плотные, без «умножения» */
 function cl(v,a,b){ a=a==null?0:a; b=b==null?1:b; return v<a?a:v>b?b:v; }
 function ph(t,a,b){ return cl((t-a)/(b-a)); }
 function eo(u){ return 1-Math.pow(1-u,3); }
@@ -65,8 +31,8 @@ function hsh(i){ var x=Math.sin(i*127.1+311.7)*43758.5453; return x-Math.floor(x
    fill → заливка со сдвигом (5,4); sw → синяя линия поверх */
 function sh(d,fill,sw,extra){
   if(fill){
-    var paperish=fill===PAPER||fill==='#fff';
-    O.push('<path d="'+d+'" transform="translate(5 4)" fill="'+fill+'"'+(paperish?'':' class="m"')+'/>');
+    var paperish=OPQ||fill===PAPER||fill==='#fff';
+    O.push('<path d="'+d+'" transform="translate('+MIS[0]+' '+MIS[1]+')" fill="'+fill+'"'+(paperish?'':' class="m"')+'/>');
   }
   if(sw!==0) O.push('<path d="'+d+'" fill="none" stroke="'+INK+'" stroke-width="'+(sw||4)+'" stroke-linecap="round" stroke-linejoin="round"'+(extra||'')+'/>');
 }
@@ -99,7 +65,6 @@ function record(x,y,r,lab,rot,holes){
   });
 }
 function bubble(x,y,w,h,tailX,tailY,fill){
-  var d=rect(x,y,w,h,28)+' M'+r2(x+w*.35)+','+r2(y+h-2)+' L'+r2(tailX)+','+r2(tailY)+' L'+r2(x+w*.5)+','+r2(y+h-2);
   sh(rect(x,y,w,h,28),fill||'#fff',4);
   sh('M'+r2(x+w*.33)+','+r2(y+h-3)+' L'+r2(tailX)+','+r2(tailY)+' L'+r2(x+w*.47)+','+r2(y+h-3),'#fff',4);
   solid(rect(x+w*.3,y+h-8,w*.2,10),'#fff');
@@ -108,7 +73,7 @@ function star(x,y,r,col,rot){
   var p=[]; for(var k=0;k<10;k++){ var a=(k/10)*6.2832+(rot||0), rr=k%2?r*.45:r; p.push([x+Math.cos(a)*rr,y+Math.sin(a)*rr]); }
   sh(poly(p,true),col||YEL,3);
 }
-function waves(x,y,n,sp,t,dir,col){
+function waves(x,y,n,sp,t,dir){
   for(var k=0;k<n;k++){
     var u=((t*1.6+k/n)%1), rr=30+u*sp;
     sh('M'+r2(x+dir*rr*.3)+','+r2(y-rr)+' Q'+r2(x+dir*rr)+','+r2(y)+' '+r2(x+dir*rr*.3)+','+r2(y+rr),null,5*(1-u)+1,' stroke-opacity="'+(1-u).toFixed(2)+'"');
@@ -137,100 +102,173 @@ function knob(x,y,r,val){
   });
 }
 function speaker(x,y,s,thump){
+  var opq=OPQ; OPQ=true;
   g('translate('+x+','+y+') scale('+s+')',function(){
     sh(rect(-80,-200,160,200,10),DARK,4);
     var k=1+thump*.08;
     sh(circ(0,-140,34*k),GREY,4); sh(circ(0,-140,10),INK,2);
     sh(circ(0,-60,50*k),GREY,4); sh(circ(0,-60,16),INK,2);
   });
+  OPQ=opq;
 }
 
 /* ----------------------------------------------------------------- герой
-   Один и тот же нос во всех версиях — это и есть «я». */
+   Русый, светлая кожа, прямой нос, волосы коротко по бокам и с объёмом
+   сверху. Нос, брови и цвет волос общие для всех версий — это и есть «я».
+   Руки и ноги — «трубки» с контуром, у лица свои тени и румянец. */
+var SKIN='#f8d2b6', SKIN_D='#e9a98b', HAIR='#e4bc6a', HAIR_D='#a8742e', EYE='#5d87b3', SHIRT='#fbf6ea', BEIGE='#d9c29c', DENIM='#3e5195', CORD='#c98a4b';
 var V=[
-  {tag:'11–15',shirt:PINK,hair:'metal',phones:1,tee:'bolt'},
-  {tag:'16–18',shirt:TEAL,hair:'fringe',tee:'stripes',scarf:0},
-  {tag:'19',shirt:YEL,hair:'hat',tee:'note'},
-  {tag:'20–21',shirt:PINK,hair:'hippie',tee:'flower',band:1},
-  {tag:'22–24',shirt:GREY,hair:'neat',glasses:1,tee:'none',turtle:1},
-  {tag:'сейчас',shirt:TEAL,hair:'neat',glasses:1,scarf:1,stubble:1}
+  {tag:'11–15',shirt:DARK,hair:'metal',phones:1,tee:'bolt',pants:DENIM,leg:8},
+  {tag:'16–18',shirt:TEAL,hair:'fringe',tee:'stripes',pants:DARK,leg:26},
+  {tag:'19',shirt:YEL,hair:'hat',tee:'note',pants:DENIM},
+  {tag:'20–21',shirt:PINK,hair:'hippie',tee:'flower',band:1,pants:CORD},
+  {tag:'22–24',shirt:GREY,hair:'neat',turtle:1,pants:DARK},
+  {tag:'сейчас',shirt:SHIRT,hair:'quiff',tee:'camp',short:1,pants:BEIGE,shoe:'#fff'}
 ];
+function tube(d,col,w){
+  O.push('<path d="'+d+'" fill="none" stroke="'+INK+'" stroke-width="'+(w+7)+'" stroke-linecap="round" stroke-linejoin="round"/>');
+  O.push('<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round" transform="translate(1.5 1)"/>');
+}
+function tint(d,col,op){ O.push('<path d="'+d+'" fill="'+col+'" opacity="'+(op||.5)+'" class="m"/>'); }
+function stroke(d,col,w,op){ O.push('<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round"'+(op?' opacity="'+op+'"':'')+'/>'); }
 function guy(x,y,s,o){
   o=o||{};
   var d={armL:.25,armR:.25,bendL:.35,bendR:.35,tilt:0,bob:0,eyes:'dot',mouth:'smile',flip:0,walk:0,squash:1};
   for(var k in d) if(o[k]==null) o[k]=d[k];
-  var hands={};
+  var hands={}, mis=MIS, opq=OPQ; MIS=[3,2.5]; OPQ=true;
   g('translate('+r2(x)+','+r2(y+o.bob)+') scale('+r2(s*(o.flip?-1:1))+','+r2(s*o.squash)+')',function(){
-    var w=o.walk?Math.sin(o.walk)*16:0;
-    /* ноги и кеды */
-    line(-16,-62,-18-w,-4,6); line(16,-62,18+w,-4,6);
-    sh(ell(-24-w,0,20,9),INK,3); sh(ell(24+w,0,20,9),INK,3);
-    /* тело */
-    var body='M-44,-150 C-52,-110 -48,-72 -38,-58 L38,-58 C48,-72 52,-110 44,-150 C24,-162 -24,-162 -44,-150Z';
+    var w=o.walk?Math.sin(o.walk)*16:0, pants=o.pants||DARK, L=o.sit?-30:o.leg!=null?o.leg:38;
+    if(!o.sit) tint(ell(0,3,56,9),INK,.13);
+    /* ноги: брюки и кеды; чем старше версия, тем длиннее ноги */
+    if(o.sit){ /* сидя: бёдра к зрителю, видны колени и голени */
+      tube('M-15,-36 L-24,-30 L-20,-12',pants,22); tube('M15,-36 L24,-30 L20,-12',pants,22);
+    } else {
+      tube('M-15,'+(-66-L)+' Q-19,'+r2(-38-L/2)+' '+r2(-18-w)+',-12',pants,20);
+      tube('M15,'+(-66-L)+' Q19,'+r2(-38-L/2)+' '+r2(18+w)+',-12',pants,20);
+    }
+    [[-1,-w],[1,w]].forEach(function(f){ var fx=f[0]*24+f[1];
+      sh('M'+r2(fx-f[0]*22)+',-2 C'+r2(fx-f[0]*22)+',-18 '+r2(fx+f[0]*4)+',-20 '+r2(fx+f[0]*16)+',-12 C'+r2(fx+f[0]*26)+',-8 '+r2(fx+f[0]*26)+',2 '+r2(fx+f[0]*18)+',4 L'+r2(fx-f[0]*20)+',4Z',o.shoe||DARK,3);
+      stroke('M'+r2(fx-f[0]*21)+',0 L'+r2(fx+f[0]*22)+',0',o.shoe?GREY:'#fff',2.5); });
+    O.push('<g transform="translate(0,'+(-L)+')">');
+    /* шея */
+    sh(rect(-10,-184,20,32,6),SKIN,3); tint(rect(-8,-176,16,12,4),SKIN_D,.6);
+    /* тело: покатые плечи, рубашка чуть сужается к поясу */
+    var body='M-18,-162 C-34,-160 -46,-152 -46,-136 C-47,-110 -44,-84 -38,-60 L38,-60 C44,-84 47,-110 46,-136 C46,-152 34,-160 18,-162 C8,-157 -8,-157 -18,-162Z';
     sh(body,o.shirt||PINK,4);
-    shade('M-40,-100 C-42,-80 -40,-68 -34,-60 L34,-60 C40,-68 42,-80 40,-100Z','ht',.35);
-    if(o.tee==='bolt') sh('M-4,-140 L-16,-106 L-2,-106 L-10,-76 L14,-116 L0,-116 L8,-140Z',YEL,3);
-    if(o.tee==='stripes'){ for(var q=0;q<3;q++) line(-44,-138+q*22,44,-138+q*22,3); }
+    shade('M22,-158 C38,-152 47,-130 45,-100 C44,-80 41,-68 38,-62 L22,-62Z','ht',.28);
+    if(o.tee==='camp'){
+      O.push('<path d="'+body+'" fill="url(#eye)" opacity=".7"/>');
+      sh('M-11,-158 L0,-132 L11,-158Z',SKIN,3);
+      sh('M-12,-160 L-2,-134 L-30,-148 L-26,-160Z','#fff',3); sh('M12,-160 L2,-134 L30,-148 L26,-160Z','#fff',3);
+      line(0,-132,0,-62,2.5); for(var bt=0;bt<3;bt++) sh(circ(5,-118+bt*22,2.6),'#fff',2);
+    }
+    if(o.tee==='bolt') sh('M-4,-144 L-16,-110 L-2,-110 L-10,-80 L14,-120 L0,-120 L8,-144Z',YEL,3);
+    if(o.tee==='stripes'){ for(var q=0;q<3;q++) line(-46,-136+q*22,46,-136+q*22,3); }
     if(o.tee==='note'){ sh(circ(-6,-96,9),INK,2); line(3,-96,3,-130,4); line(3,-130,16,-122,4); }
     if(o.tee==='flower'){ for(var p=0;p<5;p++){ var a=p*1.2566; sh(circ(Math.cos(a)*12,-106+Math.sin(a)*12,8),YEL,2);} sh(circ(0,-106,6),PINK,2); }
-    if(o.turtle) sh('M-26,-160 Q0,-146 26,-160 L22,-146 Q0,-136 -22,-146Z',GREY,3);
-    /* руки: угол от вертикали, наружу — плюс */
+    if(o.turtle) sh('M-20,-166 Q0,-156 20,-166 L20,-150 Q0,-140 -20,-150Z',GREY,3);
+    /* руки: угол от вертикали, наружу — плюс; короткий рукав или длинный */
     function arm(side,a,b){
-      var sx=side*40, sy=-142, ex=sx+side*Math.sin(a)*44, ey=sy+Math.cos(a)*44, a2=a+b,
+      var sx=side*38, sy=-146, ex=sx+side*Math.sin(a)*44, ey=sy+Math.cos(a)*44, a2=a+b,
           hx=ex+side*Math.sin(a2)*40, hy=ey+Math.cos(a2)*40;
-      sh('M'+r2(sx)+','+r2(sy)+'L'+r2(ex)+','+r2(ey)+'L'+r2(hx)+','+r2(hy),null,7);
+      var path='M'+r2(sx)+','+r2(sy)+'L'+r2(ex)+','+r2(ey)+'L'+r2(hx)+','+r2(hy);
+      if(o.short){
+        tube(path,SKIN,14);
+        tube('M'+r2(sx)+','+r2(sy)+'L'+r2(sx+(ex-sx)*.5)+','+r2(sy+(ey-sy)*.5),o.shirt||PINK,22);
+      } else tube(path,o.shirt||PINK,16);
       return [hx,hy];
     }
     hands.l=arm(-1,o.armL,o.bendL); hands.r=arm(1,o.armR,o.bendR);
     if(o.holdBack) o.holdBack(hands);
-    sh(circ(hands.l[0],hands.l[1],11),PAPER,4); sh(circ(hands.r[0],hands.r[1],11),PAPER,4);
-    if(o.horns){ var hh=o.horns==='l'?hands.l:hands.r; line(hh[0]-5,hh[1]-8,hh[0]-8,hh[1]-30,5); line(hh[0]+5,hh[1]-8,hh[0]+8,hh[1]-30,5); }
+    sh(circ(hands.l[0],hands.l[1],11),SKIN,3.5); sh(circ(hands.r[0],hands.r[1],11),SKIN,3.5);
+    if(o.horns){ var hh=o.horns==='l'?hands.l:hands.r; tube('M'+r2(hh[0]-5)+','+r2(hh[1]-8)+'L'+r2(hh[0]-8)+','+r2(hh[1]-30),SKIN,6); tube('M'+r2(hh[0]+5)+','+r2(hh[1]-8)+'L'+r2(hh[0]+8)+','+r2(hh[1]-30),SKIN,6); }
     /* голова */
-    g('rotate('+r2(o.tilt)+' 0 -158)',function(){
-      if(o.scarf){ sh('M-34,-160 Q0,-140 34,-160 L30,-146 Q0,-130 -30,-146Z',PINK,3); sh('M18,-150 l14,40 l-18,4 l-8,-38Z',PINK,3); }
-      var head='M0,-274 C40,-274 60,-242 58,-206 C56,-172 30,-154 0,-154 C-32,-154 -58,-174 -58,-210 C-58,-246 -36,-274 0,-274Z';
-      if(o.hair==='hippie') sh('M-62,-236 C-80,-180 -76,-130 -60,-110 L-40,-160 M62,-236 C80,-180 76,-130 60,-110 L40,-160','#8a5a2b',0);
-      if(o.hair==='hippie'){ sh('M-58,-230 C-86,-170 -74,-126 -56,-112 L-44,-170Z',YEL,4); sh('M58,-230 C86,-170 74,-126 56,-112 L44,-170Z',YEL,4); }
-      if(o.hair==='metal') sh('M-62,-240 C-84,-170 -80,-110 -66,-92 L-30,-150 L30,-150 L66,-92 C80,-110 84,-170 62,-240Z',INK,4);
-      sh(head,PAPER,4);
-      if(o.stubble) shade('M-44,-190 C-40,-164 -20,-156 0,-156 C24,-156 42,-166 46,-188 C30,-176 -30,-176 -44,-190Z','ht',.45);
-      /* нос — одинаковый у всех */
-      sh('M4,-226 C10,-212 26,-200 22,-192 C18,-186 8,-190 2,-194',PAPER,4);
-      sh(ell(-30,-196,10,6),PINK,0);
+    g('rotate('+r2(o.tilt)+' 0 -158) translate(0,-174) scale(.86,.92) translate(0,156)',function(){
+      var hr=o.hair;
+      if(o.scarf){ sh('M-30,-164 Q0,-144 30,-164 L28,-150 Q0,-134 -28,-150Z',PINK,3); sh('M16,-154 l14,40 l-18,4 l-8,-38Z',PINK,3); }
+      /* длинные волосы — за головой */
+      if(hr==='metal') sh('M-58,-244 C-84,-176 -80,-112 -64,-96 L-34,-154 L34,-154 L64,-96 C80,-112 84,-176 58,-244Z',HAIR,4);
+      if(hr==='hippie'){ sh('M-56,-234 C-86,-172 -74,-126 -54,-112 L-42,-170Z',HAIR,4); sh('M56,-234 C86,-172 74,-126 54,-112 L42,-170Z',HAIR,4); }
+      /* уши */
+      if(!o.ear) sh(ell(-54,-210,9,15),SKIN,3.5);
+      sh(ell(55,-210,9,15),SKIN,3.5); stroke('M58,-218 Q52,-210 57,-202',SKIN_D,2.5);
+      /* лицо: вытянутый овал, острый подбородок */
+      var face='M0,-274 C36,-274 55,-250 55,-216 C55,-188 42,-166 24,-157 C12,-151 -10,-151 -22,-157 C-40,-166 -54,-188 -54,-216 C-54,-250 -34,-274 0,-274Z';
+      sh(face,SKIN,4);
+      tint('M38,-258 C52,-244 56,-222 53,-198 C50,-178 40,-165 26,-158 C38,-176 44,-200 44,-224 C44,-238 42,-250 38,-258Z',SKIN_D,.4);
+      tint(ell(-30,-190,11,6),PINK,.35); tint(ell(34,-190,9,6),PINK,.35);
       /* глаза */
-      var hideEyes=o.hair==='metal';
+      var hideEyes=hr==='metal', ex=[-18,22], ey=-216, look=o.eyes==='side'?4:0;
       if(!hideEyes){
-        if(o.eyes==='dot'){ solid(circ(-18,-222,5.5)); solid(circ(18,-222,5.5)); }
-        else if(o.eyes==='wide'){ sh(circ(-18,-224,13),'#fff',3); sh(circ(18,-224,13),'#fff',3); solid(circ(-16,-222,5)); solid(circ(20,-222,5)); }
-        else if(o.eyes==='closed'){ sh('M-28,-222 Q-18,-214 -8,-222',null,4); sh('M8,-222 Q18,-214 28,-222',null,4); }
-        else if(o.eyes==='happy'){ sh('M-28,-218 Q-18,-230 -8,-218',null,4); sh('M8,-218 Q18,-230 28,-218',null,4); }
-        else if(o.eyes==='side'){ solid(circ(-12,-222,5.5)); solid(circ(24,-222,5.5)); }
+        ex.forEach(function(cx){
+          if(o.eyes==='dot'||o.eyes==='side'||o.eyes==='wide'){
+            var big=o.eyes==='wide';
+            var ew=big?12:10.5, eh=big?11:6.5;
+            sh('M'+(cx-ew)+','+ey+' Q'+cx+','+(ey-eh*1.6)+' '+(cx+ew)+','+ey+' Q'+cx+','+(ey+eh*1.3)+' '+(cx-ew)+','+ey+'Z','#fff',0);
+            solid(circ(cx+look+1,ey,big?5.5:5.6),EYE); solid(circ(cx+look+1,ey,2.7),INK); solid(circ(cx+look+2.8,ey-1.8,1.5),'#fff');
+            stroke('M'+(cx-ew-1)+','+(ey+1)+' Q'+cx+','+(ey-eh*1.7)+' '+(cx+ew+1)+','+(ey-1),INK,big?3.5:4);
+            stroke('M'+(cx-ew+3)+','+(ey+eh*.7)+' Q'+cx+','+(ey+eh*1.25)+' '+(cx+ew-3)+','+(ey+eh*.6),SKIN_D,2);
+          } else if(o.eyes==='closed') stroke('M'+(cx-10)+','+ey+' Q'+cx+','+(ey+7)+' '+(cx+10)+','+ey,INK,3.5);
+          else if(o.eyes==='happy') stroke('M'+(cx-10)+','+(ey+3)+' Q'+cx+','+(ey-8)+' '+(cx+10)+','+(ey+3),INK,3.5);
+        });
       }
-      if(o.glasses){ sh(circ(-18,-222,16),null,4); sh(circ(20,-222,16),null,4); line(-2,-224,4,-224,3); }
+      /* брови — русые, выражают больше, чем рот */
+      var bu=(o.eyes==='wide'||o.mouth==='o'||o.mouth==='scream')?-8:0, worry=o.mouth==='frown'||o.sweat;
+      if(!hideEyes){
+        stroke('M'+(-29)+','+(ey-15+bu+(worry?-4:0))+' Q-18,'+(ey-21+bu)+' -7,'+(ey-17+bu+(worry?-6:0)),HAIR_D,5);
+        stroke('M11,'+(ey-17+bu+(worry?-6:0))+' Q22,'+(ey-21+bu)+' 33,'+(ey-15+bu+(worry?-4:0)),HAIR_D,5);
+      }
+      if(o.glasses){ sh(circ(-18,-216,15),null,3.5); sh(circ(22,-216,15),null,3.5); line(-3,-217,7,-217,3); }
+      /* нос — прямой, с чёткой спинкой */
+      stroke('M6,-224 C8,-212 12,-201 15,-194 C14,-188 8,-187 3,-190',INK,3);
+      tint('M14,-192 C17,-196 18,-190 15,-186Z',SKIN_D,.8);
       /* рот */
       var m=o.mouth;
-      if(m==='smile') sh('M-22,-176 Q-4,-164 12,-176',null,4);
-      else if(m==='grin'){ sh('M-26,-180 Q-4,-150 18,-180Z','#fff',4); }
-      else if(m==='o') sh(ell(-4,-174,8,11),DARK,3);
-      else if(m==='flat') line(-18,-174,8,-174,4);
-      else if(m==='scream') sh(ell(-4,-172,14,18),DARK,4);
-      else if(m==='talk') sh(ell(-4,-174,12,4+Math.abs(Math.sin((o.t||0)*18))*8),DARK,3);
-      else if(m==='frown') sh('M-20,-168 Q-4,-180 10,-168',null,4);
-      /* причёски */
-      if(o.hair==='metal'){ sh('M-58,-214 C-60,-262 -30,-284 2,-282 C36,-282 62,-258 58,-214 C44,-236 26,-244 0,-244 C-24,-244 -44,-236 -58,-214Z',INK,4);
-        sh('M-40,-240 C-44,-212 -42,-196 -38,-186 M-14,-244 C-16,-214 -14,-200 -12,-190 M14,-244 C16,-216 14,-200 12,-192',null,5); solid('M-58,-216 C-48,-226 -36,-232 -20,-236 L-20,-196 C-36,-200 -50,-206 -58,-216Z'); solid('M58,-216 C48,-226 36,-232 20,-236 L20,-196 C36,-200 50,-206 58,-216Z'); }
-      if(o.hair==='fringe') sh('M-58,-212 C-60,-262 -24,-284 10,-280 C40,-276 60,-256 58,-226 C30,-236 10,-232 -8,-220 C-24,-212 -44,-204 -58,-212Z',DARK,4);
-      if(o.hair==='neat') sh('M-56,-226 C-56,-262 -26,-280 4,-278 C34,-276 58,-258 56,-228 C40,-246 14,-250 -10,-248 C-30,-246 -46,-240 -56,-226Z',DARK,4);
-      if(o.hair==='hippie'){ sh('M-58,-222 C-60,-262 -26,-284 4,-282 C36,-280 60,-260 58,-222 C40,-244 -40,-244 -58,-222Z',YEL,4); if(o.band){ sh('M-58,-238 Q0,-262 58,-238 L58,-226 Q0,-250 -58,-226Z',PINK,3); } }
-      if(o.hair==='hat'){ sh('M-86,-238 Q0,-222 86,-238 Q0,-252 -86,-238Z',DARK,4); sh('M-44,-240 C-44,-290 44,-290 44,-240Z',DARK,4); sh('M-44,-252 L44,-252 L44,-242 L-44,-242Z',PINK,2); }
-      if(o.phones){ sh('M-66,-214 C-72,-300 72,-300 66,-214',null,9); sh(rect(-82,-236,26,50,10),YEL,4); sh(rect(56,-236,26,50,10),YEL,4); }
-      if(o.sweat) sh('M48,-252 q10,16 0,22 q-10,-6 0,-22Z','#9fe0ff',3);
-      if(o.halo){ g('translate(0,-310) scale(1,.32)',function(){ record(0,0,70,YEL,o.t*60); }); }
-      if(o.ear){ var es=o.ear; g('translate(-58,-210) scale('+r2(es)+')',function(){ sh('M0,-20 C-40,-40 -46,20 -10,28 C-20,10 -18,-6 0,-4Z',PINK,4); sh('M-8,-10 C-24,-12 -24,8 -10,12',null,3); }); }
+      if(m==='smile'){ stroke('M-12,-175 Q3,-165 17,-176',INK,3.5); stroke('M-2,-167 Q4,-164 9,-167',SKIN_D,3); }
+      else if(m==='grin'){ sh('M-16,-178 Q3,-152 21,-179 Q3,-172 -16,-178Z','#fff',3.5); tint('M-8,-164 Q3,-158 13,-165 Q3,-162 -8,-164Z',PINK,.7); }
+      else if(m==='o') sh(ell(3,-171,7,9),DARK,3);
+      else if(m==='flat') stroke('M-10,-173 L15,-174',INK,3.5);
+      else if(m==='scream'){ sh(ell(3,-170,13,17),DARK,3.5); tint(ell(3,-160,8,5),PINK,.9); }
+      else if(m==='talk') sh(ell(3,-173,10,3+Math.abs(Math.sin((o.t||0)*18))*7),DARK,3);
+      else if(m==='frown') stroke('M-10,-167 Q3,-177 16,-167',INK,3.5);
+      /* причёски — все русые */
+      if(hr==='quiff'){
+        /* виски коротко — светлая тень, сверху объём, чуб зачёсан вверх */
+        tint('M-54,-206 C-56,-228 -52,-244 -42,-254 L-36,-236 C-44,-230 -50,-220 -54,-206Z',HAIR,.8);
+        tint('M55,-206 C57,-228 53,-244 43,-254 L37,-236 C45,-230 51,-220 55,-206Z',HAIR,.8);
+        sh('M-50,-234 C-52,-254 -44,-268 -32,-274 C-34,-284 -22,-292 -8,-288 C-2,-300 18,-302 28,-292 C42,-294 54,-284 52,-272 C58,-262 56,-246 52,-234 C48,-244 42,-250 34,-252 C36,-244 32,-240 28,-240 C24,-252 12,-258 0,-258 C2,-250 -2,-246 -8,-246 C-12,-254 -24,-256 -34,-250 C-42,-246 -48,-240 -50,-234Z',HAIR,3.5);
+        stroke('M-34,-252 C-30,-266 -18,-278 -4,-282 M-8,-248 C-4,-266 10,-282 22,-288 M18,-252 C24,-264 36,-276 46,-278 M36,-246 C42,-256 48,-264 50,-270',HAIR_D,2.2);
+        stroke('M-22,-260 C-16,-272 -6,-280 6,-283 M10,-262 C18,-274 28,-281 38,-283','#fbe7b4',3,.9);
+      }
+      if(hr==='neat'){
+        sh('M-54,-212 C-58,-256 -30,-282 4,-282 C36,-282 58,-260 55,-212 C50,-236 36,-250 14,-252 L4,-262 C-10,-250 -34,-242 -54,-212Z',HAIR,4);
+        stroke('M4,-262 C-8,-272 -26,-270 -40,-258 M16,-254 C30,-268 44,-262 50,-246',HAIR_D,2.5);
+      }
+      if(hr==='metal'){
+        sh('M-58,-212 C-60,-262 -30,-286 2,-284 C36,-284 62,-260 58,-212 C44,-236 26,-244 0,-244 C-24,-244 -44,-236 -58,-212Z',HAIR,4);
+        stroke('M-40,-244 C-44,-214 -42,-198 -38,-186 M-14,-246 C-16,-214 -14,-200 -12,-190 M14,-246 C16,-216 14,-200 12,-192 M38,-240 C40,-214 40,-200 38,-188',HAIR_D,3);
+        sh('M-58,-214 C-48,-228 -36,-234 -20,-238 L-24,-196 C-38,-200 -50,-206 -58,-214Z',HAIR,3.5); sh('M58,-214 C48,-228 36,-234 20,-238 L24,-196 C38,-200 50,-206 58,-214Z',HAIR,3.5);
+        sh('M-22,-240 C-10,-244 10,-244 22,-240 L20,-200 C8,-196 -8,-196 -20,-200Z',HAIR,3.5);
+      }
+      if(hr==='fringe'){
+        sh('M-56,-206 C-62,-262 -24,-288 10,-284 C42,-280 60,-258 56,-222 C44,-234 30,-236 16,-232 C0,-226 -18,-214 -30,-194 C-40,-194 -50,-198 -56,-206Z',HAIR,4);
+        stroke('M-40,-250 C-20,-262 10,-262 36,-248 M-30,-238 C-16,-232 -4,-228 12,-232',HAIR_D,2.5);
+      }
+      if(hr==='hippie'){ sh('M-58,-218 C-60,-262 -26,-286 4,-284 C36,-282 60,-260 58,-218 C40,-244 -40,-244 -58,-218Z',HAIR,4);
+        stroke('M0,-282 L0,-244',HAIR_D,2.5);
+        if(o.band){ sh('M-58,-238 Q0,-262 58,-238 L58,-226 Q0,-250 -58,-226Z',PINK,3); } }
+      if(hr==='hat'){ sh('M-58,-222 C-58,-236 -52,-244 -44,-248 L-40,-220Z',HAIR,3); sh('M58,-222 C58,-236 52,-244 44,-248 L40,-220Z',HAIR,3);
+        sh('M-86,-240 Q0,-224 86,-240 Q0,-254 -86,-240Z',DARK,4); sh('M-44,-242 C-44,-292 44,-292 44,-242Z',DARK,4); sh('M-44,-254 L44,-254 L44,-244 L-44,-244Z',PINK,2); }
+      if(o.phones){ stroke('M-66,-214 C-72,-300 72,-300 66,-214',INK,9); sh(rect(-82,-236,26,50,10),YEL,4); sh(rect(56,-236,26,50,10),YEL,4); }
+      if(o.sweat) sh('M50,-254 q10,16 0,22 q-10,-6 0,-22Z','#9fe0ff',3);
+      if(o.halo){ g('translate(0,-316) scale(1,.32)',function(){ record(0,0,70,YEL,o.t*60); }); }
+      if(o.ear){ var es=o.ear; g('translate(-54,-210) scale('+r2(es)+')',function(){ sh('M0,-20 C-40,-40 -46,20 -10,28 C-20,10 -18,-6 0,-4Z',SKIN,4); sh('M-8,-10 C-24,-12 -24,8 -10,12',null,3); tint('M-4,-14 C-30,-26 -34,14 -12,20Z',PINK,.3); }); }
     });
     if(o.hold) o.hold(hands);
+    O.push('</g>');
     if(o.tag){ g('translate(0,26) rotate('+r2(o.tagRot||-4)+')',function(){ sh(rect(-46,0,92,34,6),'#fff',3); tx(0,26,o.tag,28,{}); }); }
   });
+  MIS=mis; OPQ=opq;
   return hands;
 }
 function ver(k,x,y,s,extra){
@@ -270,9 +308,8 @@ scene(0,S[1],function(t){
     var sq=1+wig(t,1.3,.015);
     g('translate(800,420)',function(){
       sh(rect(-190,-260,380,470,6),YEL,10); sh(rect(-160,-230,320,410,4),'#fff',5); shade(rect(-160,-230,320,410,4),'htp',.25);
-      guy(0,170,1.08*sq,{shirt:TEAL,hair:'neat',glasses:1,scarf:1,armL:1.5,armR:1.5,bendL:-.2,bendR:-.2,mouth:'flat',eyes:'side',squash:.94,tilt:wig(t,.7,4)});
+      ver(5,0,176,1.24*sq,{tag:false,armL:1.5,armR:1.5,bendL:-.2,bendR:-.2,mouth:'flat',eyes:'side',squash:.94,tilt:wig(t,.7,4)});
       /* локти и колени торчат за раму */
-      sh(ell(-200,-40,22,14),TEAL,4); sh(ell(200,-40,22,14),TEAL,4);
       sh('M-160,176 l-30,24 M160,176 l30,24',null,5);
       /* табличка */
       g('translate(0,262)',function(){ sh(rect(-170,0,340,70,4),'#fff',3); tx(0,30,'«ОКОНЧАТЕЛЬНАЯ ВЕРСИЯ»',21,{font:'Rubik Mono One',weight:400}); tx(0,58,'масло, 2026. руками не трогать',24,{}); });
@@ -314,7 +351,6 @@ scene(S[1],S[3],function(t){
 
 /* 3. Подросток: хэви-метал, альбом целиком, религия, монотеизм */
 scene(S[3],S[8],function(t){
-  var lt=t-S[3];
   if(t<S[5]){
     /* прожектор и хэдбэнгинг */
     sh('M620,0 L980,0 L1180,720 L420,720Z',YEL,0); shade('M620,0 L980,0 L1180,720 L420,720Z','hty',.6);
@@ -377,7 +413,6 @@ scene(S[8],S[11],function(t){
   /* доска */
   sh(rect(420,120,760,420,10),'#2f4a3f',6);
   tx(800,200,'СОНАТА № 8 × 3',46,{font:'Rubik Mono One',weight:400,col:'#f4ecd9'});
-  var p3=ph(t,S[8]+1.5,S[8]+6);
   var names=['I','II','III'];
   for(var k=0;k<3;k++){
     var ta=S[8]+2+k*1.2, u=pop(t,ta,.4); if(u<=0) continue;
@@ -387,7 +422,20 @@ scene(S[8],S[11],function(t){
       sh('M-70,0 L70,0 L70,-30 C60,-80 -10,-90 -40,-60 L-70,-30Z','#1d1a24',4); sh(rect(-70,0,140,14,2),'#fff',3);
       line(-60,14,-60,60,5); line(60,14,60,60,5);
       var bob=Math.sin(t*(6+k*2))*6;
-      g('translate(-100,'+r2(bob)+')',function(){ sh(circ(0,-40,18),PAPER,3); sh('M0,-40 C4,-34 10,-30 8,-26',null,3); sh('M-14,-20 L14,-20 L18,30 L-18,30Z',DARK,3); line(10,-10,34,4,4); });
+      /* три разных пианиста: седой маэстро, брюнет, рыжая */
+      var opq=OPQ; OPQ=true;
+      sh(rect(-124,30,48,10,3),'#8a5a2b',2.5);
+      g('translate(-100,'+r2(bob)+')',function(){
+        sh('M-16,-20 C-19,0 -19,20 -15,30 L17,30 C20,14 20,0 15,-20 C6,-27 -6,-27 -16,-20Z',DARK,3);
+        sh('M-5,-23 L5,-23 L0,-6Z','#fff',2);
+        line(8,-12,38,0,6); sh(circ(42,0,5),SKIN,2);
+        if(k===2) sh('M-18,-36 C-24,-10 -14,-4 -8,-14 L-6,-40Z','#d9793a',3);
+        sh(circ(0,-40,16),SKIN,3);
+        stroke('M13,-46 L20,-38 L14,-36',INK,2.5); solid(circ(7,-44,2.2));
+        if(k===0){ sh('M-16,-38 C-30,-48 -22,-66 -8,-60 C-6,-72 14,-68 12,-56 C22,-58 24,-48 16,-46 C8,-54 -6,-52 -16,-38Z','#fff',3); }
+        else sh('M-16,-38 C-20,-58 8,-64 16,-46 C6,-52 -6,-50 -16,-38Z',k===1?DARK:'#d9793a',3);
+      });
+      OPQ=opq;
       tx(0,110,'пианист '+names[k],30,{col:'#f4ecd9'});
     });
   }
@@ -404,15 +452,15 @@ scene(S[8],S[11],function(t){
     if(t>S[9]+1.2){
       g('translate(390,250) scale('+r2(pop(t,S[9]+1.2,.3))+')',function(){
         bubble(-150,-120,300,210,-90,120);
-        g('translate(0,70) scale(.42)',function(){ ver(0,0,0,1,{glasses:1,scarf:1,hair:'metal',mouth:'scream',phones:0,tag:false}); });
+        g('translate(0,70) scale(.42)',function(){ ver(5,0,0,1,{hair:'metal',mouth:'scream',tag:false}); });
         tx(100,-70,'?!',50,{col:PINK,font:'Rubik Mono One',weight:400});
       });
     }
   }
   /* «иногда я и сам задаю себе этот вопрос» — зеркало */
   if(t>S[10]){
-    var u=pop(t,S[10],.4);
-    g('translate(1060,300) scale('+r2(u)+')',function(){ sh(ell(0,0,90,130),'#dff3f1',6); tx(0,40,'?',150,{font:'Rubik Mono One',weight:400,col:PINK}); });
+    var um=pop(t,S[10],.4);
+    g('translate(1060,300) scale('+r2(um)+')',function(){ sh(ell(0,0,90,130),'#dff3f1',6); tx(0,40,'?',150,{font:'Rubik Mono One',weight:400,col:PINK}); });
   }
 });
 
@@ -428,7 +476,7 @@ scene(S[11],S[15],function(t){
     var p=eo(ph(t,S[12],S[12]+1.4));
     g('translate(800,380)',function(){
       var parts=[['бас',-300,120,TEAL],['тема',-40,-170,PINK],['гармония',260,-60,YEL],['вдох',300,150,'#fff'],['исполнитель',-280,-120,YEL]];
-      parts.forEach(function(q,i){
+      parts.forEach(function(q){
         var x=q[1]*p, y=q[2]*p;
         sh(rect(x-90,y-40,180,80,14),q[3],4); tx(x,y+12,q[0],38,{});
         line(0,0,x*.7,y*.7,2);
@@ -541,7 +589,7 @@ scene(S[17],S[22],function(t){
     g('translate(1300,560)',function(){ sh(rect(-130,-60,260,120,14),GREY,5); sh(circ(-60,0,40),DARK,4); sh(circ(60,0,40),DARK,4); });
     for(var w=0;w<6;w++){ var u=((t*1.8+w/6)%1)*blast; if(blast>0) sh('M'+r2(1160-u*700)+','+r2(560-160-u*120)+' Q'+r2(1160-u*900)+',560 '+r2(1160-u*700)+','+r2(560+160+u*120),null,8*(1-u)+2); }
     var lean=blast*-18;
-    ver(5,520,730,1.4,{tilt:lean,mouth:blast>.3?'grin':'smile',eyes:blast>.3?'closed':'dot',armL:1.2*blast+.2,armR:1.2*blast+.2,t:t,tag:false,hair:blast>.5?'metal':'neat',phones:0});
+    ver(5,520,730,1.4,{tilt:lean,mouth:blast>.3?'grin':'smile',eyes:blast>.3?'closed':'dot',armL:1.2*blast+.2,armR:1.2*blast+.2,t:t,tag:false,hair:blast>.5?'metal':'quiff',phones:0});
     if(blast>.5) caption(560,200,'2009!',80,S[21]+1.1,t,{font:'Rubik Mono One',weight:400,col:PINK,rot:-10});
     g('translate(1300,300)',function(){
       sh('M-100,0 A100,100 0 0,1 100,0',null,5); var a2=Math.PI+(.15+blast*.85)*Math.PI; line(0,0,Math.cos(a2)*84,Math.sin(a2)*84,7);
@@ -576,7 +624,7 @@ scene(S[22],S[26],function(t){
     var gx=305+si*170+fr*170, gy=660-si*70-Math.sin(fr*Math.PI)*30;
     if(t<S[24]) ver(5,gx,gy,.6,{walk:t*10,mouth:'smile',t:t,tag:false});
     else{
-      ver(5,1150,590-6*70+60,.6,{mouth:'grin',t:t,tag:false,armR:2.6});
+      ver(5,1150,590-6*70+60,.62,{mouth:'grin',t:t,tag:false,armR:2.6});
       /* статистика: пирог, где академическая доля перевалила за половину */
       var u=eo(ph(t,S[24]+.6,S[24]+3.5));
       g('translate(520,280)',function(){
@@ -589,9 +637,9 @@ scene(S[22],S[26],function(t){
   } else {
     /* венок, кубок, печать «образцово» */
     for(var k2=0;k2<7;k2++){ sh(rect(220+k2*170,660-k2*70,170,720-(660-k2*70)+60,0),k2%2?YEL:'#fff',5); }
-    ver(5,1150,590-6*70+60,.8,{mouth:'grin',eyes:'happy',t:t,tag:false,armL:2.8,armR:2.8,bendL:-.1,bendR:-.1,
+    ver(5,1150,590-6*70+60,.64,{mouth:'grin',eyes:'happy',t:t,tag:false,armL:2.8,armR:2.8,bendL:-.1,bendR:-.1,
       hold:function(h){ sh('M'+r2(h.r[0]-20)+','+r2(h.r[1]-60)+' l40,0 l-6,50 l-28,0Z',YEL,4); }});
-    g('translate(1150,125) scale(.8)',function(){ for(var q=0;q<7;q++){ var a=Math.PI+q/6*Math.PI; sh(ell(Math.cos(a)*70,Math.sin(a)*30,16,8),TEAL,3); } });
+    g('translate(1150,108) scale(.66)',function(){ for(var q=0;q<7;q++){ var a=Math.PI+q/6*Math.PI; sh(ell(Math.cos(a)*70,Math.sin(a)*30,16,8),TEAL,3); } });
     g('translate(480,300) rotate(-14) scale('+r2(pop(t,S[25]+1,.35))+')',function(){ sh(circ(0,0,130),null,10); sh(circ(0,0,108),null,4); tx(0,14,'ОБРАЗЦОВО',30,{font:'Rubik Mono One',weight:400,col:PINK}); });
     caption(800,120,'история культурного роста',56,S[25]+.3,t,{});
   }
@@ -610,7 +658,7 @@ scene(S[26],S[30],function(t){
   });
   if(t>S[26]+2.4){ var mu=pop(t,S[26]+2.4,.3); g('translate('+r2(rx+60)+',520) scale('+r2(mu)+')',function(){ sh(ell(0,0,22,16),GREY,3); sh(circ(-12,-14,8),GREY,3); sh(circ(10,-14,8),GREY,3); solid(circ(-4,-2,3)); line(20,4,48,-8,3); }); }
   if(t>S[26]+2.6) caption(560,380,'до дыр',54,S[26]+2.6,t,{rot:-6,col:PINK});
-  ver(5,1150,590-6*70+60,.8,{mouth:t>S[26]+1.5?'o':'grin',eyes:t>S[26]+1.5?'wide':'happy',t:t,tag:false,tilt:t>S[26]+1.5?-8:0});
+  ver(5,1150,590-6*70+60,.64,{mouth:t>S[26]+1.5?'o':'grin',eyes:t>S[26]+1.5?'wide':'happy',t:t,tag:false,tilt:t>S[26]+1.5?-8:0});
   if(t>S[27]){
     /* телефон на пружине */
     var j=pop(t,S[27],.35), bob=Math.abs(Math.sin((t-S[27])*6))*30;
@@ -674,7 +722,7 @@ scene(S[30],S[33],function(t){
       ver(0,1030,720,.9,{mouth:'o',eyes:'wide',t:t,tag:false}); }
     ver(5,lerp(300,700,eo(ph(t,S[32],S[32]+1.6))),730,1.15,{walk:t<S[32]+1.6?t*12:0,armR:1.7,bendR:.4,mouth:'smile',t:t,tag:false,
       hold:function(h){ g('translate('+r2(h.r[0]+40)+','+r2(h.r[1]-20)+')',function(){ sh(rect(-50,-30,100,50,6),YEL,4); sh(rect(-50,-40,100,14,4),PINK,3); line(0,-40,0,-64,3); sh('M0,-64 q-6,-10 0,-18 q6,8 0,18Z',PINK,2); }); }});
-    g('translate(700,470) rotate(8)',function(){ sh(rect(-50,-20,100,40,6),'#fff',3); tx(0,12,'ГОСТЬ',22,{font:'Rubik Mono One',weight:400}); });
+    g('translate(700,585) rotate(8)',function(){ sh(rect(-50,-20,100,40,6),'#fff',3); tx(0,12,'ГОСТЬ',22,{font:'Rubik Mono One',weight:400}); });
     caption(560,160,'без обязательства остаться',48,S[32]+3.2,t,{rot:-3});
   }
 });
@@ -689,8 +737,8 @@ scene(S[33],END,function(t){
     turntable(1420,700,.6,t,t>S[34]+.6,t>S[34]+.6);
     var argue=t<S[33]+2;
     var blast=eo(ph(t,S[36]+.2,S[36]+.9));
-    ver(0,640,640,.9,{mouth:argue?'talk':'grin',t:t,armR:t>S[34]&&t<S[35]?2.2:.5,tilt:blast>0?Math.sin(t*8.8)*14:0,horns:blast>0?'r':null,tag:false});
-    ver(5,940,640,.9,{mouth:t>S[35]&&t<S[36]+.3?'talk':(blast>0?'grin':'smile'),t:t,armR:t>S[35]&&t<S[36]?2.5:.4,bendR:.2,tag:false,tilt:-blast*16,eyes:blast>.5?'closed':'dot'});
+    ver(0,640,664,.9,{sit:1,mouth:argue?'talk':'grin',t:t,armR:t>S[34]&&t<S[35]?2.2:.5,tilt:blast>0?Math.sin(t*8.8)*14:0,horns:blast>0?'r':null,tag:false});
+    ver(5,940,664,.9,{sit:1,mouth:t>S[35]&&t<S[36]+.3?'talk':(blast>0?'grin':'smile'),t:t,armR:t>S[35]&&t<S[36]?2.5:.4,bendR:.2,tag:false,tilt:-blast*16,eyes:blast>.5?'closed':'dot'});
     if(argue){ g('translate(800,250)',function(){ bubble(-230,-70,200,90,40,90); tx(-130,-14,'МОЁ!',30,{font:'Rubik Mono One',weight:400}); bubble(30,-80,200,90,120,100); tx(130,-24,'НЕТ, МОЁ!',22,{font:'Rubik Mono One',weight:400}); }); }
     else if(t<S[34]) g('translate(790,330) scale('+r2(pop(t,S[33]+2,.3))+')',function(){ sh('M-40,0 C-40,-40 40,-40 40,0',null,5); solid(circ(-30,4,12),PAPER); caption(0,-60,'мир',80,S[33]+2.2,t,{}); });
     if(t>S[34]&&t<S[35]) caption(1420,420,'шшш… клац',40,S[34]+.4,t,{col:PINK});
@@ -737,66 +785,37 @@ function chapter(t,idx,a){
   });
 }
 
-/* ============================================================ субтитры */
-var SUBS=!/nosubs/.test(location.search);
-var MC=document.createElement('canvas').getContext('2d');
-function measure(s,fs){ MC.font='600 '+fs+'px "Golos Text"'; return MC.measureText(s).width; }
-function subtitles(t){
-  if(!SUBS) return '';
-  var c=null;
-  for(var i=0;i<TIMING.cues.length;i++){ var q=TIMING.cues[i]; if(t>=q.t0-.05&&t<=q.t1){ c=q; break; } }
-  if(!c) return '';
-  var words=c.s.split(' '), lines=[''], max=52;
-  words.forEach(function(w){ var l=lines[lines.length-1]; if((l+' '+w).trim().length>max&&l) lines.push(w); else lines[lines.length-1]=(l+' '+w).trim(); });
-  var fs=36, lh=46, h=lines.length*lh+26, y0=900-28-h;
-  var wmax=Math.max.apply(null,lines.map(function(l){ return measure(l,fs); }))+64;
-  var out='<rect x="'+r2(800-wmax/2)+'" y="'+r2(y0)+'" width="'+r2(wmax)+'" height="'+h+'" rx="14" fill="#f4ecd9" fill-opacity=".92" stroke="'+INK+'" stroke-width="3"/>';
-  lines.forEach(function(l,i){ out+='<text x="800" y="'+r2(y0+13+lh*(i+1)-12)+'" font-family="Golos Text" font-weight="600" font-size="'+fs+'" fill="'+INK+'" text-anchor="middle">'+esc(l)+'</text>'; });
-  return out;
-}
-
-/* =============================================================== кадр */
-var scn=document.getElementById('scene'), subs=document.getElementById('subs'), turb=document.getElementById('turb'), wiper=document.getElementById('wiper');
-function renderAt(t){
+/* ============================================================== экспорт */
+export var SCENES=SC.map(function(s,i){ return {a:s.a,b:s.b,label:CH[i]}; });
+export var FILM_END=END;
+export var CUES=TIMING.cues;
+/* кадр главы idx во время t: сцена, номер главы, рамка */
+export function drawScene(idx,t){
   O=[];
-  var cur=null, idx=0;
-  for(var i=0;i<SC.length;i++) if(t>=SC[i].a&&t<SC[i].b){ cur=SC[i]; idx=i; break; }
-  if(!cur){ cur=SC[SC.length-1]; idx=SC.length-1; }
+  var cur=SC[idx];
   cur.fn(t);
   chapter(t,idx,cur.a);
   sh(rect(18,16,1564,868,26),null,5);
-  scn.innerHTML=O.join('');
-  /* линии «кипят» — двенадцать рисунков в секунду, как в покадровой анимации */
-  turb.setAttribute('seed',String(1+Math.floor(t*12)%9));
-  /* смена сцены — шторка слева направо */
-  var w=idx===0?1:eo(ph(t,cur.a,cur.a+.35));
-  wiper.setAttribute('width',String(Math.round(1600*w)));
-  subs.innerHTML=subtitles(t);
+  return O.join('');
 }
-window.renderAt=renderAt;
-window.FILM_END=END;
-
-/* бумага: зерно считается один раз */
-(function(){
+/* бумага: зерно считается один раз на вкладку */
+var paperUrl=null;
+/* global document */
+export function paper(){
+  if(paperUrl) return paperUrl;
   var c=document.createElement('canvas'); c.width=800; c.height=450;
   var x=c.getContext('2d'), im=x.createImageData(800,450), d=im.data;
   for(var i=0;i<d.length;i+=4){ var n=hsh(i*.37)*28+hsh(i*.011)*10; d[i]=244-n; d[i+1]=236-n; d[i+2]=217-n*.8; d[i+3]=255; }
   x.putImageData(im,0,0);
   for(var k=0;k<60;k++){ x.fillStyle='rgba(120,100,80,'+(hsh(k)*.06)+')'; x.beginPath(); x.arc(hsh(k+1)*800,hsh(k+2)*450,hsh(k+3)*3+.5,0,7); x.fill(); }
-  document.getElementById('paper').setAttribute('href',c.toDataURL('image/jpeg',.85));
-})();
-
-/* живой просмотр: ?play — под звук film-audio.m4a из той же папки */
-var ui=document.getElementById('ui');
-if(/play/.test(location.search)){
-  var a=new Audio('film-audio.m4a');
-  ui.innerHTML='<button id="go">▶ смотреть под звук</button>';
-  document.getElementById('go').onclick=function(){ a.play(); this.remove(); (function loop(){ renderAt(a.currentTime); if(!a.ended) requestAnimationFrame(loop); })(); };
-  renderAt(0);
-} else {
-  var m=location.search.match(/t=([\d.]+)/); renderAt(m?+m[1]:0);
+  paperUrl=c.toDataURL('image/jpeg',.85);
+  return paperUrl;
 }
-})();
-</script>
-</body>
-</html>
+export {INK,PAPER};
+/* лист персонажа для Remotion Studio: все версии рядом */
+export function drawCast(t){
+  O=[];
+  floor(760);
+  for(var k=0;k<6;k++) ver(k,170+k*252,760,1.45,{t:t,mouth:['grin','smile','talk','smile','flat','smile'][k],eyes:k===4?'side':'dot',armR:k===5?2.3:.25});
+  return O.join('');
+}

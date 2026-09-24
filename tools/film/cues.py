@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Субтитры и времена фраз для фильма из words.json → timing.json"""
+"""Субтитры и времена фраз для фильма из words.json → src/timing.json"""
 import json, re, os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 W=json.load(open('words.json')); res=W['res']; asr=W['asr']; ew=W['ew']; match={int(k):v for k,v in W['match'].items()}
@@ -51,6 +51,6 @@ for key,pat in [('acdc','AC/DC'),('mono','монотеизм'),('three','трё�
         if pat.lower().replace('ё','е') in w.lower().replace('ё','е'):
             if wt[k]: kw[key]=round(wt[k][0],2)
             break
-json.dump({'cues':cues,'sent':sent,'kw':kw},open('timing.json','w'),ensure_ascii=False,indent=0)
+json.dump({'cues':cues,'sent':sent,'kw':kw},open('src/timing.json','w'),ensure_ascii=False,indent=0)
 for c in cues: print('%7.2f %7.2f %s'%(c['t0'],c['t1'],c['s']))
 print(kw)
