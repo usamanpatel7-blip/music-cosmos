@@ -675,6 +675,8 @@ function stop(){
 }
 
 P.resolve=resolve; P.info=info; P.play=play; P.toggle=toggle; P.stop=stop;
+/* громкость нужна фильму на главной: музыка под голосом тише, финал громче */
+P.volume=function(v){ el().volume=Math.max(0,Math.min(1,v)); };
 P.on=on; P.current=function(){ return cur; }; P.state=function(){ return state; };
 P.meta=function(){ return meta; };
 return P;

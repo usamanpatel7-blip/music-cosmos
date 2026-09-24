@@ -95,8 +95,7 @@ const two = (s, base = 0) => Array.from({length: s.length / 2}, (_, i) =>
   (B64.indexOf(s[2 * i]) << 6 | B64.indexOf(s[2 * i + 1])) + base);
 const t = catalog.t;
 assert.equal(packed.n.length, t.n.length);
-assert.deepEqual(one(packed.E), t.E);
-assert.deepEqual(one(packed.L), t.L);
+assert.deepEqual(one(packed.C), t.C);
 assert.deepEqual(one(packed.R), t.R);
 assert.deepEqual(two(packed.a), t.a);
 assert.deepEqual(two(packed.y, 1000).map(y => y === 1000 ? 0 : y), t.y);
