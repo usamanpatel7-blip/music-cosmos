@@ -31,7 +31,7 @@ python3 cues.py                 # → src/timing.json: субтитры и на�
 python3 audio.py                # → public/film-audio.m4a: голос, винил, рифф
 npm run dev                     # Remotion Studio: таймлайн, главы, лист персонажа
 npm run render                  # → out/film.mp4 (crf 31, под сайт)
-npm run poster                  # → out/film-poster.jpg
+npm run poster                  # → out/film-poster.jpg: кадр «комнаты» без субтитров
 ```
 
 Первые четыре шага нужны, только если перезаписан голос: тайминги и звук

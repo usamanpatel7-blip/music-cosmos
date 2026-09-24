@@ -21,8 +21,8 @@ Config.setX264Preset("slow");
 Config.setPixelFormat("yuv420p");
 Config.setAudioBitrate("96k");
 Config.overrideFfmpegCommand(({ type, args }) => {
-  if (type !== "stitcher") return args;
+  // только шаг кодирования: в шаге faststart поток копируется, фильтр там нельзя
   const i = args.indexOf("-c:v");
-  if (i === -1) return args;
+  if (type !== "stitcher" || i === -1 || args[i + 1] !== "libx264") return args;
   return [...args.slice(0, i), "-vf", "hqdn3d=3:3:4:4", "-tune", "animation", ...args.slice(i)];
 });
