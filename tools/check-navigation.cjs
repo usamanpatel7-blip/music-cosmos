@@ -65,7 +65,7 @@ for (const [kind,key] of [['epoch','e'],['band','b'],['row','r'],['year','y']]) 
 }
 assert.equal(ctx.sameHit(null, null), true);
 
-for (const name of ['08-cosmos','11-library','index']) {
+for (const name of ['08-cosmos','11-library','index','archive']) {
   const src = read('src/'+name+'.html');
   const doc = read('docs/'+name+'.html');
   assert.ok(doc.includes(src), name+': docs must match src');
@@ -86,4 +86,24 @@ vm.runInContext(mapScript, fallback);
 assert.ok(wrap.innerHTML.includes('Открыть полный каталог'));
 assert.ok(wrap.innerHTML.includes('11-library.html#ep='));
 assert.ok(wrap.innerHTML.includes('11-library.html#art='));
-console.log('PASS: URL validation, hover identity, script syntax, local links, generated pages, no-WebGL fallback');
+// The home page packs the catalogue into strings; unpacking must give it back exactly.
+const home = read('docs/index.html');
+const packed = JSON.parse(home.match(/var ONE=(.*?);\n/s)[1]);
+const B64 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
+const one = (s) => [...s].map(c => B64.indexOf(c));
+const two = (s, base = 0) => Array.from({length: s.length / 2}, (_, i) =>
+  (B64.indexOf(s[2 * i]) << 6 | B64.indexOf(s[2 * i + 1])) + base);
+const t = catalog.t;
+assert.equal(packed.n.length, t.n.length);
+assert.deepEqual(one(packed.E), t.E);
+assert.deepEqual(one(packed.L), t.L);
+assert.deepEqual(one(packed.R), t.R);
+assert.deepEqual(two(packed.a), t.a);
+assert.deepEqual(two(packed.y, 1000).map(y => y === 1000 ? 0 : y), t.y);
+assert.deepEqual(two(packed.r), t.r);
+assert.deepEqual(packed.i.split(',').map(x => String(parseInt(x, 36))), t.i);
+one(packed.s).forEach((k, j) => {
+  const m = t.m[j];
+  assert.ok(k === 6 ? m === 0 : (m >> k & 1) && (m & ((1 << k) - 1)) === 0, 'shelf ' + j);
+});
+console.log('PASS: URL validation, hover identity, script syntax, local links, generated pages, no-WebGL fallback, home data');

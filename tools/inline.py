@@ -12,12 +12,14 @@ tools/player.js, — а копии в страницах расставляет 
 Места вшивания размечены:
     var CAT={…};                      ← data/catalog.json
     /* < player */ … /* player > */   ← tools/player.js
+    var ONE={…};                      ← tools/one_data.py (главная)
 """
 import io, os, re, sys, json
 from map_data import map_data
+from one_data import one_data
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PAGES = ['src/11-library.html', 'src/12-portrait.html', 'src/13-epochs.html']
+PAGES = ['src/index.html', 'src/11-library.html', 'src/12-portrait.html', 'src/13-epochs.html']
 JSON = os.path.join(ROOT, 'data', 'catalog.json')
 PLAY = os.path.join(ROOT, 'tools', 'player.js')
 
@@ -35,6 +37,12 @@ for rel in PAGES:
     page = io.open(path, encoding='utf-8').read()
     before, hits = page, []
 
+    if re.search(r'var ONE=.*?;\n', page, re.S):
+        one = json.dumps(one_data(json.loads(data)), ensure_ascii=False, separators=(',', ':'))
+        if '</script' in one.lower():
+            sys.exit('в данных главной есть </script')
+        page = re.sub(r'var ONE=.*?;\n', lambda m: 'var ONE=' + one + ';\n', page, count=1, flags=re.S)
+        hits.append('данные главной')
     if re.search(r'var CAT=.*?;\n', page, re.S):
         page = re.sub(r'var CAT=.*?;\n', lambda m: 'var CAT=' + data + ';\n', page, count=1)
         hits.append('данные')
