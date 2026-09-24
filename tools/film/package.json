@@ -11,6 +11,8 @@
     "@remotion/transitions": "4.0.528",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-humaaans": "^1.0.1",
+    "react-peeps": "^0.1.10",
     "remotion": "4.0.528"
   },
   "devDependencies": {

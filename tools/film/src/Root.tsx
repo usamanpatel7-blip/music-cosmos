@@ -2,6 +2,10 @@ import React from "react";
 import { Composition, Folder } from "remotion";
 import { Cast } from "./Chapter";
 import { Cast2 } from "./v2/Cast2";
+import { Poses } from "./v3/Poses";
+import { LibHumaaans, LibPeeps } from "./lab/Libs";
+import { Pick } from "./lab/Pick";
+import { PeepRoom, PeepStage } from "./lab/PeepFrames";
 import { FrameNow, FrameRoom, FrameStage } from "./v2/Frames";
 import { Film } from "./Film";
 import { FILM_END } from "./engine";
@@ -24,6 +28,12 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="FrameRoom" component={FrameRoom} durationInFrames={48} fps={24} width={1920} height={1080} />
       <Composition id="FrameStage" component={FrameStage} durationInFrames={48} fps={24} width={1920} height={1080} />
       <Composition id="FrameNow" component={FrameNow} durationInFrames={48} fps={24} width={1920} height={1080} />
+      <Composition id="LibHumaaans" component={LibHumaaans} durationInFrames={1} fps={24} width={1920} height={1080} />
+      <Composition id="LibPeeps" component={LibPeeps} durationInFrames={1} fps={24} width={1920} height={1080} />
+      <Composition id="PeepRoom" component={PeepRoom} durationInFrames={48} fps={24} width={1920} height={1080} />
+      <Composition id="PeepStage" component={PeepStage} durationInFrames={48} fps={24} width={1920} height={1080} />
+      <Composition id="Pick" component={Pick} durationInFrames={1} fps={24} width={1920} height={1080} />
+      <Composition id="Poses" component={Poses} durationInFrames={48} fps={24} width={1920} height={1080} />
       <Composition id="Cast2" component={Cast2} durationInFrames={48} fps={24} width={1920} height={1080} />
       <Composition
         id="Cast"
