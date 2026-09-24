@@ -16,3 +16,8 @@ node_modules/
 Thumbs.db
 __pycache__/
 *.pyc
+
+# фильм: сборка и кадры — рабочие файлы, результат лежит в docs/media
+tools/film/out/
+tools/film/asr.json
+tools/film/words.json

@@ -287,35 +287,14 @@ h2{font:500 clamp(40px,4.4vw,64px)/.98 var(--serif);font-style:italic;margin:0 0
 .inl::before{content:"";border-left:8px solid currentColor;border-top:5px solid transparent;border-bottom:5px solid transparent}
 
 /* ----------------------------------------------------------------- фильм */
-#film{position:fixed;inset:0;z-index:40;pointer-events:none}
+#film{position:fixed;inset:0;z-index:40;background:#0a090b;display:flex;align-items:center;justify-content:center}
 #film[hidden]{display:none}
-#film>*{pointer-events:auto}
-.fl-top{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:14px;padding:16px var(--gut);background:linear-gradient(var(--bg),rgba(12,11,13,0))}
-.fl-top span{font:500 italic 20px/1 var(--serif);color:var(--ink2)}
-.fl-top button{margin-left:auto;background:none;border:1px solid var(--line2);border-radius:99px;width:38px;height:38px;font-size:20px;line-height:1}
-.fl-sub{position:absolute;left:50%;bottom:112px;transform:translateX(-50%);width:min(980px,calc(100vw - 32px));text-align:center;pointer-events:none;
-  font:500 clamp(24px,3.1vw,40px)/1.22 var(--serif);text-shadow:0 2px 18px rgba(0,0,0,.9),0 0 3px rgba(0,0,0,.9);transition:opacity .35s}
-.fl-sub.title{font-style:italic;font-size:clamp(40px,6vw,84px);bottom:44%}
-.fl-sub.title small{display:block;font:600 12px/1 var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--ink2);font-style:normal;margin-top:18px}
-.fl-sub.hide{opacity:0}
-.fl-bar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:14px;padding:18px var(--gut) 24px;background:linear-gradient(rgba(12,11,13,0),var(--bg) 55%)}
-.fl-play{width:46px;height:46px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);display:grid;place-items:center;flex:none}
-.fl-track{flex:1;height:18px;position:relative;cursor:pointer}
-.fl-track::before{content:"";position:absolute;left:0;right:0;top:8px;height:2px;background:var(--line2)}
-.fl-track i{position:absolute;left:0;top:7px;height:4px;border-radius:2px;background:var(--c1);width:0}
-.fl-time{font:500 13px/1 var(--sans);color:var(--ink2);font-variant-numeric:tabular-nums;min-width:84px;text-align:right}
-.fl-end{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;width:min(640px,calc(100vw - 32px))}
+#film video{display:block;width:min(100vw,calc(100vh*16/9 - 20px));max-height:calc(100vh - 20px);aspect-ratio:16/9;background:#f4ecd9;border-radius:6px}
+#flX{position:absolute;right:var(--gut);top:16px;z-index:2;background:rgba(12,11,13,.7);border:1px solid var(--line2);border-radius:99px;width:40px;height:40px;font-size:20px;line-height:1}
+.fl-end{position:absolute;left:0;right:0;bottom:12%;text-align:center;z-index:2}
 .fl-end[hidden]{display:none}
-.fl-end h3{font:500 italic clamp(44px,6vw,80px)/.95 var(--serif);margin:0 0 18px}
-.fl-end p{color:var(--ink2);margin:0 0 22px}
 .fl-end .btns{justify-content:center}
-.fl-rec{position:absolute;inset:0;background:rgba(12,11,13,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px 40px;text-align:center}
-.fl-rec[hidden]{display:none}
-.fl-rec .now{font:500 clamp(28px,3.6vw,48px)/1.2 var(--serif);max-width:900px;margin:0 0 18px;min-height:2.4em}
-.fl-rec .nxt{font:500 18px/1.4 var(--serif);color:var(--ink3);max-width:800px;min-height:2.8em;margin:0 0 26px}
-.fl-rec .rs{font-size:13.5px;color:var(--ink2);margin:0 0 16px;max-width:620px}
-.fl-rec .rs b{color:var(--no)}
-.fl-rec .btns{justify-content:center}
+.fl-end .btn{background:rgba(12,11,13,.85)}
 
 /* ---------------------------------------------------------------- чтение */
 #reader{position:fixed;inset:0;z-index:45;background:rgba(12,11,13,.97);overflow:auto;padding:80px var(--gut) 80px}
@@ -353,10 +332,6 @@ h2{font:500 clamp(40px,4.4vw,64px)/.98 var(--serif);font-style:italic;margin:0 0
   #np{left:12px;right:12px;bottom:12px;max-width:none}
   body.room #np{display:none}
   .foot{padding-bottom:110px}
-  .fl-sub{bottom:104px;font-size:clamp(20px,5.4vw,28px)}
-  .fl-bar{padding:14px 14px 18px;gap:10px}
-  .fl-time{min-width:0;font-size:12px}
-  #flRec{display:none}
 }
 @media (max-width:899px) and (max-height:700px){ #room,#room.wide{height:64vh} }
 </style>
@@ -387,7 +362,7 @@ h2{font:500 clamp(40px,4.4vw,64px)/.98 var(--serif);font-style:italic;margin:0 0
     <h1>Одна вещь</h1>
     <p class="lead">Моя музыкальная эволюция — от плейлиста «11–15» до сегодняшнего дня. Сторона&nbsp;А — обо мне. Сторона&nbsp;Б — о&nbsp;вас: сколько мне было, какая это эпоха и <em>как менялась музыка</em>.</p>
     <div class="btns">
-      <button class="btn pri" type="button" id="filmBtn"><i class="pl"></i>Смотреть фильм <small id="filmLen">3 мин</small></button>
+      <button class="btn pri" type="button" id="filmBtn"><i class="pl"></i>Смотреть фильм <small>2:50</small></button>
       <a class="btn" href="#a0" id="needleBtn">Опустить иглу ↓</a>
     </div>
     <p class="hint" id="hint">Каждая точка — настоящая запись. Наведите, чтобы узнать какая; нажмите — зазвучит.</p>
@@ -604,21 +579,11 @@ h2{font:500 clamp(40px,4.4vw,64px)/.98 var(--serif);font-style:italic;margin:0 0
 </div>
 
 <div id="film" hidden role="dialog" aria-modal="true" aria-label="Фильм «Моя музыкальная эволюция»">
-  <div class="fl-top"><span>Моя музыкальная эволюция</span><button id="flX" type="button" aria-label="Закрыть фильм">×</button></div>
-  <div class="fl-sub hide" id="flSub"></div>
-  <div class="fl-end" id="flEnd" hidden>
-    <h3>Одна вещь</h3>
-    <p>Дальше — моя история по плейлистам и ваш слух на второй стороне.</p>
-    <div class="btns"><button class="btn pri" type="button" id="flToA">Сторона А ↓</button><button class="btn" type="button" id="flToB">Сторона Б</button><button class="btn" type="button" id="flAgain">Ещё раз</button></div>
-  </div>
-  <div class="fl-bar">
-    <button class="fl-play" id="flP" type="button" aria-label="Пауза"><i class="ico"></i></button>
-    <div class="fl-track" id="flTrack" role="slider" aria-label="Время фильма" tabindex="0"><i id="flFill"></i></div>
-    <span class="fl-time" id="flTime">0:00</span>
-    <button class="linkish" type="button" id="flTxt">текст</button>
-    <button class="linkish" type="button" id="flRec">записать голос</button>
-  </div>
-  <div class="fl-rec" id="flRecBox" hidden></div>
+  <button id="flX" type="button" aria-label="Закрыть фильм">×</button>
+  <video id="flV" controls playsinline preload="none" poster="media/film-poster.jpg">
+    <source src="media/film.mp4" type="video/mp4">
+  </video>
+  <div class="fl-end" id="flEnd" hidden><div class="btns"><button class="btn pri" type="button" id="flToA">Сторона А ↓</button><button class="btn" type="button" id="flToB">Сторона Б — ваш слух</button><button class="btn" type="button" id="flAgain">Ещё раз</button></div></div>
 </div>
 
 <div id="reader" hidden role="dialog" aria-modal="true"><button id="rdX" type="button" aria-label="Закрыть">×</button><article id="rdA"></article></div>
@@ -931,60 +896,6 @@ TEXTS.essays={
     'А работу всё равно придётся продолжать.'
   ]}
 };
-
-/* Фильм: фраза — одна строка субтитров. f — фигура, которая встаёт под
-   фразой; m — запись, которая начинает звучать (0 — тишина), v — её громкость.
-   Время каждой фразы — по длине (≈14 знаков в секунду), пока автор не
-   записал голос: тогда время берётся из media/intro-cues.js. */
-TEXTS.film=[
-  {s:'Мне, кажется, тесно в окончательной версии себя.',f:['rec',{}]},
-  {s:'Если бы все мои прежние версии однажды оказались в одной комнате,',f:['rec',{ring:1}]},
-  {s:'музыку пришлось бы выключить.'},
-  {s:'Иначе мы бы так и не познакомились:',f:['tl',{focus:[0,1,2,3,4,5]}]},
-  {s:'каждый потребовал бы поставить своё.'},
-  {s:'Подросток выбрал бы хэви-метал.',f:['cl',{k:0}],m:'574050602',v:.55},
-  {s:'Причём не отдельную песню — альбом целиком, от первой секунды до последней.'},
-  {s:'В этом смысле он был почти религиозен.'},
-  {s:'Один AC/DC, одна пластинка, никаких сомнений и перескоков.',f:['cl',{k:0,hl:'AC/DC'}]},
-  {s:'Музыкальный монотеизм.',p:.6},
-  {s:'Нынешний я, скорее всего, начал бы объяснять,',f:['cl',{k:5}],m:'1452515042',v:.5},
-  {s:'почему одну сонату полезно и увлекательно слушать от трёх разных первоклассных пианистов.',f:['cl',{k:5,ids:['1452515042','1702899469']}]},
-  {s:'Подросток посмотрел бы на меня с опаской:',f:['tl',{focus:[0,5]}]},
-  {s:'это что, с нами случится?'},
-  {s:'Иногда я и сам задаю себе этот вопрос.',p:.8},
-  {s:'С возрастом приятно слышать больше.',f:['rv',{}]},
-  {s:'Замечать разницу между исполнениями, узнавать устройство вещи,'},
-  {s:'различать то, что прежде проходило мимо.'},
-  {s:'В этом даже есть немного тщеславия: приятно замечать, что замечаешь.'},
-  {s:'Но лучшие минуты всё равно наступают тогда,',f:['rec',{}]},
-  {s:'когда внутреннему комментатору наконец нечего сказать.',m:0,p:1.2},
-  {s:'Старые песни особенно хорошо это умеют.',f:['rec',{ring:1}]},
-  {s:'Я храню плейлисты с возрастом в названии: «11–15», «16–18», «20–21».'},
-  {s:'Иногда там попадается трек, который сегодня я не дослушал бы до конца.'},
-  {s:'Удалить его всё равно невозможно.'},
-  {s:'Он помнит обо мне что-то, чего я сам уже не помню.'},
-  {s:'События прошлого пересказать легко;',f:['cl',{k:0}]},
-  {s:'труднее восстановить силу, с которой они когда-то происходили.'},
-  {s:'Старому припеву иногда достаточно нескольких секунд.',m:'325821864',v:.6,p:1.6},
-  {s:'По библиотеке вообще удобно сочинять биографию.',f:['rv',{}],m:0},
-  {s:'Например, можно рассказать, как человек, слушавший Nickelback,',f:['rv',{ids:['719617259','719617243','282084063','470343163']}]},
-  {s:'постепенно пришёл к Баху и послевоенному авангарду.',f:['rv',{focus:[4,5]}]},
-  {s:'Статистика охотно подтверждает сюжет:',f:['cl',{k:5}]},
-  {s:'последние годы академическая музыка занимает больше половины моих прослушиваний.'},
-  {s:'Получается образцовая история культурного роста.'},
-  {s:'Правда, её немного портит почти целиком сохранённый новый альбом A$AP Rocky, заслушанный до дыр.',f:['cl',{k:5,hl:'A$AP Rocky'}],m:'1862935173',v:.55},
-  {s:'И тот самый трек из TikTok.'},
-  {s:'И ещё несколько вещей, которым в этой красивой эволюционной схеме вообще не положено существовать.',f:['cl',{k:5,pop:1}]},
-  {s:'И хорошо.',m:0,p:1},
-  {s:'Наверное, взросление не обязано быть заменой плохого вкуса на хороший.',f:['rec',{}]},
-  {s:'Можно измениться, не объявляя предыдущую версию себя ошибкой.'},
-  {s:'Песни как раз позволяют навещать прежнего себя без обязательства снова им становиться.',p:.8},
-  {s:'Представляю, как мы с тем подростком наконец перестаём спорить.',f:['rec',{ring:1}]},
-  {s:'Он ставит старый альбом.',f:['cl',{k:0}],m:'574050602',v:.35},
-  {s:'Я собираюсь рассказать ему, сколько всего мы потом открыли.'},
-  {s:'Но начинается припев.',p:.6},
-  {s:'Ладно, эту погромче.',f:['rec',{fast:1}],v:1,p:5}
-];
 
 /* Пороги: пара записей по разные стороны границы и вопрос «что изменилось».
    Правильный вариант — первый; на экране порядок перемешан. */
@@ -1318,8 +1229,7 @@ function frame(t){
   if(view.spin&&!RM&&visible&&!document.hidden){ view.rot+=dt*view.rate; drawDirty=true; busy=true; }
   if(drawDirty){ draw(); drawDirty=false; }
   follow();
-  if(FILM.on) filmTick(dt);
-  if(busy||FILM.on) kick();
+  if(busy) kick();
 }
 function resizeCanvas(){
   W=innerWidth; H=innerHeight; DPR=Math.min(window.devicePixelRatio||1,W<900?1.75:2);
@@ -1334,10 +1244,6 @@ var ROOMH=0;
 function gut(){ return Math.max(20,Math.min(48,W*.032)); }
 function colW(){ return (ROOM.open&&ROOM.wide?Math.min(540,W*.44):Math.min(440,W*.38))+2*gut(); }
 function region(){
-  if(FILM.on){
-    if(W>=900) return {x:W*.1,y:70,w:W*.8,h:H-70-200};
-    return {x:10,y:60,w:W-20,h:Math.round(H*.5)};
-  }
   if(W>=900){ var x=colW()+8; return {x:x,y:74,w:W-x-Math.max(24,W*.03),h:H-128}; }
   var h=Math.round(H*.43);
   if(ROOM.open&&ROOMH) h=Math.max(160,H-ROOMH-64);
@@ -1957,7 +1863,7 @@ function closeRoom(){
 $('rmX').onclick=closeRoom;
 addEventListener('keydown',function(e){
   if(e.key!=='Escape') return;
-  if(!$('reader').hidden) closeReader(); else if(FILM.on) closeFilm(); else if(ROOM.open) closeRoom();
+  if(!$('reader').hidden) closeReader(); else if(!film.hidden) closeFilm(); else if(ROOM.open) closeRoom();
 });
 function next(){
   ROOM.k++;
@@ -2441,224 +2347,43 @@ function openReader(k){
   rdBack=document.activeElement;
   rdA.innerHTML='<h3>'+esc(e.t)+'</h3>'+e.p.map(function(p){ return p.charAt(0)==='>'?'<p class="q">'+esc(p.slice(1))+'</p>':'<p>'+esc(p)+'</p>'; }).join('');
   reader.hidden=false; reader.scrollTop=0; document.body.classList.add('reader','locked');
-  if(FILM.on&&FILM.play) filmPause();
+  if(!film.hidden) flV.pause();
   $('rdX').focus({preventScroll:true});
 }
 function closeReader(){
   reader.hidden=true; document.body.classList.remove('reader');
-  if(!ROOM.open&&!FILM.on) document.body.classList.remove('locked');
+  if(!ROOM.open&&film.hidden) document.body.classList.remove('locked');
   if(rdBack&&rdBack.focus) rdBack.focus({preventScroll:true});
 }
 $('rdX').onclick=closeReader;
 each('[data-rd]',function(b){ b.onclick=function(){ openReader(b.getAttribute('data-rd')); }; });
 
 /* ================================================================= фильм
-   Эссе «Моя музыкальная эволюция» субтитрами поверх живой пластинки. Время
-   фраз — оценка по длине, пока нет записи голоса; когда автор запишет голос
-   (кнопка «записать голос»), рядом лягут media/intro.* и media/intro-cues.js
-   с его собственным темпом — и фильм пойдёт под голос. */
-var FILM={on:false,play:false,t:0,k:-2,starts:[],dur:0,voice:null,hasVoice:false,music:'',vol:.6,fx:-1,ended:false};
-var flSub=$('flSub'), flFill=$('flFill'), flTime=$('flTime'), flP=$('flP'), flEnd=$('flEnd'), film=$('film');
-var CUES=X.film||[];
-function estStarts(){
-  var t=3.4, st=[];
-  CUES.forEach(function(c){ st.push(t); t+=clamp(c.s.length/14+.55,1.8,8.5)+(c.p||.2); });
-  return {st:st,end:t+.5};
-}
-function fmt(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+('0'+s%60).slice(-2); }
-(function(){ var e=estStarts(); $('filmLen').textContent=Math.round(e.end/60)+' мин'; })();
-function loadVoice(cb){
-  var done=false, fin=function(a){ if(done) return; done=true; cb(a); };
-  var sc=document.createElement('script'); sc.src='media/intro-cues.js';
-  var go=function(){
-    var srcs=['media/intro.mp3','media/intro.m4a','media/intro.webm','media/intro.ogg'], n=0, a=new Audio();
-    a.preload='auto';
-    a.addEventListener('loadedmetadata',function(){ fin(a); });
-    a.addEventListener('error',function(){ if(n<srcs.length) a.src=srcs[n++]; else fin(null); });
-    a.src=srcs[n++];
-    setTimeout(function(){ fin(null); },2500);
-  };
-  sc.onload=go; sc.onerror=go; document.head.appendChild(sc);
-}
-function timing(){
-  var e=estStarts(), c=window.INTRO_CUES;
-  if(FILM.hasVoice&&c&&c.t&&c.t.length===CUES.length){ FILM.starts=c.t.slice(); FILM.dur=(c.end||FILM.voice.duration)+.3; return; }
-  if(FILM.hasVoice&&isFinite(FILM.voice.duration)&&FILM.voice.duration>10){
-    var k=(FILM.voice.duration-.5)/(e.end-3.4);
-    FILM.starts=e.st.map(function(s){ return (s-3.4)*k; }); FILM.dur=FILM.voice.duration+.3; return;
-  }
-  FILM.starts=e.st; FILM.dur=e.end;
-}
-function openFilm(preview){
+   Рисованный фильм по эссе «Моя музыкальная эволюция» — голос автора,
+   субтитры вшиты в кадр. Собирается отдельно: tools/film (см. README). */
+var FILM={on:false};
+var film=$('film'), flV=$('flV'), flEnd=$('flEnd');
+function openFilm(){
   if(ROOM.open) closeRoom();
   if(MP) MP.stop();
-  FILM.on=true; FILM.t=0; FILM.k=-2; FILM.fx=-1; FILM.music=''; FILM.ended=false;
   film.hidden=false; flEnd.hidden=true; document.body.classList.add('film','locked'); showTip(-1);
-  prefetch(CUES.map(function(c){ return c.m?BYID[c.m]:null; }).concat(CUES.map(function(c){ return c.f&&c.f[1].ids?idx(c.f[1].ids)[0]:null; })));
-  cur=null; show('rec',{});
-  var start=function(a){
-    FILM.voice=a; FILM.hasVoice=!!a; timing(); filmPlay(); $('flP').focus({preventScroll:true});
-  };
-  if(preview) start(preview); else loadVoice(start);
-  kick();
+  visible=false;
+  var p=flV.play(); if(p&&p.catch) p.catch(function(){});
+  flV.focus({preventScroll:true});
 }
 function closeFilm(){
-  if(!FILM.on) return;
-  FILM.on=false; FILM.play=false;
-  if(FILM.voice) FILM.voice.pause();
-  if(MP) MP.stop();
-  film.hidden=true; $('flRecBox').hidden=true; document.body.classList.remove('film');
-  if(!ROOM.open) document.body.classList.remove('locked');
-  cur=null; activate(activeStep||$('hero'));
+  if(film.hidden) return;
+  flV.pause(); film.hidden=true; document.body.classList.remove('film');
+  if(!ROOM.open&&reader.hidden) document.body.classList.remove('locked');
+  visible=true; kick();
 }
-function filmPlay(){
-  if(FILM.ended){ filmSeek(0); FILM.ended=false; flEnd.hidden=true; }
-  FILM.play=true; flP.classList.remove('paused'); flP.setAttribute('aria-label','Пауза');
-  if(FILM.voice) FILM.voice.play().catch(function(){});
-  if(MP&&FILM.music&&MP.state()==='paused') MP.toggle();
-  kick();
-}
-function filmPause(){
-  FILM.play=false; flP.classList.add('paused'); flP.setAttribute('aria-label','Играть');
-  if(FILM.voice) FILM.voice.pause();
-  if(MP&&MP.state()==='playing') MP.toggle();
-}
-function filmSeek(t){
-  FILM.t=clamp(t,0,FILM.dur); FILM.k=-2; FILM.fx=-1;
-  if(FILM.voice) try{ FILM.voice.currentTime=FILM.t; }catch(e){}
-}
-function cueAt(t){ var k=-1; for(var j=0;j<FILM.starts.length;j++){ if(FILM.starts[j]<=t) k=j; else break; } return k; }
-function filmBeat(k){
-  /* фигура — последняя объявленная не позже этой фразы */
-  var fx=-1, mx=-1, vx=-1;
-  for(var j=0;j<=k;j++){ if(CUES[j].f) fx=j; if(CUES[j].m!=null) mx=j; if(CUES[j].v!=null) vx=j; }
-  if(fx!==FILM.fx){ FILM.fx=fx; var f=fx>=0?CUES[fx].f:['rec',{}]; show(f[0],f[1]); }
-  var mid=mx>=0?CUES[mx].m:0, vol=vx>=0?CUES[vx].v:.6;
-  if(!MP) return;
-  var v=FILM.hasVoice&&vol<1?vol*.45:vol;
-  if(mid&&String(mid)!==FILM.music){
-    FILM.music=String(mid); var i=BYID[mid];
-    if(i!=null){ MP.volume(v); playIdx(i,false,{film:1}); }
-  }else if(!mid&&FILM.music){ FILM.music=''; MP.stop(); }
-  MP.volume(v);
-}
-function filmTick(dt){
-  if(FILM.play){
-    if(FILM.hasVoice&&!FILM.voice.paused) FILM.t=FILM.voice.currentTime;
-    else if(!FILM.hasVoice) FILM.t+=dt;
-    else if(FILM.voice.ended) FILM.t+=dt;
-  }
-  var k=cueAt(FILM.t);
-  if(k!==FILM.k){
-    FILM.k=k;
-    flSub.classList.add('hide');
-    setTimeout(function(){
-      if(k<0){ flSub.className='fl-sub title'; flSub.innerHTML='Моя музыкальная эволюция<small>'+(FILM.hasVoice?'фильм':'фильм · субтитры')+'</small>'; }
-      else { flSub.className='fl-sub'; flSub.textContent=CUES[k].s; }
-    },RM?0:220);
-    filmBeat(k);
-  }
-  flFill.style.width=(FILM.dur?FILM.t/FILM.dur*100:0).toFixed(2)+'%';
-  flTime.textContent=fmt(FILM.t)+' / '+fmt(FILM.dur);
-  if(FILM.play&&FILM.t>=FILM.dur-.05&&!FILM.ended){
-    FILM.ended=true; FILM.play=false; flP.classList.add('paused');
-    flSub.classList.add('hide'); flEnd.hidden=false;
-  }
-}
-$('filmBtn').onclick=function(){ openFilm(); };
+flV.addEventListener('ended',function(){ flEnd.hidden=false; });
+flV.addEventListener('play',function(){ flEnd.hidden=true; });
+$('filmBtn').onclick=openFilm;
 $('flX').onclick=closeFilm;
-flP.onclick=function(){ if(FILM.play) filmPause(); else filmPlay(); };
-$('flTrack').addEventListener('click',function(e){
-  var r=this.getBoundingClientRect(); filmSeek((e.clientX-r.left)/r.width*FILM.dur);
-  if(FILM.ended){ FILM.ended=false; flEnd.hidden=true; }
-});
-$('flTrack').addEventListener('keydown',function(e){
-  if(e.key==='ArrowRight'){ filmSeek(FILM.t+5); e.preventDefault(); }
-  if(e.key==='ArrowLeft'){ filmSeek(FILM.t-5); e.preventDefault(); }
-});
-$('flTxt').onclick=function(){ openReader('evo'); };
 $('flToA').onclick=function(){ closeFilm(); $('a0').scrollIntoView({behavior:RM?'auto':'smooth'}); };
 $('flToB').onclick=function(){ closeFilm(); $('sideB').scrollIntoView({behavior:RM?'auto':'smooth'}); };
-$('flAgain').onclick=function(){ flEnd.hidden=true; FILM.ended=false; if(MP) MP.stop(); FILM.music=''; filmSeek(0); filmPlay(); };
-addEventListener('keydown',function(e){
-  if(!FILM.on||!$('flRecBox').hidden||!reader.hidden) return;
-  if(e.key===' '&&e.target.tagName!=='BUTTON'){ e.preventDefault(); if(FILM.play) filmPause(); else filmPlay(); }
-});
-
-/* суфлёр: автор читает фразу, пробелом отмечает начало следующей;
-   голос пишется в браузере, темп — в intro-cues.js */
-var REC={on:false,t0:0,k:0,times:[],mr:null,chunks:[],stream:null,type:''};
-var recBox=$('flRecBox');
-function recView(){
-  var c=CUES[REC.k]||{s:''}, n=CUES[REC.k+1];
-  recBox.innerHTML='<p class="kick">запись · фраза '+(REC.k+1)+' из '+CUES.length+'</p><p class="now">'+esc(c.s)+'</p><p class="nxt">'+(n?esc(n.s):'— конец —')+'</p>'+
-    '<p class="rs"><b>●</b> идёт запись. Пробел или «Дальше» — в тот момент, когда начинаете читать следующую фразу.</p>'+
-    '<div class="btns"><button class="btn pri" type="button" id="rcN">Дальше (пробел)</button><button class="btn" type="button" id="rcF">Закончить</button></div>';
-  $('rcN').onclick=recNext; $('rcF').onclick=recFinish;
-}
-function recIntro(){
-  filmPause();
-  recBox.hidden=false;
-  var ok=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder);
-  recBox.innerHTML='<p class="kick">запись голоса</p><p class="now" style="font-size:clamp(24px,2.6vw,34px)">Прочитайте эссе вслух — субтитры запомнят ваш темп</p>'+
-    '<p class="rs">Нажмите «Начать» и сразу читайте первую фразу. Каждую следующую фразу начинайте с пробела (или кнопки «Дальше»): так субтитры встанут точно под голос. '+
-    'В конце сохраните два файла и положите их в папку <code>docs/media/</code> рядом со страницей: <code>intro.*</code> — голос, <code>intro-cues.js</code> — тайминги. '+
-    'Если пишете в другой программе, сохраните её файл как <code>docs/media/intro.mp3</code>: без таймингов фильм растянет субтитры по длине записи.</p>'+
-    (ok?'':'<p class="rs"><b>Этот браузер не умеет записывать звук.</b></p>')+
-    '<div class="btns">'+(ok?'<button class="btn pri" type="button" id="rcS">Начать</button>':'')+'<button class="btn" type="button" id="rcC">Отмена</button></div>';
-  if(ok) $('rcS').onclick=recStart;
-  $('rcC').onclick=function(){ recBox.hidden=true; };
-}
-function recStart(){
-  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:true}}).then(function(stream){
-    REC.stream=stream; REC.chunks=[];
-    var types=['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg;codecs=opus'];
-    REC.type=''; for(var j=0;j<types.length;j++) if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(types[j])){ REC.type=types[j]; break; }
-    REC.mr=REC.type?new MediaRecorder(stream,{mimeType:REC.type,audioBitsPerSecond:64000}):new MediaRecorder(stream);
-    REC.mr.ondataavailable=function(e){ if(e.data&&e.data.size) REC.chunks.push(e.data); };
-    REC.mr.onstop=recDone;
-    REC.mr.start(1000);
-    REC.on=true; REC.t0=performance.now(); REC.k=0; REC.times=[0];
-    recView();
-  }).catch(function(){
-    recBox.innerHTML='<p class="now">Микрофон недоступен</p><p class="rs">Разрешите доступ к микрофону в настройках браузера и попробуйте снова.</p><div class="btns"><button class="btn" type="button" id="rcC">Закрыть</button></div>';
-    $('rcC').onclick=function(){ recBox.hidden=true; };
-  });
-}
-function recNext(){
-  if(!REC.on) return;
-  if(REC.k>=CUES.length-1){ recFinish(); return; }
-  REC.k++; REC.times.push(+((performance.now()-REC.t0)/1000).toFixed(2)); recView();
-}
-function recFinish(){
-  if(!REC.on) return;
-  REC.on=false; REC.end=+((performance.now()-REC.t0)/1000).toFixed(2);
-  while(REC.times.length<CUES.length) REC.times.push(REC.end);
-  REC.mr.stop(); REC.stream.getTracks().forEach(function(t){ t.stop(); });
-}
-function recDone(){
-  var type=(REC.mr.mimeType||REC.type||'audio/webm').split(';')[0], ext=type.indexOf('mp4')>=0?'m4a':type.indexOf('ogg')>=0?'ogg':'webm';
-  var blob=new Blob(REC.chunks,{type:type}), url=URL.createObjectURL(blob);
-  var cues='/* тайминги субтитров фильма: начало каждой фразы в секундах, записано '+new Date().toISOString().slice(0,10)+' */\nwindow.INTRO_CUES={v:1,end:'+REC.end+',t:['+REC.times.join(',')+']};\n';
-  recBox.innerHTML='<p class="kick">готово · '+fmt(REC.end)+'</p><p class="now" style="font-size:clamp(24px,2.6vw,34px)">Запись сделана</p>'+
-    '<p class="rs">Сохраните оба файла в <code>docs/media/</code>. Голос браузер записывает в '+ext+'; если хотите mp3 для Safari: <code>ffmpeg -i intro.'+ext+' -b:a 64k intro.mp3</code>.</p>'+
-    '<div class="btns"><button class="btn pri" type="button" id="rcP">Посмотреть с голосом</button><button class="btn" type="button" id="rcA">Скачать голос</button><button class="btn" type="button" id="rcT">Скачать тайминги</button><button class="btn" type="button" id="rcC">Закрыть</button></div>';
-  $('rcA').onclick=function(){ download('intro.'+ext,blob); };
-  $('rcT').onclick=function(){ download('intro-cues.js',new Blob([cues],{type:'text/javascript'})); };
-  $('rcC').onclick=function(){ recBox.hidden=true; };
-  $('rcP').onclick=function(){
-    window.INTRO_CUES={v:1,end:REC.end,t:REC.times.slice()};
-    var a=new Audio(url); recBox.hidden=true;
-    if(FILM.voice) FILM.voice.pause();
-    if(MP) MP.stop(); FILM.music='';
-    a.addEventListener('loadedmetadata',function(){ FILM.voice=a; FILM.hasVoice=true; timing(); filmSeek(0); filmPlay(); },{once:true});
-    a.load();
-  };
-}
-$('flRec').onclick=recIntro;
-/* суфлёр — инструмент автора, посетителю он не нужен: index.html#film&author */
-if(!/author/.test(location.search+location.hash)) $('flRec').hidden=true;
-addEventListener('keydown',function(e){ if(REC.on&&e.key===' '){ e.preventDefault(); recNext(); } });
+$('flAgain').onclick=function(){ flV.currentTime=0; flV.play(); };
 
 /* ============================================================ прокрутка */
 var steps=[].slice.call(document.querySelectorAll('[data-f]')), activeStep=null, navA=document.querySelectorAll('#nav a');
@@ -2750,6 +2475,6 @@ $('hint').textContent=!MP?'Каждая точка — настоящая зап
   :'Каждая точка — настоящая запись. Наведите, чтобы узнать какая; нажмите — зазвучит.';
 if(/[#&]film\b/.test(location.hash)) setTimeout(openFilm,300);
 
-window.one={show:show,state:function(){ return {cur:cur&&cur.name,W:W,H:H,gl:!!gl,st:ST,film:{on:FILM.on,t:FILM.t,k:FILM.k,dur:FILM.dur},rh:RHI.length}; },open:openRoom,close:closeRoom,film:openFilm,seek:filmSeek};
+window.one={show:show,state:function(){ return {cur:cur&&cur.name,W:W,H:H,gl:!!gl,st:ST,rh:RHI.length}; },open:openRoom,close:closeRoom,film:openFilm};
 })();
 </script>
