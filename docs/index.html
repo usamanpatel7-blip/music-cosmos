@@ -1065,7 +1065,7 @@ function layoutCl(k){
 function fCl(o){
   var r=region(), cx=r.x+r.w/2, cy=r.y+r.h/2, k=o.k, f=newF(), L=layoutCl(k);
   f.cx=cx; f.cy=cy;
-  var Rv=Math.min(r.w,r.h)/2, sc=Math.min(Rv*.84/L.Rb,Rv*.075), z=clamp(sc*.3,1.3,4.4);
+  var Rv=Math.min(r.w,r.h)/2, sc=Math.min(Rv*.84/L.Rb,Rv*.034), z=clamp(sc*.3,1.3,4.4);
   var hlA=-1;
   if(o.hl) for(var q=0;q<D.A.length;q++) if(D.A[q]===o.hl){ hlA=q; break; }
   L.groups.forEach(function(g){
