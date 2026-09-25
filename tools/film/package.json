@@ -11,8 +11,7 @@
     "@remotion/transitions": "4.0.528",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-humaaans": "^1.0.1",
-    "react-peeps": "^0.1.10",
+    "react-peeps": "0.1.10",
     "remotion": "4.0.528"
   },
   "devDependencies": {
@@ -26,7 +25,7 @@
   "scripts": {
     "dev": "remotion studio",
     "render": "remotion render Film out/film.mp4",
-    "poster": "remotion still Film out/film-poster.jpg --frame=300 --props={\"subtitles\":false} --image-format=jpeg --jpeg-quality=85",
+    "poster": "remotion still Film out/film-poster.jpg --frame=300 --props={\"subtitles\":false} --scale=1 --image-format=jpeg --jpeg-quality=85",
     "lint": "eslint src && tsc",
     "upgrade": "remotion upgrade"
   }

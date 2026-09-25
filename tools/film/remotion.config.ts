@@ -13,16 +13,11 @@ Config.setOverwriteOutput(true);
 if (process.env.REMOTION_BROWSER) {
   Config.setBrowserExecutable(process.env.REMOTION_BROWSER);
 }
-// Сжатие под сайт: бумага и «кипящие» линии дают много шума, поэтому перед
-// кодированием кадры слегка сглаживаются (hqdn3d), а качество — crf 31.
+// Сцены рисуются в 1920×1080, для сайта хватает 1280×720 (scale 2/3).
+// Плоские заливки хорошо сжимаются: crf 27 даёт чистую линию и небольшой файл.
+Config.setScale(2 / 3);
 Config.setCodec("h264");
-Config.setCrf(31);
+Config.setCrf(27);
 Config.setX264Preset("slow");
 Config.setPixelFormat("yuv420p");
 Config.setAudioBitrate("96k");
-Config.overrideFfmpegCommand(({ type, args }) => {
-  // только шаг кодирования: в шаге faststart поток копируется, фильтр там нельзя
-  const i = args.indexOf("-c:v");
-  if (type !== "stitcher" || i === -1 || args[i + 1] !== "libx264") return args;
-  return [...args.slice(0, i), "-vf", "hqdn3d=3:3:4:4", "-tune", "animation", ...args.slice(i)];
-});

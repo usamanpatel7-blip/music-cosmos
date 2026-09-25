@@ -1,48 +1,21 @@
 import React from "react";
 import { Composition, Folder } from "remotion";
-import { Cast } from "./Chapter";
-import { Cast2 } from "./v2/Cast2";
-import { Poses } from "./v3/Poses";
-import { LibHumaaans, LibPeeps } from "./lab/Libs";
-import { Pick } from "./lab/Pick";
-import { PeepRoom, PeepStage } from "./lab/PeepFrames";
-import { FrameNow, FrameRoom, FrameStage } from "./v2/Frames";
-import { Film } from "./Film";
-import { FILM_END } from "./engine";
+import { Film } from "./peeps/Film";
+import { END, FPS } from "./peeps/kit";
+import { Probe } from "./peeps/Probe";
+import { CatalogBodies, CatalogFaces, CatalogHair } from "./lab/Catalog";
 import { loadFonts } from "./fonts";
 
 loadFonts();
 
 export const RemotionRoot: React.FC = () => (
   <>
-    <Composition
-      id="Film"
-      component={Film}
-      durationInFrames={Math.round(FILM_END * 24)}
-      fps={24}
-      width={1280}
-      height={720}
-      defaultProps={{ subtitles: true }}
-    />
+    <Composition id="Film" component={Film} durationInFrames={END * FPS} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true }} />
     <Folder name="sketches">
-      <Composition id="FrameRoom" component={FrameRoom} durationInFrames={48} fps={24} width={1920} height={1080} />
-      <Composition id="FrameStage" component={FrameStage} durationInFrames={48} fps={24} width={1920} height={1080} />
-      <Composition id="FrameNow" component={FrameNow} durationInFrames={48} fps={24} width={1920} height={1080} />
-      <Composition id="LibHumaaans" component={LibHumaaans} durationInFrames={1} fps={24} width={1920} height={1080} />
-      <Composition id="LibPeeps" component={LibPeeps} durationInFrames={1} fps={24} width={1920} height={1080} />
-      <Composition id="PeepRoom" component={PeepRoom} durationInFrames={48} fps={24} width={1920} height={1080} />
-      <Composition id="PeepStage" component={PeepStage} durationInFrames={48} fps={24} width={1920} height={1080} />
-      <Composition id="Pick" component={Pick} durationInFrames={1} fps={24} width={1920} height={1080} />
-      <Composition id="Poses" component={Poses} durationInFrames={48} fps={24} width={1920} height={1080} />
-      <Composition id="Cast2" component={Cast2} durationInFrames={48} fps={24} width={1920} height={1080} />
-      <Composition
-        id="Cast"
-        component={Cast}
-        durationInFrames={48}
-        fps={24}
-        width={1600}
-        height={900}
-      />
+      <Composition id="Probe" component={Probe} defaultProps={{ t: 12 }} durationInFrames={1} fps={FPS} width={1920} height={1080} />
+      <Composition id="CatalogBodies" component={CatalogBodies} defaultProps={{ page: 0 }} durationInFrames={1} fps={FPS} width={1920} height={1080} />
+      <Composition id="CatalogFaces" component={CatalogFaces} durationInFrames={1} fps={FPS} width={1920} height={1080} />
+      <Composition id="CatalogHair" component={CatalogHair} durationInFrames={1} fps={FPS} width={1920} height={1080} />
     </Folder>
   </>
 );
