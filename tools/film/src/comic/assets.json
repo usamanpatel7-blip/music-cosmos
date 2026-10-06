@@ -1,0 +1,80 @@
+{
+ "cast/now.png": {
+  "w": 774,
+  "h": 2511,
+  "neck": 0.155,
+  "cx": 0.539
+ },
+ "cast/r1.png": {
+  "w": 421,
+  "h": 1310,
+  "neck": 0.155,
+  "cx": 0.521
+ },
+ "cast/r2.png": {
+  "w": 438,
+  "h": 1387,
+  "neck": 0.155,
+  "cx": 0.507
+ },
+ "cast/sp.png": {
+  "w": 423,
+  "h": 1398,
+  "neck": 0.155,
+  "cx": 0.526
+ },
+ "cast/su.png": {
+  "w": 472,
+  "h": 1408,
+  "neck": 0.155,
+  "cx": 0.501
+ },
+ "poses/duo-sit.png": {
+  "w": 721,
+  "h": 739,
+  "neck": 0.155,
+  "cx": 0.566
+ },
+ "poses/now-explain.png": {
+  "w": 477,
+  "h": 751,
+  "neck": 0.155,
+  "cx": 0.454
+ },
+ "poses/now-listen.png": {
+  "w": 556,
+  "h": 758,
+  "neck": 0.155,
+  "cx": 0.435
+ },
+ "poses/r1-headbang.png": {
+  "w": 541,
+  "h": 1460,
+  "neck": 0.155,
+  "cx": 0.2
+ },
+ "poses/r1-peek.png": {
+  "w": 277,
+  "h": 667,
+  "neck": 0.155,
+  "cx": 0.624
+ },
+ "poses/r2-shout.png": {
+  "w": 405,
+  "h": 661,
+  "neck": 0.155,
+  "cx": 0.638
+ },
+ "poses/sp-argue.png": {
+  "w": 545,
+  "h": 666,
+  "neck": 0.155,
+  "cx": 0.482
+ },
+ "poses/su-point.png": {
+  "w": 568,
+  "h": 664,
+  "neck": 0.155,
+  "cx": 0.493
+ }
+}

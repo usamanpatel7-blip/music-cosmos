@@ -6,6 +6,7 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@fontsource/pangolin": "^5.3.0",
     "@remotion/cli": "4.0.528",
     "@remotion/fonts": "4.0.528",
     "@remotion/transitions": "4.0.528",
@@ -25,7 +26,7 @@
   "scripts": {
     "dev": "remotion studio",
     "render": "remotion render Film out/film.mp4",
-    "poster": "remotion still Film out/film-poster.jpg --frame=300 --props={\"subtitles\":false} --scale=1 --image-format=jpeg --jpeg-quality=85",
+    "poster": "remotion still Film out/film-poster.jpg --frame=120 --props={\"subtitles\":false} --scale=1 --image-format=jpeg --jpeg-quality=85",
     "lint": "eslint src && tsc",
     "upgrade": "remotion upgrade"
   }

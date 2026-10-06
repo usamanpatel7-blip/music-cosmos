@@ -11,6 +11,7 @@ const FONTS = [
   { family: "Caveat", weight: "700", stem: "caveat" },
   { family: "Golos Text", weight: "600", stem: "golos-text" },
   { family: "Rubik Mono One", weight: "400", stem: "rubik-mono-one" },
+  { family: "Pangolin", weight: "400", stem: "pangolin" },
 ];
 
 export const loadFonts = () =>
