@@ -13,11 +13,13 @@ Config.setOverwriteOutput(true);
 if (process.env.REMOTION_BROWSER) {
   Config.setBrowserExecutable(process.env.REMOTION_BROWSER);
 }
-// Сцены рисуются в 1920×1080, для сайта хватает 1280×720 (scale 2/3).
-// Плоские заливки хорошо сжимаются: crf 27 даёт чистую линию и небольшой файл.
-Config.setScale(2 / 3);
+// 3D (облако треков) считается программно: SwiftShader через ANGLE — работает
+// без видеокарты и быстрее варианта по умолчанию.
+Config.setChromiumOpenGlRenderer("swangle");
+// Фильм рендерится в полном 1920×1080: мелкие бусины и титры должны быть чёткими.
+Config.setScale(1);
 Config.setCodec("h264");
-Config.setCrf(27);
+Config.setCrf(22);
 Config.setX264Preset("slow");
 Config.setPixelFormat("yuv420p");
 Config.setAudioBitrate("96k");
