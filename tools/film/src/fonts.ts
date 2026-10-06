@@ -12,6 +12,15 @@ const FONTS = [
   { family: "Golos Text", weight: "600", stem: "golos-text" },
   { family: "Rubik Mono One", weight: "400", stem: "rubik-mono-one" },
   { family: "Pangolin", weight: "400", stem: "pangolin" },
+  { family: "Playfair Display", weight: "900", stem: "playfair-display" },
+  { family: "Oswald", weight: "700", stem: "oswald" },
+  { family: "Press Start 2P", weight: "400", stem: "press-start-2p" },
+  { family: "Russo One", weight: "400", stem: "russo-one" },
+  { family: "Old Standard TT", weight: "700", stem: "old-standard-tt" },
+  { family: "Unbounded", weight: "800", stem: "unbounded" },
+  { family: "Ruslan Display", weight: "400", stem: "ruslan-display" },
+  { family: "JetBrains Mono", weight: "700", stem: "jetbrains-mono" },
+  { family: "Amatic SC", weight: "700", stem: "amatic-sc" },
 ];
 
 export const loadFonts = () =>
