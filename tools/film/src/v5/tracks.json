@@ -1,0 +1,170 @@
+{
+ "r1": {
+  "id": "574050602",
+  "artist": "AC/DC",
+  "track": "Back In Black",
+  "album": "Back In Black",
+  "year": "1980",
+  "collectionId": 574050396
+ },
+ "r2": {
+  "id": "251127052",
+  "artist": "Arctic Monkeys",
+  "track": "505",
+  "album": "Favourite Worst Nightmare",
+  "year": "2007",
+  "collectionId": 251126923
+ },
+ "su": {
+  "id": "580708941",
+  "artist": "Led Zeppelin",
+  "track": "Babe I'm Gonna Leave You",
+  "album": "Led Zeppelin (Remastered)",
+  "year": "1969",
+  "collectionId": 580708520
+ },
+ "sp": {
+  "id": "594522647",
+  "artist": "Гленн Гульд",
+  "track": "Goldberg Variations, BWV 988 (1981 Recording): Variation 25 a 2 Clav. Adagio",
+  "album": "Bach: Goldberg Variations, BWV 988 (The 1955 & 1981 Recordings)",
+  "year": "1982",
+  "collectionId": 594521223
+ },
+ "now": {
+  "id": "1452515042",
+  "artist": "Эмиль Гилельс",
+  "track": "Piano Sonata No. 8 in C Minor, Op. 13 \"Pathétique\": I. Grave - Allegro di molto e con brio",
+  "album": "Beethoven: Pathétique & Moonlight Sonatas",
+  "year": "1981",
+  "collectionId": 1452515037
+ },
+ "room": {
+  "id": "1717831052",
+  "artist": "Ryuichi Sakamoto",
+  "track": "Energy flow",
+  "album": "BTTB - 20th Anniversary Edition",
+  "year": "1998",
+  "collectionId": 1717829350
+ },
+ "grinberg": {
+  "id": "1702899469",
+  "artist": "Мария Гринберг",
+  "track": "Соната No. 8 для фортепиано до минор, соч. 13 \"Патетическая\": I. Grave - Allegro di molto e con brio",
+  "album": "Мария Гринберг. Бетховен",
+  "year": "2023",
+  "collectionId": 1702899191
+ },
+ "adagio": {
+  "id": "1452515048",
+  "artist": "Эмиль Гилельс",
+  "track": "Piano Sonata No. 8 in C Minor, Op. 13 \"Pathétique\": II. Adagio cantabile",
+  "album": "Beethoven: Pathétique & Moonlight Sonatas",
+  "year": "1981",
+  "collectionId": 1452515037
+ },
+ "skillet": {
+  "id": "325821864",
+  "artist": "Skillet",
+  "track": "Awake and Alive",
+  "album": "Awake (Deluxe Version)",
+  "year": "2009",
+  "collectionId": 325821860
+ },
+ "skip": {
+  "id": "460737399",
+  "artist": "Hurts",
+  "track": "Illuminated",
+  "album": "Happiness",
+  "year": "2010",
+  "collectionId": 460737384
+ },
+ "nickel": {
+  "id": "719617243",
+  "artist": "Nickelback",
+  "track": "Burn It To the Ground",
+  "album": "The Best of Nickelback, Vol. 1",
+  "year": "2008",
+  "collectionId": 719617041
+ },
+ "bach": {
+  "id": "211291241",
+  "artist": "Akademie für Alte Musik Berlin & Zvi Meniker",
+  "track": "Harpsichord Concerto in D Minor, BWV 1052: I. Allegro",
+  "album": "Bach: Triple Concerto (BWV 1044), Harpsichord Concerto (BWV 1052)",
+  "year": "2001",
+  "collectionId": 211291238
+ },
+ "avant": {
+  "id": "1572109443",
+  "artist": "Justin Taylor",
+  "track": "Hungarian Rock: Chaconne",
+  "album": "Scarlatti & Ligeti: Continuum",
+  "year": "2018",
+  "collectionId": 1572109435
+ },
+ "asap": {
+  "id": "1862935173",
+  "artist": "A$AP Rocky",
+  "track": "ROBBERY (feat. Doechii)",
+  "album": "Don't Be Dumb",
+  "year": "2026",
+  "collectionId": 1862934946
+ },
+ "tiktok": {
+  "id": "1850117925",
+  "artist": "Aarne, Toxi$ & Big Baby Tape",
+  "track": "NOBODY",
+  "album": "SLAANG",
+  "year": "2025",
+  "collectionId": 1850117224
+ },
+ "abba": {
+  "id": "1444206083",
+  "artist": "ABBA",
+  "track": "Dancing Queen",
+  "album": "The Essential Collection",
+  "year": "1976",
+  "collectionId": 1444205055
+ },
+ "nsync": {
+  "id": "255985600",
+  "artist": "*NSYNC",
+  "track": "Bye Bye Bye",
+  "album": "No Strings Attached",
+  "year": "2000",
+  "collectionId": 255985596
+ },
+ "limahl": {
+  "id": "691264357",
+  "artist": "Limahl",
+  "track": "The NeverEnding Story",
+  "album": "The NeverEnding Story (Original Motion Picture Soundtrack)",
+  "year": "1984",
+  "collectionId": 691264356
+ },
+ "salmon": {
+  "id": "1474660531",
+  "artist": "The Chemical Brothers",
+  "track": "The Salmon Dance",
+  "album": "We Are the Night",
+  "year": "2007",
+  "collectionId": 1474660272
+ },
+ "alina": {
+  "id": "1036946712",
+  "artist": "Marcel Worms",
+  "track": "Für Alina",
+  "album": "Pärt: Complete Works for Violin and Piano & Piano Solo",
+  "year": "2015",
+  "collectionId": 1036942349
+ },
+ "hell": {
+  "id": "574044008",
+  "artist": "AC/DC",
+  "track": "Highway to Hell",
+  "album": "Highway to Hell",
+  "year": "1979",
+  "collectionId": 574043989
+ }
+}

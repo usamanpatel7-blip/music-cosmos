@@ -23,3 +23,7 @@ tools/film/.remotion/
 tools/film/asr.json
 tools/film/words.json
 tools/film/gen/__pycache__/
+
+# превью и обложки Apple для фильма скачиваются скриптом tools/film/gen/music.py
+tools/film/public/music/
+tools/film/public/covers/

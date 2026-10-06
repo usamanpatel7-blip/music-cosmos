@@ -9,6 +9,7 @@ import { Probe as ComicProbe, Strip as ComicStrip } from "./comic/Probe";
 import { CatalogBodies, CatalogFaces, CatalogHair } from "./lab/Catalog";
 import { loadFonts } from "./fonts";
 import { LibFilm } from "./lib/Film";
+import { Look, LOOKS } from "./v5/Look";
 
 loadFonts();
 
@@ -16,6 +17,7 @@ export const RemotionRoot: React.FC = () => (
   <>
     <Composition id="Film" component={LibFilm} durationInFrames={Math.round(END * FPS)} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true }} />
     <Folder name="sketches">
+      <Composition id="Look" component={Look} durationInFrames={LOOKS.length} fps={FPS} width={1920} height={1080} defaultProps={{}} />
       <Composition id="ComicFilm" component={Film} durationInFrames={Math.round(END * FPS)} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true }} />
       <Composition id="Strip" component={LibFilm} durationInFrames={2} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true, at: [1, 2] as number[] }} calculateMetadata={({ props }) => ({ durationInFrames: props.at?.length ?? 1 })} />
       <Composition id="PeepsFilm" component={PeepsFilm} durationInFrames={Math.round(END * FPS)} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true }} />
