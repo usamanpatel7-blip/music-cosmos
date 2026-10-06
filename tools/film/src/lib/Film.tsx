@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Audio, staticFile, useCurrentFrame } from "remotion";
 import { ThreeCanvas } from "@remotion/three";
-import { AGE, AGE_LABEL, FPS, INK, IVORY, KEY, KW, N, S, VER, clamp, ease, hash, inout, kick, lerp, ph, spr } from "./data";
+import { AGE, AGE_LABEL, FPS, INK, IVORY, KEY, KW, N, S, VER, clamp, ease, hash, inout, kick, lerp, ph, spr, SE, rt } from "./data";
 import { Form, XS5, hide, miniRow, only, portrait, record, rgb, rose, scatter, setAge } from "./forms";
 import { CamKey, CamRig, Cloud, Seg } from "./Cloud";
 import { Captions, CapStyle, Chip, Sheet, Sticker, Tape, WIPES, Wipe } from "./collage";
@@ -68,7 +68,7 @@ const roomMod = (t: number, p: Float32Array, c: Float32Array, s: Float32Array) =
 
 /* альбом целиком: пластинка из десяти треков, игла идёт от края к центру */
 const RED = rgb("#ff5a3c"), DARK = rgb("#3a2f33");
-const SE4 = 20.04;
+const SE4 = SE[4];
 const albumColored = (t: number): Form => {
   const prog = ph(t, S[4] + 0.3, SE4 - 0.1);
   return record({
@@ -103,7 +103,7 @@ const one = only(
 
 const SEGS: Seg[] = [
   { t: -10, f: () => scatter({ R: 10 }) },
-  { t: 0.0, f: () => portrait("now", { y: -0.2 }), d: 1.5, order: "top", swirl: 1.4, mod: squeeze((t) => lerp(6, 2.15, ease(ph(t, 1.0, 2.3)))) },
+  { t: 0.0, f: () => portrait("now", { y: -0.2 }), d: 1.5, order: "top", swirl: 1.4, mod: squeeze((t) => lerp(6, 2.15, ease(ph(t, rt(1.0), rt(2.3))))) },
   { t: S[1] - 0.6, f: () => miniRow({ y: 0.5, h: 3.7 }), d: 1.6, order: "center", swirl: 2.2, mod: roomMod },
   { t: S[3] - 0.35, f: () => portrait("r1", { y: -0.25, h: 9, dark: true }), d: 1.3, order: "top", swirl: 1.6, mod: headbang(9, -0.25, (t) => (t < S[3] + 0.3 ? 0 : Math.max(0, Math.sin((t / BEAT) * Math.PI)) * 0.42 + kick(t) * 0.06)) },
   { t: S[4] - 0.15, f: albumColored, d: 1.3, order: "out", swirl: 1.4 },
@@ -117,16 +117,16 @@ void hide; void setAge; void inout;
 
 const CAM: CamKey[] = [
   [0, [0, 0, 12], [0, 0, 0]],
-  [3.4, [0, 0.1, 12.6], [0, 0, 0]],
-  [13.4, [0, 0.1, 12.8], [0, 0, 0]],
-  [14.2, [0, 0, 11.2], [0, 0.2, 0]],
-  [15.5, [0, 0.3, 10.8], [0, 0.2, 0]],
-  [16.8, [0, 2.2, 11.5], [0, -0.6, 0]],
-  [20.4, [0, 1.6, 11.8], [0, -0.4, 0]],
-  [21.2, [0, 0.4, 11.4], [0, 0.3, 0]],
-  [23.4, [0, 0.3, 11.6], [0, 0.3, 0]],
-  [27.6, [0, 0.2, 9.4], [0, 0.2, 0]],
-  [30.0, [0, 0.2, 9.0], [0, 0.2, 0]],
+  [rt(3.4), [0, 0.1, 12.6], [0, 0, 0]],
+  [rt(13.4), [0, 0.1, 12.8], [0, 0, 0]],
+  [rt(14.2), [0, 0, 11.2], [0, 0.2, 0]],
+  [rt(15.5), [0, 0.3, 10.8], [0, 0.2, 0]],
+  [rt(16.8), [0, 2.2, 11.5], [0, -0.6, 0]],
+  [rt(20.4), [0, 1.6, 11.8], [0, -0.4, 0]],
+  [rt(21.2), [0, 0.4, 11.4], [0, 0.3, 0]],
+  [rt(23.4), [0, 0.3, 11.6], [0, 0.3, 0]],
+  [rt(27.6), [0, 0.2, 9.4], [0, 0.2, 0]],
+  [rt(30.0), [0, 0.2, 9.0], [0, 0.2, 0]],
   ...CAM2,
 ];
 
@@ -155,7 +155,7 @@ const Stage: React.FC<{ t: number }> = ({ t }) => {
 };
 
 /* ---------------------------------------------------------------- коллаж */
-WIPES.push(S[1] - 0.7, S[3] - 0.45, S[8] - 0.45, S[10] - 0.35, S[11] - 0.4, S[15] - 0.4, 70.8, S[17] - 0.4, S[22] - 0.4, S[30] - 0.4, S[33] - 0.4);
+WIPES.push(S[1] - 0.7, S[3] - 0.45, S[8] - 0.45, S[10] - 0.35, S[11] - 0.4, S[15] - 0.4, rt(70.8), S[17] - 0.4, S[20] - 0.4, S[28] - 0.4, S[32] - 0.4);
 const Bolt: React.FC<{ x: number; y: number; s: number; rot?: number; color?: string }> = ({ x, y, s, rot = 0, color = "#ff5a3c" }) => (
   <svg style={{ position: "absolute", left: x, top: y, width: 300 * s, height: 520 * s, transform: `rotate(${rot}deg)`, filter: "drop-shadow(8px 10px 0 rgba(0,0,0,.35))" }} viewBox="0 0 300 520">
     <path d="M190,0 L40,290 L140,290 L90,520 L270,200 L160,200 L230,0Z" fill={color} />
@@ -191,7 +191,7 @@ const Back: React.FC<{ t: number }> = ({ t }) => (
 
 const Front: React.FC<{ t: number }> = ({ t }) => {
   /* глава 1: стенки рамки из крафта сжимают портрет */
-  const wall = ease(ph(t, 1.0, 2.3)) * (1 - ease(ph(t, S[1] - 0.8, S[1] - 0.2)));
+  const wall = ease(ph(t, rt(1.0), rt(2.3))) * (1 - ease(ph(t, S[1] - 0.8, S[1] - 0.2)));
   const burst = ph(t, S[1] - 0.8, S[1] - 0.2);
   return (
     <>
@@ -249,10 +249,10 @@ const Front: React.FC<{ t: number }> = ({ t }) => {
 const DARK_PAL: [string, string][] = [["#f5eee0", INK], ["#ffb52e", INK], ["#c77dff", INK], [INK, "#f5eee0"]];
 const LIGHT_PAL: [string, string][] = [["#fff8ea", INK], ["#f3d36a", INK], [INK, "#fff8ea"], ["#c77dff", INK]];
 const capStyle = (t: number, si: number): CapStyle => {
-  if (si === 29) return { pal: [["#ff5a3c", INK], ["#f5eee0", INK]], big: true, y: 860 };
+  if (si === 27) return { pal: [["#ff5a3c", INK], ["#f5eee0", INK]], big: true, y: 860 };
   if (t > S[15] - 0.4 && t < S[17] - 0.3) return { pal: LIGHT_PAL, y: 150 };
-  if (t > S[22] - 0.4 && t < S[24] - 0.2) return { pal: LIGHT_PAL, y: 1000, size: 64 };
-  if (t > S[8] - 0.4) return { pal: (t > S[11] && t < S[15]) || (t > S[17] && t < S[22]) || t > S[33] ? DARK_PAL : LIGHT_PAL };
+  if (t > S[20] - 0.4 && t < S[22] - 0.2) return { pal: LIGHT_PAL, y: 1000, size: 64 };
+  if (t > S[8] - 0.4) return { pal: (t > S[11] && t < S[15]) || (t > S[17] && t < S[20]) || t > S[32] ? DARK_PAL : LIGHT_PAL };
   if (si === 7) return { pal: [["#ff5a3c", INK], ["#f5eee0", INK], ["#f3d36a", INK]], big: true, y: 860, size: 118 };
   if (t > S[3] - 0.4) return { pal: [["#f5eee0", INK], ["#ff5a3c", INK], ["#f3d36a", INK], [INK, "#f5eee0"]] };
   return { pal: [["#fff8ea", INK], ["#f3d36a", INK], [INK, "#fff8ea"], ["#ff8e6e", INK]] };

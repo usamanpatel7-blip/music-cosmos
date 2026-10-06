@@ -1,19 +1,27 @@
 #!/usr/bin/env python3
-"""Звук фильма: голос двумя частями, треск винила и синтезированный рифф
-в финале → out/film-audio.wav и public/film-audio.m4a (звук для Remotion)."""
-import numpy as np, subprocess, wave, os
+"""Звук фильма: голос тремя частями, треск винила и синтезированный рифф —
+короткий «старый припев» между первой и второй частью и финал
+→ out/film-audio.wav и public/film-audio.m4a (звук для Remotion).
+Времена фраз берутся из src/timing.json (сначала words.py и cues.py)."""
+import numpy as np, subprocess, wave, os, json
 HERE=os.path.dirname(os.path.abspath(__file__))
 SR=48000
 def load(f):
     raw=subprocess.run(['ffmpeg','-v','error','-i',f,'-ac','1','-ar',str(SR),'-f','f32le','-'],capture_output=True).stdout
     return np.frombuffer(raw,dtype=np.float32).copy()
-p1=load(os.path.join(HERE,'voice','part1.m4a')); p2=load(os.path.join(HERE,'voice','part2.m4a'))
-off2=len(p1)/SR+0.8
-print('part2 offset',off2)
-TOTAL=170.0
+T=json.load(open(os.path.join(HERE,'src','timing.json')))
+SENT=[x['t0'] for x in T['sent']]; KW=T['kw']
+GAPS=[4.5,1.0]  # те же, что в words.py
+parts=[load(os.path.join(HERE,'voice',f'part{k}.m4a')) for k in (1,2,3)]
+TOTAL=T['end']
 n=int(TOTAL*SR); out=np.zeros(n,np.float32)
 voice=np.zeros(n,np.float32)
-voice[:len(p1)]+=p1; s2=int(off2*SR); voice[s2:s2+len(p2)]+=p2
+offs=[]; o=0.0
+for k,pp in enumerate(parts):
+    offs.append(o); i=int(o*SR); voice[i:i+len(pp)]+=pp[:max(0,n-i)]
+    o+=len(pp)/SR+(GAPS[k] if k<len(GAPS) else 0)
+MEM0=offs[0]+len(parts[0])/SR+0.15  # «старый припев» в паузе после первой части
+print('offsets',offs,'memory',MEM0)
 # голос: мягкая нормализация
 pk=np.percentile(np.abs(voice[np.abs(voice)>0.01]),99.5); voice*=0.5/pk
 rng=np.random.default_rng(7)
@@ -47,20 +55,23 @@ def lp(x,a):
     from itertools import accumulate
     return np.array(list(accumulate(x,lambda v,s: v+a*(s-v))),dtype=np.float32)
 riff=np.zeros(n,np.float32); drums=np.zeros(n,np.float32)
-t0=150.9; tend=166.5; k=0; tt=t0
-while tt<tend:
-    sym=pattern[k%len(pattern)]
-    if sym!='x':
-        i=int(tt*SR); g=guitar(notes[sym],e8*1.9,mute=(k%4==1)); riff[i:i+len(g)]+=g[:max(0,min(len(g),n-i))]
-    # барабаны: бочка на 1 и 3, малый на 2 и 4, тарелочка на восьмые
-    i=int(tt*SR)
-    hh=rng.normal(0,1,int(.04*SR))*np.exp(-np.arange(int(.04*SR))/(.008*SR))*.18
-    hh=hh-np.convolve(hh,np.ones(4)/4,'same'); drums[i:i+len(hh)]+=hh
-    if k%4==0:
-        L=int(.25*SR); x=np.arange(L)/SR; kick=np.sin(2*np.pi*(55+90*np.exp(-x*30))*x)*np.exp(-x*9); drums[i:i+L]+=kick*.9
-    if k%4==2:
-        L=int(.2*SR); x=np.arange(L)/SR; sn=(rng.normal(0,1,L)*.7+np.sin(2*np.pi*190*x)*.5)*np.exp(-x*18); drums[i:i+L]+=sn*.6
-    k+=1; tt+=e8
+PUTS=SENT[33]-0.1; CHOR=SENT[35]; LOUD=KW['louder']; tend=TOTAL-4.5
+def play(t0,tend):
+  k=0; tt=t0
+  while tt<tend:
+      sym=pattern[k%len(pattern)]
+      if sym!='x':
+          i=int(tt*SR); g=guitar(notes[sym],e8*1.9,mute=(k%4==1)); riff[i:i+len(g)]+=g[:max(0,min(len(g),n-i))]
+      # барабаны: бочка на 1 и 3, малый на 2 и 4, тарелочка на восьмые
+      i=int(tt*SR)
+      hh=rng.normal(0,1,int(.04*SR))*np.exp(-np.arange(int(.04*SR))/(.008*SR))*.18
+      hh=hh-np.convolve(hh,np.ones(4)/4,'same'); drums[i:i+len(hh)]+=hh
+      if k%4==0:
+          L=int(.25*SR); x=np.arange(L)/SR; kick=np.sin(2*np.pi*(55+90*np.exp(-x*30))*x)*np.exp(-x*9); drums[i:i+L]+=kick*.9
+      if k%4==2:
+          L=int(.2*SR); x=np.arange(L)/SR; sn=(rng.normal(0,1,L)*.7+np.sin(2*np.pi*190*x)*.5)*np.exp(-x*18); drums[i:i+L]+=sn*.6
+      k+=1; tt+=e8
+play(MEM0,MEM0+3.9); play(PUTS,tend)
 # финальный аккорд
 i=int(tend*SR); g=guitar(notes['E'],3.2); riff[i:i+len(g)]+=g[:n-i]
 L=int(2.5*SR); x=np.arange(L)/SR; cr=rng.normal(0,1,L)*np.exp(-x*1.6)*.35; drums[i:i+L]+=cr
@@ -69,11 +80,12 @@ band=riff*0.33+drums*0.55
 g=np.zeros(n,np.float32)
 def ramp(a,b,va,vb):
     ia,ib=int(a*SR),int(b*SR); g[ia:ib]=np.linspace(va,vb,ib-ia)
-ramp(150.9,151.4,0,.1); ramp(151.4,155.25,.1,.1); ramp(155.25,155.6,.1,.2); ramp(155.6,158.3,.2,.2); ramp(158.3,159.4,.2,1.0); ramp(159.4,166.5,1.0,1.0); ramp(166.5,170,1.0,1.0)
+ramp(MEM0,MEM0+0.15,0,.9); ramp(MEM0+0.15,MEM0+3.3,.9,.9); ramp(MEM0+3.3,MEM0+4.1,.9,0)
+ramp(PUTS,PUTS+.5,0,.1); ramp(PUTS+.5,CHOR,.1,.1); ramp(CHOR,CHOR+.35,.1,.2); ramp(CHOR+.35,LOUD-.2,.2,.2); ramp(LOUD-.2,LOUD+.9,.2,1.0); ramp(LOUD+.9,TOTAL,1.0,1.0)
 # пока тихо — глухо, как за стеной
 quiet=lp(band,0.06); loud=band
 mix_band=np.where(g<0.5,quiet*(1-g*1.4)+loud*g*1.4,loud)*g
-out=voice+crackle*(1-np.clip((t-158.5)/1.5,0,1)*.7)+mix_band*0.9
+out=voice+crackle*(1-np.clip((t-LOUD)/1.5,0,1)*.7)+mix_band*0.9
 fade=np.clip((TOTAL-t)/2.2,0,1); out*=fade
 out=np.tanh(out*1.1)/1.1*0.95
 wav=(np.clip(out,-1,1)*32767).astype(np.int16)

@@ -4,9 +4,11 @@
 import json, re, difflib, os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 A=json.load(open('asr.json')); S=[l.strip() for l in open('essay.txt',encoding='utf-8') if l.strip()]
-GAP=0.8  # пауза между частями в склейке (та же в audio.py)
-d1=A.get('p1_dur',76.39)
-asr=[dict(w,t0=w['start'],t1=w['end']) for w in A['p1']]+[dict(w,t0=w['start']+d1+GAP,t1=w['end']+d1+GAP) for w in A['p2']]
+GAPS=[4.5,1.0]  # паузы между частями (те же в audio.py): после первой — «старый припев»
+asr=[]; off=0.0
+for k,(part,dur) in enumerate(zip(A['parts'],A['durs'])):
+    asr+=[dict(w,t0=w['start']+off,t1=w['end']+off) for w in part]
+    off+=dur+(GAPS[k] if k<len(GAPS) else 0)
 def norm(w): return re.sub(r'[^а-яa-z0-9]','',w.lower().replace('ё','е'))
 ew=[]  # essay words with sentence index
 for si,s in enumerate(S):

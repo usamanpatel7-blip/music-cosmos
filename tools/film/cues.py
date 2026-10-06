@@ -46,11 +46,11 @@ for i,c in enumerate(cues):
     nxt=cues[i+1]['t0'] if i+1<len(cues) else c['t1']+1.5
     c['t1']=round(min(nxt-0.05,c['t1']+0.8),2)
 kw={}
-for key,pat in [('acdc','AC/DC'),('mono','монотеизм'),('three','трёх'),('nickel','Nickelback'),('bach','Баху'),('avant','авангарду'),('asap','альбом'),('tiktok','TikTok'),('stat','Статистика'),('half','половины'),('chorus','припев'),('louder','погромче'),('puts','ставит'),('off','выключить'),('ear','слышать'),('mirror','замечаешь'),('delete','Удалить'),('remember','помнит'),('old','припеву')]:
+for key,pat in [('acdc','AC/DC'),('mono','монотеизм'),('three','трёх'),('nickel','Nickelback'),('bach','Баху'),('avant','авангарду'),('asap','альбом'),('tiktok','TikTok'),('stat','Статистика'),('half','половины'),('chorus','припев'),('louder','погромче'),('puts','ставит'),('off','выключить'),('ear','слышать'),('mirror','замечаешь'),('delete','Удалить'),('remember','помнит'),('room','комнате.')]:
     for k,(n,si,w) in enumerate(ew):
         if pat.lower().replace('ё','е') in w.lower().replace('ё','е'):
             if wt[k]: kw[key]=round(wt[k][0],2)
             break
-json.dump({'cues':cues,'sent':sent,'kw':kw},open('src/timing.json','w'),ensure_ascii=False,indent=0)
+json.dump({'cues':cues,'sent':sent,'kw':kw,'end':round(sent[-1]['t1']+9.0,2)},open('src/timing.json','w'),ensure_ascii=False,indent=0)
 for c in cues: print('%7.2f %7.2f %s'%(c['t0'],c['t1'],c['s']))
 print(kw)
