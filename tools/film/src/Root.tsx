@@ -10,16 +10,18 @@ import { CatalogBodies, CatalogFaces, CatalogHair } from "./lab/Catalog";
 import { loadFonts } from "./fonts";
 import { LibFilm } from "./lib/Film";
 import { Look, LOOKS } from "./v5/Look";
+import { Film5 } from "./v5/Film5";
 
 loadFonts();
 
 export const RemotionRoot: React.FC = () => (
   <>
-    <Composition id="Film" component={LibFilm} durationInFrames={Math.round(END * FPS)} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true }} />
+    <Composition id="Film" component={Film5} durationInFrames={Math.round(END * FPS)} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true }} />
     <Folder name="sketches">
+      <Composition id="LibFilm" component={LibFilm} durationInFrames={Math.round(END * FPS)} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true }} />
       <Composition id="Look" component={Look} durationInFrames={LOOKS.length} fps={FPS} width={1920} height={1080} defaultProps={{}} />
       <Composition id="ComicFilm" component={Film} durationInFrames={Math.round(END * FPS)} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true }} />
-      <Composition id="Strip" component={LibFilm} durationInFrames={2} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true, at: [1, 2] as number[] }} calculateMetadata={({ props }) => ({ durationInFrames: props.at?.length ?? 1 })} />
+      <Composition id="Strip" component={Film5} durationInFrames={2} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true, at: [1, 2] as number[] }} calculateMetadata={({ props }) => ({ durationInFrames: props.at?.length ?? 1 })} />
       <Composition id="PeepsFilm" component={PeepsFilm} durationInFrames={Math.round(END * FPS)} fps={FPS} width={1920} height={1080} defaultProps={{ subtitles: true }} />
       <Composition id="ComicStrip" component={ComicStrip} defaultProps={{ times: [1, 2] }} calculateMetadata={({ props }) => ({ durationInFrames: props.times.length })} durationInFrames={2} fps={FPS} width={1920} height={1080} />
       <Composition id="ComicProbe" component={ComicProbe} defaultProps={{ t: 12 }} durationInFrames={1} fps={FPS} width={1920} height={1080} />

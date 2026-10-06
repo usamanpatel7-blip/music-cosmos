@@ -45,7 +45,7 @@ const FRAG = /* glsl */ `
 
 export type DotData = { p: Float32Array; c: Float32Array; s: Float32Array; a?: Float32Array };
 
-export const Dots: React.FC<{ data: DotData; focus?: number; aperture?: number; maxBlur?: number; additive?: boolean; renderOrder?: number }> = ({ data, focus = 12, aperture = 0, maxBlur = 60, additive = false, renderOrder = 0 }) => {
+export const Dots: React.FC<{ data: DotData; stamp?: number; focus?: number; aperture?: number; maxBlur?: number; additive?: boolean; renderOrder?: number }> = ({ data, stamp = 0, focus = 12, aperture = 0, maxBlur = 60, additive = false, renderOrder = 0 }) => {
   const { gl, size, camera } = useThree();
   const n = data.s.length;
   const geom = useMemo(() => {
@@ -80,6 +80,6 @@ export const Dots: React.FC<{ data: DotData; focus?: number; aperture?: number; 
     (geom.attributes.alpha as THREE.BufferAttribute).set(data.a ?? new Float32Array(n).fill(1));
     for (const k of ["position", "color", "size", "alpha"]) geom.attributes[k].needsUpdate = true;
     geom.computeBoundingSphere();
-  }, [data, focus, aperture, maxBlur, geom, mat, gl, size, camera, n]);
+  }, [data, stamp, focus, aperture, maxBlur, geom, mat, gl, size, camera, n]);
   return <points geometry={geom} material={mat} frustumCulled={false} renderOrder={renderOrder} />;
 };

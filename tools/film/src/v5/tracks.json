@@ -47,13 +47,29 @@
   "year": "1998",
   "collectionId": 1717829350
  },
- "grinberg": {
-  "id": "1702899469",
-  "artist": "Мария Гринберг",
-  "track": "Соната No. 8 для фортепиано до минор, соч. 13 \"Патетическая\": I. Grave - Allegro di molto e con brio",
-  "album": "Мария Гринберг. Бетховен",
-  "year": "2023",
-  "collectionId": 1702899191
+ "richter": {
+  "id": "1118265397",
+  "artist": "Святослав Рихтер",
+  "track": "Prelude and Fugue: No. 2 in C Minor, BWV 847",
+  "album": "И.С. Бах: Хорошо темперированный клавир. Том I",
+  "year": "1970",
+  "collectionId": 1118264995
+ },
+ "schiff": {
+  "id": "1452153134",
+  "artist": "Андраш Шифф",
+  "track": "The Well-Tempered Clavier, Book I: Prelude and Fugue in C Minor, BWV 847",
+  "album": "J.S. Bach: The Well-Tempered Clavier, Book I",
+  "year": "1984",
+  "collectionId": 1452152335
+ },
+ "nikolaeva": {
+  "id": "1116797606",
+  "artist": "Татьяна Николаева",
+  "track": "Prelude and Fugue: No. 2 in C Minor, BWV 847",
+  "album": "И. С. Бах: Хорошо темперированный клавир. Том I",
+  "year": "1984",
+  "collectionId": 1116797593
  },
  "adagio": {
   "id": "1452515048",

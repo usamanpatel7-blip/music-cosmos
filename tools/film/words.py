@@ -4,7 +4,7 @@
 import json, re, difflib, os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 A=json.load(open('asr.json')); S=[l.strip() for l in open('essay.txt',encoding='utf-8') if l.strip()]
-GAPS=[4.5,1.0]  # паузы между частями (те же в audio.py): после первой — «старый припев»
+GAPS=[1.2,1.0]  # паузы между частями (те же в audio.py)
 asr=[]; off=0.0
 for k,(part,dur) in enumerate(zip(A['parts'],A['durs'])):
     asr+=[dict(w,t0=w['start']+off,t1=w['end']+off) for w in part]

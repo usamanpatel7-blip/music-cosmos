@@ -27,6 +27,7 @@ for si,r in enumerate(res):
             prev=next((times[i][1] for i in range(j-1,-1,-1) if times[i]),t0)
             nxt=next((times[i][0] for i in range(j+1,len(times)) if times[i]),t1)
             times[j]=(prev,max(prev,nxt))
+    if si==16: t1=82.08  # перечисление плейлистов распознано не целиком
     sent.append({'i':si,'t0':round(t0,2),'t1':round(t1,2),'s':text})
     # фраза — один субтитр (две строки); длиннее 100 знаков — две половины,
     # разрезанные у знака препинания ближе к середине
@@ -40,6 +41,7 @@ for si,r in enumerate(res):
         parts=[list(range(best[1]+1)),list(range(best[1]+1,len(words)))]
     for c in parts:
         a=times[c[0]][0]; b=times[c[-1]][1]
+        if si==16: b=max(b,82.08)
         cues.append({'t0':round(a,2),'t1':round(b,2),'s':' '.join(words[i] for i in c)})
 # субтитр держится до начала следующего, но не дольше +0.8 с после конца речи
 for i,c in enumerate(cues):

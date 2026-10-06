@@ -147,23 +147,35 @@ export const useSiteLabel = (title = "Одна вещь", side = "СТОРОНА
 
 /* Пластинка: диск R, этикетка 0.3R (картинка или надпись), вращение spin.
    Плоскость пластинки — XY, лицом к +Z. */
-export const Record3D: React.FC<{ R: number; pos?: [number, number, number]; rot?: [number, number, number]; spin?: number; label?: THREE.Texture | null; labelK?: number; children?: React.ReactNode }> = ({ R, pos = [0, 0, 0], rot = [0, 0, 0], spin = 0, label, labelK = 0.3, children }) => {
+export const Record3D: React.FC<{ R: number; pos?: [number, number, number]; rot?: [number, number, number]; spin?: number; label?: THREE.Texture | null; label2?: THREE.Texture | null; mix?: number; labelK?: number; opacity?: number; children?: React.ReactNode }> = ({ R, pos = [0, 0, 0], rot = [0, 0, 0], spin = 0, label, label2, mix = 0, labelK = 0.3, opacity = 1, children }) => {
   const tex = useMemo(() => grooves(), []);
   return (
     <group position={pos} rotation={rot}>
       <mesh position={[0, 0, -0.012]}>
         <circleGeometry args={[R * 1.004, 160]} />
-        <meshBasicMaterial color="#070608" />
+        <meshBasicMaterial color="#070608" transparent opacity={opacity} />
       </mesh>
       <group rotation={[0, 0, spin]}>
         <mesh position={[0, 0, 0.0]}>
           <circleGeometry args={[R, 160]} />
-          <meshBasicMaterial map={tex} />
+          <meshBasicMaterial map={tex} transparent opacity={opacity} />
         </mesh>
+        {label ? (
+          <mesh position={[0, 0, 0.0015]}>
+            <circleGeometry args={[R * labelK, 128]} />
+            <meshBasicMaterial color="#e8dcc4" transparent opacity={opacity * (1 - mix)} />
+          </mesh>
+        ) : null}
         {label ? (
           <mesh position={[0, 0, 0.002]}>
             <circleGeometry args={[R * labelK, 128]} />
-            <meshBasicMaterial map={label} transparent />
+            <meshBasicMaterial map={label} transparent opacity={opacity * (1 - mix)} />
+          </mesh>
+        ) : null}
+        {label2 && mix > 0 ? (
+          <mesh position={[0, 0, 0.003]}>
+            <circleGeometry args={[R * labelK, 128]} />
+            <meshBasicMaterial map={label2} transparent opacity={opacity * mix} />
           </mesh>
         ) : null}
         {children}

@@ -22,6 +22,12 @@ while i < n:
         i = j
     else:
         i += 1
+# названия плейлистов распознаватель не узнал — их время взято по соседним
+# распознанным словам («одинадцать», «шестнадцать», «двадцати»)
+FIX = {"«11–15»,": (78.39, 79.45), "«16–18»,": (79.53, 80.7), "«20–21».": (80.85, 82.08)}
+for k in range(n):
+    if ew[k][2] in FIX:
+        t0[k], t1[k] = FIX[ew[k][2]]
 out = [[ew[k][2], round(t0[k], 3), round(t1[k], 3), ew[k][1]] for k in range(n)]
 json.dump(out, open("src/eras/words.json", "w"), ensure_ascii=False, separators=(",", ":"))
 print(n, "слов")
